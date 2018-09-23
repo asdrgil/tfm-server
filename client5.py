@@ -1,13 +1,16 @@
+#!/usr/bin/env python
 import pika
 import uuid
-import base64
 
-class VerifyToken(object):
+class FibonacciRpcClient(object):
     def __init__(self):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+
         self.channel = self.connection.channel()
+
         result = self.channel.queue_declare(exclusive=True)
         self.callback_queue = result.method.queue
+
         self.channel.basic_consume(self.on_response, no_ack=True,
                                    queue=self.callback_queue)
 
@@ -19,7 +22,7 @@ class VerifyToken(object):
         self.response = None
         self.corr_id = str(uuid.uuid4())
         self.channel.basic_publish(exchange='',
-                                   routing_key='tokens',
+                                   routing_key='token',
                                    properties=pika.BasicProperties(
                                          reply_to = self.callback_queue,
                                          correlation_id = self.corr_id,
@@ -29,19 +32,8 @@ class VerifyToken(object):
             self.connection.process_data_events()
         return int(self.response)
 
-if __name__ == "__main__":
-    verifyToken_rpc = VerifyToken()
-    token = "128e9c300e35b7dc723b130776eb91bc"
-    mail = "adgil@ucm.es"
-    passwd = "mypass"
+fibonacci_rpc = FibonacciRpcClient()
 
-    response1 = verifyToken_rpc.call(token)
-    if response1 == 0:
-        print("[DEBUG] Error. Invalid token")
-    elif response1 == 1:
-        print("[DEBUG] Error. Token has already been used.")
-    else:
-        #TODO: send credentials to register user
-        #base64.b64encode(passwd)
-        
-    
+print(" [x] Requesting fib(30)")
+response = fibonacci_rpc.call("e59d97bfa9e5e72a69b3280141606935")
+print(" [.] Got %r" % response)
