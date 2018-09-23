@@ -8,7 +8,7 @@ import bcrypt
 #Global variables
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
-topics = ["token", "register"]
+topics = ["token", "register", "measurement"]
 token = ""
 mongoClient = MongoClient('localhost:27017').tfm
 
@@ -52,6 +52,22 @@ def register(data):
         return 1
 
     return 200
+
+def measurement(data):
+    try:
+        #TODO: Add some authentification before allowing to send sensorized data
+        
+        if mongoClient.measurement.find_one({'sensor' : data["sensor"], 'timestamp' : data["timestamp"], 'mail' : data["mail"]}):
+            return 3
+        
+        mongoClient.measurement.insert_one(data)
+    
+    except ValueError: #Body is not in json format
+        return 0
+    except KeyError: #Missing key mail or passwd
+        return 1
+
+    return 200
     
 
 def on_request(ch, method, props, body):
@@ -65,6 +81,8 @@ def on_request(ch, method, props, body):
         response = findToken(token)
     elif method.routing_key == "register":
         response = register(json.loads(body.decode("ascii")))
+    elif method.routing_key == "measurement":
+        response = measurement(json.loads(body.decode("ascii")))
     
     #response = fib(n)
 
