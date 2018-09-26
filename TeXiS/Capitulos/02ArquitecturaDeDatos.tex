@@ -1,6 +1,6 @@
 %---------------------------------------------------------------------
 %
-%                          Capítulo 1 - Estado del arte
+%                          Capítulo 2 - Arquitectura de datos
 %
 %---------------------------------------------------------------------
 
@@ -67,3 +67,79 @@ Entre estos lenguajes, Redis y Cassandra son descartados por una mezcla entre el
 
 \paragraph{}
 En el caso de Couchbase y MongoDB, ambos cuentan con documentación para Android en sus respectivas páginas oficiales así como proyectos de ejemplo en los que queda bastante claro la manera de interactuar con las bases de datos. En el caso de MongoDB, se cuenta con experiencia previa con dicho lenguaje (punto 6), mientras que a pesar de no haber usado previamente Couchbase, esta cuenta con un sistema de consultas de datos llamado N1QL cuya sintaxis es bastante más intuitiva que la de MongoDB. A su vez, ambas cuentan con contenedores Docker ya configurados así como tutoriales que facilitan su puesta en marcha y modificación. Teniendo todo esto en cuenta, realmente se podría haber elegido cualquiera de estas dos soluciones para este proyecto, decantándose finalmente por utilizar Couchbase debido a que se considera que N1QL facilita tener un código limpio y mejor estructurado.
+
+
+\section{Ciberseguridad}
+\paragraph{}
+Como se va a tratar con datos biométricos sensibles, es importante asegurarse de que esta información no acabe en manos indeseadas. Con este fin, se han tomado las siguientes medidas de seguridad:
+\begin{enumerate}
+\item Autenticación tanto en la base de datos del móvil como en la base de datos del servidor. En el caso de la base de datos del servidor, se debe permitir las conexiones externas a través del servicio web de Python.
+\item Encriptación de los datos de ambas bases de datos, para que aunque un atacante consiguiese tener acceso al dispositivo, no pudiese obtener información de la propia base de datos.
+\item Encriptación punto a punto, para evitar ataques de sniffer.
+\end{enumerate}
+
+\paragraph{}
+El punto más vulnerable de nuestra solución será en lo que respecta al envío de datos de la pulsera al dispositivo Android, pues este envío viene configurado por el propio desarrollador de la pulsera y este envío se realiza sin ningún tipo de cifrado, por lo que si un atacante se hace con el control del dispositivo Android, podrá leer directamente los datos que son enviados por BLE sin tener que forzar ni nuestra app ni nuestras bases de datos.
+
+\paragraph{}
+En lo que respecta a la autentificación en las bases de datos, MongoDB cuenta con el método SCRAM, basado a su vez en el método IETF RFC 5802 \citep{ietf}. Para la encriptación de los datos almacenados, utiliza AES256-GCM. También provee de herramientas para el encriptado punto a punto al acceder a servidores externos. Sin embargo, como no se va a exponer directamente la base de datos sino que estas operaciones se van a realizar a través del servicio web, esta parte del protocolo de seguridad de MongoDB no va a ser utilizada.
+
+\paragraph{}
+[TODO: encriptación en la capa de transporte]
+
+
+\subsection{Autenticación y autorización en el servidor web}
+\paragraph{}
+El servidor web requiere que los usuarios se autentiquen antes de poder operar con los datos de las mediciones para evitar accesos indeseados a la base de datos con los registros de sensorizaciones. A continuación se van a describir distintos métodos de autenticación que se pueden implementar para a continuación intentar justificar el método utilizado.
+
+\begin{itemize}
+\item Autenticación básica: el usuario se identifica mediante una tupla usuario-contraseña que son enviados en texto plano. Esto tiene numerosas vulnerabilidades, como la escucha de terceros así como el hecho de que al no contar con claves API que funcionen por debajo de la contraseña del usuario, se impide que el responsable de la seguridad del servidor pueda cambiar las claves API en caso de detectar alguna posible vulnerabilidad. Por contra, en este caso por cada cambio que se realice se requiere la interacción del usuario.
+
+\item OAuth 1.0: es un protocolo basado en la autorización en lugar de la autenticación en la que los consumidores y los proveedores no intercambian las claves de acceso sino claves que autorizan al consumidor para realizar determinadas operaciones. Es un modelo similar al de las claves de coches de lujo de tipo valet, que permiten acceder sólo a recursos concretos del coche (por ejemplo, con estas llaves se puede conducir el coche pero no utilizar el ordenador de abordo) y sólo durante un periodo de uso concreto (por ejemplo, la llave deja de funcionar si se sobrepasan los 10 kilómetros de autonomía que se establecen para que un chófer pueda aparcar dicho coche pero no pueda utilizarlo para dar una vuelta), en contraposición de la llave del coche tradicional que autoriza para realizar cualquier operación sin que esta llave nunca caduque \citep{oauth1}. Los tres actores que intervienen en este protocolo son el usuario, el consumidor y el proveedor del servicio. A continuación se van a desgranar a partir del artículo de Rob Sobers \citeyear{robsobers} el flujo que sigue un usuario cuando accede correctamente a un recurso protegido:
+\begin{enumerate}
+\item El usuario muestra su intención de acceder a un determinado recurso.
+\item Este consumidor pregunta al proveedor del servicio si puede darle permiso al usuario. El proveedor de servicio provee al consumidor un token y un secreto para acceder al recurso.
+\item El consumidor le envía al usuario este token y su correspondiente secreto. 
+\item El usuario le envía al proveedor del servicio una solicitud para que autorice el token que le ha enviado el consumidor, respondiendo si dicho token es correcto.
+\item El consumidor cambia con el proveedor del servicio el token de solicitud obtenido en el paso dos por un token de acceso.
+\item El consumidor accede al recurso protegido con su token.
+\end{enumerate}
+%TODO: add flow diagram and explain previous steps referencing the flow diagram (perhaps mix it with Twitter's example from Rob Sobers).
+%https://oauth.net/core/1.0/ Flow diagram OAuth1
+%https://tools.ietf.org/html/rfc6749 Flow diagram OAuth2
+%https://docs.spring.io/spring-social/docs/1.1.0.RELEASE/reference/htmlsingle/#section_oauth2ServiceProviders Flow diagram of both OAuth1 and OAuth2. <--- Use this
+%https://hueniverse.com/oauth-2-0-and-the-road-to-hell-8eec45921529 Limitations OAuth2
+
+\item OAuth 2.0: como su nombre indica, es la segunda versión del protocolo Oauth 1.0, que aumenta significativamente su usabilidad. Las principales diferencias de OAuth 2.0 frente a OAuth 1.0 son las siguientes \citep{oauth2}:
+\begin{itemize}
+\item Mejor experiencia de usuario para accesos desde dispositivos móviles: para usar OAuth 1.0 en las apps, era necesario redirigir al usuario al navegador, que este introdujese ahí sus credenciales, en caso de que fueran correctos copiar el token de autorización e introducirlo de vuelta en la app. En OAuth 2.0 este proceso se puede realizar sin tener que salir de la propia app.
+\item Ya no se requiere que el usuario tenga el sistema de cifrado HMAC, al proveer la opción de enviar los datos a través de HTTPS.
+\item Simplificación de las firmas: ya no hace falta una codificación concreta y utiliza un único secreto en lugar de dos.
+\item Se incluye la posibilidad de incluir tokens de actualización. Estos son tokens que se envían junto a los credenciales del usuario cuando el token de acceso ha caducado para solicitar un nuevo token. Este token por tanto, no tiene ninguna utilidad si no se tienen a su vez los credenciales de acceso.
+\item Separación clara de roles entre el servidor que responde a las solicitudes de OAuth y los servidores encargados de la autenticación del usuario.
+\end{itemize}
+
+\item JWT (Json Web Token authentification): es un método que utiliza un objeto JSON para autentificar usuarios o enviar información de forma segura. La información que se manda puede ser firmada con HMAC-SHA256, o con RSA o ECDSA \citep{jwt}. El objeto JSON que se envía tiene la siguiente estructura \citep{rfc7519}:
+\begin{itemize}
+    \item Cabecera: es donde se define el algoritmo utilizado para realizar la firma (HMAC, RSA o ECDSA).
+    \item Carga útil o \textit{payload}: es donde se realiza la petición que debe ser contrastada. Existen tres tipos de peticiones:
+    \begin{itemize}
+        \item Peticiones registradas: son una serie de peticiones predefinidas que se recomienda usar. Entre ellas, se encuentra \texttt{iss}, que identifica al emisor del JSON o \texttt{exp}, que establece el momento en el que el JSON deja de ser válido.
+        \item Peticiones públicas: es una lista de peticiones más extensa que las registradas en las que por ejemplo se puede definir el correo electrónico, la zona horaria o la localización del emisor, tal como se puede consultar en la página web de IANA \citeyear{iana}.
+        \item Peticiones privadas: son peticiones personalizadas que el productor y consumidor del objeto JWT previamente han decidido usar.
+    \end{itemize}
+    \item Firma: se incluye la firma de la cabecera y de la carga útil.
+\end{itemize}
+
+\item TLS (Transport Layer Security)/SSL(Secure Socket Layer): son dos protocolos de critografía asimétrica que se suelen utilizar indistintamente y que se usan para establecer comunicaciones seguras en la red. TLS contiene dos capas: la capa para el apretón de manos, en la que autentifica a ambas partes, y la capa en la que se provee seguridad en cuanto a la integridad del mensaje \citep{evaldsson2015evaluate}. Una de sus principales fortalezas es la interoperabilidad: no se impone un método de encriptación entre el cliente y el servidor, sino que se negocia dicho método entre ambos, lo que permite renovar viejos protocolos de encriptación cuando estos quedan obsoletos \citep{carlsson2018comparison}. Su aplicación más conocida es para establecer comunicaciones seguras entre el servidor y el navegador web al realizar peticiones HTTP. Entre estos dos protocolos, SSL es el protocolo de seguridad más utilizado para la autenticación en Internet \citep{viega2002network}.
+\end{itemize}
+
+\section{Elementos tecnológicos}
+\subsection{Cliente}
+%TODO: móvil Android + pulsera
+\subsection{Servidor}
+%TODO
+
+\section{Conexiones entre elementos tecnológicos}
+\subsection{Conexión entre la pulsera inteligente y el móvil Android}
+\subsection{Conexión entre el móvil Android y el servidor}
