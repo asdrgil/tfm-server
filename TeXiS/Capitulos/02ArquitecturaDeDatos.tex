@@ -68,6 +68,41 @@ Entre estos lenguajes, Redis y Cassandra son descartados por una mezcla entre el
 \paragraph{}
 En el caso de Couchbase y MongoDB, ambos cuentan con documentación para Android en sus respectivas páginas oficiales así como proyectos de ejemplo en los que queda bastante claro la manera de interactuar con las bases de datos. En el caso de MongoDB, se cuenta con experiencia previa con dicho lenguaje (punto 6), mientras que a pesar de no haber usado previamente Couchbase, esta cuenta con un sistema de consultas de datos llamado N1QL cuya sintaxis es bastante más intuitiva que la de MongoDB. A su vez, ambas cuentan con contenedores Docker ya configurados así como tutoriales que facilitan su puesta en marcha y modificación. Teniendo todo esto en cuenta, realmente se podría haber elegido cualquiera de estas dos soluciones para este proyecto, decantándose finalmente por utilizar Couchbase debido a que se considera que N1QL facilita tener un código limpio y mejor estructurado.
 
+\section{Elementos tecnológicos}
+\subsection{Cliente}
+%TODO: móvil Android + pulsera
+\subsection{Servidor}
+%TODO
+
+\section{Conexiones entre elementos tecnológicos}
+\subsection{Conexión entre la pulsera inteligente y el móvil Android}
+\paragraph{}
+La pulsera inteligente se conecta con el móvil a traves de Bluetooth Low Energy(BLE), que es la cuarta version del protocolo Bluetooth. Es un protocolo de comunicación inalámbrica que emite en la frecuencia 2.4Ghz de bajo consumo que en entornos experimentales ha llegado a tener un alcance de más de un kilómetro \citep{akhayad2016bluetooth}. Está diseñado para el intercambio de información ligera que no requiera de alta velocidad (su velocidad de transferencia máxima es de 1Mbps). En lo que respecta a la seguridad, una vez se han acoplado los dos dispositivos, los datos emitidos se encriptan mediante Advaced Encryption Standard(AES) 128.
+
+\paragraph{}
+Por último, un dato a considerar es que este protocolo no es compatible con versiones previas de Bluetooth, por lo que para el emparejamiento entre la pulsera inteligente y el móvil Android será necesario que el usuario disponda de un teléfono móvil de al menos el año 2013 o 2014, que es cuando se popularizó este protocolo entre dispositivos móviles.
+
+\paragraph{}
+Este no es un protocolo que se haya podido elegir de manera aislada respecto a otros protocolos de bajo consumo, sino que se partía con la limitación de la oferta del propio hardware de tanto la pulsera como de los protocolos más comunes entre los teléfonos móviles, lo que en este caso obliga \textit{de facto} a utilizar el protocolo BLE.
+
+\subsection{Conexión entre el móvil Android y el servidor}
+\paragraph{}
+Una vez han llegado los datos de las sensorizaciones al móvil, estos datos se envían al servidor. Para realizar este envío, las opciones que se han barajado han sido realizarlas mediante peticiones Hypertext Transfer Protocol(HTTP), Message Queuing Telemetry Transport (MQTT) o Advanced Message Queuing Protocol (AMQP).
+
+\paragraph{}
+La principal diferencia entre las peticiones HTTP y las peticiones MQTT Y AMQP es el consumo de recursos de estas soluciones, siendo MQTT un protocolo más eficiente en el envío de paquetes que HTTP \citep{yokotani2016comparison}, que es un elemento crítico en IOT, lo que implica el descarte de este protocolo.
+
+\paragraph{}
+El protocolo MQTT es un protocolo unidireccional entre un publicador y un suscriptor a través de unos identificadores del canal llamado tópicos. En lo que respecta a asegurar que los datos del publicador han llegado al suscriptor, existen tres niveles de Quality of Service (QoS) que se pueden definir por cada tópico. En el nivel cero, se envía el dato al menos una vez pero no se garantiza que ese dato ha llegado al suscriptor. En el nivel uno, el suscriptor debe enviar la confirmación de que le ha llegado el dato en cuestión al menos una vez. Por último, en el nivel dos, se garantiza que el dato llega exactamente una vez al suscriptor.
+
+\paragraph{}
+AMQP se diferencia principalmente de MQTT en que en AMQP el servidor puede mandar mensajes de vuelta al cliente que vayan más allá de los mensajes numéricos de posibles errores. Esto tiene como coste un mayor consumo de ancho de banda, pero mucho menor que en el caso de HTTP. En el caso de MQTT si se quiere establecer esta comunicación bidireccional es necesario crear dos canales entre ambos elementos.
+
+\paragraph{}
+En lo que respecta a la autenticación y la ciberseguridad, ambos protocolos pueden ser integrados con TLS. El ancho de banda de esta solución en MQTT únicamente se ve notablemente resentida en la etapa de autenticación, mientras que en las fases posteriores de envío de datos el rendimiento es muy similar a las soluciones sin TLS \citep{hivemq}.
+
+\paragraph{}
+En este proyecto, se ha decidido utilizar RabbitMQ, que es una solución de software libre que facilita la implementación de MQTT y AMQP así como la inclusión de TLS. Como esta solución permite la implementación en Python (para el servidor) y Java (para el cliente), cumple todos los requisitos para el despliegue de nuestro software. A su vez, al utilizar RabbitMQ en lugar de directamente AMQP o MQTT, esto facilita que en un futuro se pudiese migrar la solución a MQTT, pues debajo de RabbitMQ se está ejecutando AMQP por la versatilidad que da el hecho de que los canales de comunicación entre cliente y servidor sean bidireccionales.
 
 \section{Ciberseguridad}
 \paragraph{}
@@ -132,14 +167,6 @@ El servidor web requiere que los usuarios se autentiquen antes de poder operar c
 \end{itemize}
 
 \item TLS (Transport Layer Security)/SSL(Secure Socket Layer): son dos protocolos de critografía asimétrica que se suelen utilizar indistintamente y que se usan para establecer comunicaciones seguras en la red. TLS contiene dos capas: la capa para el apretón de manos, en la que autentifica a ambas partes, y la capa en la que se provee seguridad en cuanto a la integridad del mensaje \citep{evaldsson2015evaluate}. Una de sus principales fortalezas es la interoperabilidad: no se impone un método de encriptación entre el cliente y el servidor, sino que se negocia dicho método entre ambos, lo que permite renovar viejos protocolos de encriptación cuando estos quedan obsoletos \citep{carlsson2018comparison}. Su aplicación más conocida es para establecer comunicaciones seguras entre el servidor y el navegador web al realizar peticiones HTTP. Entre estos dos protocolos, SSL es el protocolo de seguridad más utilizado para la autenticación en Internet \citep{viega2002network}.
+
+
 \end{itemize}
-
-\section{Elementos tecnológicos}
-\subsection{Cliente}
-%TODO: móvil Android + pulsera
-\subsection{Servidor}
-%TODO
-
-\section{Conexiones entre elementos tecnológicos}
-\subsection{Conexión entre la pulsera inteligente y el móvil Android}
-\subsection{Conexión entre el móvil Android y el servidor}
