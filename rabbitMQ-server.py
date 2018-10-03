@@ -80,7 +80,10 @@ def on_request(ch, method, props, body):
         token = body.decode("ascii")
         response = findToken(token)
     elif method.routing_key == "register":
-        response = register(json.loads(body.decode("ascii")))
+        try:
+            response = register(json.loads(body.decode("ascii")))
+        except ValueError as e:
+            response = 5
     elif method.routing_key == "measurement":
         response = measurement(json.loads(body.decode("ascii")))
     
