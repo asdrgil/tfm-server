@@ -1,0 +1,18 @@
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - AB</title>
+        {% else %}
+        <title>Abrir Brecha</title>
+        {% endif %}
+    </head>
+    <body>
+        <div>
+            <a href="{{ url_for('index') }}">Inicio</a></span>
+            {% if registered is not defined %}
+	    <a href="{{ url_for('login') }}">Iniciar sesión</a>
+	    {% endif %}
+        </div>
+        {% block content %}{% endblock %}
+    </body>
+</html>
