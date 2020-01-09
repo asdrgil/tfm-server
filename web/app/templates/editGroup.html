@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+<!-- Import macros -->
+
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import insertPatternMacro with context %}
+{% from 'macros.html' import patternsTableMacro with context %}
+
+{% from 'macros.html' import modalSaveMacro with context %}
+{% from 'macros.html' import modalCancelMacro with context %}
+{% from 'macros.html' import modalDeleteMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            //Multiselect 
+            $(function () {
+                $('select').multipleSelect();
+            })
+            bulmaAccordion.attach();
+        });
+
+        function confirmSave(){
+            document.getElementById("generalForm").submit();
+        }
+    </script>
+
+    <!-- SocketIO methods -->
+    <script type="text/javascript" charset="utf-8">
+        namespace = '/editGroup';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        //Update new pattern on the table
+        socket.on('getPatterns', function(message) {
+            
+            if(message.error.length > 0){
+                generateNotification("error", message.error);
+            }
+
+            var bodyContent = "";
+            document.getElementById("pattIds").value = "";
+            
+            //No registers, but also no errors
+            if(message.body == ""){
+                $("#tablePatterns tbody").html("");
+            }else {
+                var rows = message.body.split(";");
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    document.getElementById("pattIds").value += cols[0] + ",";
+                    bodyContent += "<tr>"
+                    //Name
+                    bodyContent += "<td>"+cols[1]+"</td>"
+                    //Description
+                    bodyContent += "<td>"+cols[2]+"</td>"
+                    //Yellow intensity
+                    var intensity1 = cols[3].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+intensity1+"</td>"
+                    //Orange intensity
+                    var intensity2 = cols[4].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+intensity2+"</td>"
+                    //Red intensity
+                    var intensity3 = cols[5].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+intensity3+"</td>"
+
+                    //View pattern
+                    var viewPattern = cols[6].trim() == "insertPattern" ? "-" : "<a onclick='viewPattern(\"" + cols[0] + "\")'><i class='fas fa-eye'></i> Ver pauta</a>";
+
+                    bodyContent += "<td>"+viewPattern+"</td>"
+                    //Unlink pattern
+                    bodyContent += "<td><a class='unlinkCells' onclick='unlinkPattern(" + cols[0] + ")'><i class='fas fa-trash-alt'></i> Desvincular pauta</a></td>"
+                    bodyContent += "</tr>"
+                }
+            }
+
+            //Remove last comma
+            document.getElementById("pattIds").value = document.getElementById("pattIds").value.replace(/,\s*$/, "");
+
+            $("#tablePatterns tbody").html(bodyContent);
+        });
+        
+
+        function persistData(){
+            socket.emit('getPatterns4', document.getElementById("windowToken").value);
+        }
+
+    </script>
+
+    <script type="text/javascript" charset="utf-8">
+        function changeEditable(){
+            if(document.getElementById("activateEdit").checked == true){
+                isEditable();
+            } else {
+                isNotEditable();                
+            }
+        }        
+
+        function isEditable(){
+            document.getElementById("editLabel").innerHTML =" Edición <b>habilitada</b> &nbsp;&nbsp;&nbsp;&nbsp;"
+
+            document.getElementById('name').removeAttribute('readonly');
+            document.getElementById('description').removeAttribute('readonly');
+
+            document.getElementById("name").style.backgroundColor = "";
+            document.getElementById("description").style.backgroundColor = "";
+
+            $('#patientsSelect').multipleSelect('enable');
+            $('#patternsSelect').multipleSelect('enable');
+
+            var elements = document.getElementsByClassName("unlinkCells");
+            
+            for(var i=0; i<elements.length; i++) {
+                elements[i].removeAttribute("style");
+                elements[i].removeAttribute("title");
+
+            }
+
+            document.getElementById("newPatt").style.display = "block";
+
+            //document.getElementById("divBtns").style.visibility = "visible" ;
+       }
+
+        function isNotEditable(){
+            document.getElementById("editLabel").innerHTML =" Edición <b>deshabilitada</b> &nbsp;&nbsp;&nbsp;&nbsp;"
+
+            document.getElementById("name").setAttribute("readonly", "");
+            document.getElementById("description").setAttribute("readonly", "");
+
+            document.getElementById("name").style.backgroundColor = "#f1f1f1";
+            document.getElementById("description").style.backgroundColor = "#f1f1f1";
+
+            $('#patientsSelect').multipleSelect('disable');
+            $('#patternsSelect').multipleSelect('disable');
+
+            var elements = document.getElementsByClassName("unlinkCells");
+            
+            for(var i=0; i<elements.length; i++) {
+                elements[i].style.color = "grey";
+                elements[i].title = "Edición deshabilitada";
+
+            }
+
+            document.getElementById("newPatt").style.display = "none";
+
+            document.getElementById("divBtns").style.visibility = "hidden" ;
+        }    
+    </script>
+
+{% endblock %}
+
+{% block content %} 
+
+<!-- Modal[Save] -->
+{{ modalSaveMacro("del grupo") }}
+
+<!-- Modal[Cancelar] -->
+{{ modalCancelMacro() }}
+
+<!-- Modal[Delete] -->
+{{ modalDeleteMacro("del grupo") }}
+
+<!-- Title -->
+<section id="contact" class="section section-light-grey">
+    {{ titleMacro("Crear un grupo de pautas") }}
+</section>
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+    <div class="column is-1">
+    </div>
+
+    <div class="column is-8 box">
+
+        <div align="center">
+            
+            <form action="" id="generalForm" method="post" novalidate>
+                {{ form.hidden_tag() }}
+                {{ form.csrf_token }}
+
+
+                <div class="field" align="center">
+                    <span id="editLabel"> Edición <b>habilitada</b> &nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    {{ form3.activateEdit() }}
+                    {{ form3.activateEdit.label }}
+                </div>
+
+                <br>
+
+                <div class="columns is-vcentered is-centered">
+                    <div class="column is-2">
+                    </div>
+                    <div class="column is-8">
+                        <p>
+                            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+                            
+                            {% for error in form.name.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+                        </p>
+                    </div>
+                    <div class="column is-2">
+                    </div>
+                </div>
+
+                <br>
+
+
+                <p>
+                    <b>{{ form.description.label }}</b> <br>
+                    {{ form.description(maxlength=50) }} 
+                </p>
+
+                <br>
+                <br>
+                
+
+                <!-- Vincular a pacientes concretos -->
+                <div class="columns is-vcentered is-centered">
+                    <div class="column is-1">
+                    </div>
+
+                    <div align="center">
+                        {{ form.patients.label }} {{ form.patients }}
+                    </div>
+                    <div class="column is-1">
+                    </div>
+                </div>
+
+                <!-- Vincular pautas preexistentes a este grupo -->
+                <div class="columns is-vcentered is-centered" style="margin-top:50px">
+                    <div class="column is-1">
+                    </div>
+
+                    <br>
+
+                    <div align="center">
+                        {{ form.patterns.label }} {{ form.patterns }}
+                    </div>
+                    <div class="column is-1">
+                    </div>
+                </div>
+                
+                <br>
+
+                {{ insertPatternMacro(form2) }}
+
+                <br>
+
+                {{ patternsTableMacro(rowPatterns, 1) }}
+
+                <br>
+
+                <div id="divBtns" align="center">
+                    {{ form3.saveBtn }}
+                    {{ form3.cancelBtn }}
+                    {{ form3.deleteBtn }}
+                </div>
+
+            </form>
+        </div>
+
+        <br>
+
+    </div>
+
+
+    <div class="column is-1">
+    </div>
+
+
+</div>
+
+{% endblock %}

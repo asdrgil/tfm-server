@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% from 'macros.html' import insertPatternMacro with context %}
+{% from 'macros.html' import patternsTableMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        //Multiselect 
+        $(function () {
+            $('#patientsSelect').multipleSelect();
+            $('#patternsSelect').multipleSelect();
+            bulmaAccordion.attach();
+        })
+    });
+
+    namespace = '/registerGroup';
+    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+
+    //Update new pattern on the table
+    socket.on('getPatterns', function(message) {
+
+    	console.log("[DEBUG] getPatterns. message:");
+    	console.log(message);
+        
+        if(message.error.length > 0){
+            generateNotification("error", message.error);
+        }
+
+        var bodyContent = "";
+        document.getElementById("pattIds").value = "";
+        
+        if(message.body != ""){
+            var rows = message.body.split(";");
+            for(i=0; i<rows.length; i++){
+                var cols = rows[i].split(",");
+
+                document.getElementById("pattIds").value += cols[0] + ",";
+                bodyContent += "<tr>"
+                //Name
+                bodyContent += "<td>"+cols[1]+"</td>"
+                //Description
+                bodyContent += "<td>"+cols[2]+"</td>"
+                //Yellow intensity
+                var intensity1 = cols[3].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                bodyContent += "<td>"+intensity1+"</td>";
+                //Orange intensity
+                var intensity2 = cols[4].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                bodyContent += "<td>"+intensity2+"</td>";
+                //Red intensity
+                var intensity3 = cols[5].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                bodyContent += "<td>"+intensity3+"</td>";
+
+                //View pattern
+                var viewPattern = cols[6].trim() == "insertPattern" ? "-" : "<a onclick='viewPattern(\"" + cols[0] + "\")'><i class='fas fa-eye'></i> Ver pauta</a>";
+
+                bodyContent += "<td>"+viewPattern+"</td>"
+                //Unlink pattern
+                bodyContent += "<td><a class='unlinkCells' onclick='unlinkPattern(" + cols[0] + ")'><i class='fas fa-trash-alt'></i> Desvincular pauta</a></td>"
+                bodyContent += "</tr>"
+            }
+        }
+
+        //Remove last comma
+        document.getElementById("pattIds").value = document.getElementById("pattIds").value.replace(/,\s*$/, "");
+
+	    $("#tablePatterns tbody").html(bodyContent);
+    });
+
+	
+	function persistData(){
+		socket.emit('getPatterns4', document.getElementById("windowToken").value);
+	}
+
+	//Submit form
+	socket.on('patterns3', function(message) {
+		console.log("message: " + message.data);
+
+		var dbPatterns = message.data.split("|");
+		document.getElementById("oldPatterns").value = dbPatterns[0];
+		document.getElementById("newPatterns").value = dbPatterns[1];
+		document.getElementById('generalForm').submit();
+	});
+
+</script>
+
+{% endblock %}
+
+{% block content %}	
+
+<!-- Titulo -->
+
+<div class="columns is-vcentered is-centered" style="height: 10px; margin-top:30px">
+
+	<div class="column is-one-third">
+		<hr>
+	</div>
+
+	<div class="column is-one-third" align="center">
+		<h3 class="title is-3">Crear un grupo de pautas</h3>
+	</div>
+	
+	<div class="column is-one-third">
+		<hr>
+	</div>
+</div>
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered" style="margin-top:50px">
+	<div class="column is-1">
+	</div>
+
+	<div class="column is-8 box">
+
+		<div align="center">
+			<h4 class="title is-4">Datos sobre el grupo</h4>
+		    <form action="" id="generalForm" method="post" novalidate>
+		        {{ form.hidden_tag() }}
+		        {{ form.csrf_token }}
+
+		        <div class="columns is-vcentered is-centered">
+					<div class="column is-2">
+					</div>
+		        	<div class="column is-8">
+				        <p>
+				            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+				            
+				            {% for error in form.name.errors %}
+				            <span style="color: red;">[{{ error }}]</span>
+				            {% endfor %}
+				        </p>
+			        </div>
+			        <div class="column is-2">
+					</div>
+		        </div>
+
+		        <br>
+
+
+		        <p>
+		            <b>{{ form.description.label }}</b> <br>
+		            {{ form.description(maxlength=50) }} 
+		        </p>
+
+		        <br>
+		        <br>
+				
+
+				<!-- Vincular a pacientes concretos -->
+				<div class="columns is-vcentered is-centered">
+					<div class="column is-1">
+					</div>
+
+	              	<div align="center">
+              	  		{{ form.patients.label }} {{ form.patients }}
+			        </div>
+					<div class="column is-1">
+					</div>
+				</div>
+
+				<!-- Vincular pautas preexistentes a este grupo -->
+				<div class="columns is-vcentered is-centered" style="margin-top:50px">
+					<div class="column is-1">
+					</div>
+
+					<br>
+
+	              	<div align="center">
+              	  		{{ form.patterns.label }} {{ form.patterns }}
+			        </div>
+					<div class="column is-1">
+					</div>
+				</div>
+		        
+		        <br>
+
+		        {{ insertPatternMacro(form2) }}
+
+                <br>
+
+                {{ patternsTableMacro(patterns) }}
+
+		        {{ form.submit }}
+
+		    </form>
+		</div>
+
+		<br>
+
+	</div>
+
+
+	<div class="column is-1">
+	</div>
+
+
+</div>
+
+{% endblock %}

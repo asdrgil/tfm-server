@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+    	$(document).ready(function() {
+    		$(function () {
+    		  	$('#patientsSelect').multipleSelect();
+            	$('#groupsSelect').multipleSelect();
+    		})
+    	});
+
+    	function confirmSave(){
+            document.getElementById("generalForm").submit();
+        }
+
+    	function cancelChanges(){
+    		 window.location.href = window.location.href; //Reload page losing all form modifications
+    	}
+    </script>
+
+    <!-- Modal scripts -->
+    <script>
+        
+        function displayModalSave(){
+            var modalDiv = document.getElementById("page-modal-save");
+            modalDiv.style.display = "block";
+        }
+
+        function closeModalSave(){
+            var modalDiv = document.getElementById("page-modal-save");
+            modalDiv.style.display = "none";
+        }
+        
+        function displayModalCancel(){
+            var modalDiv = document.getElementById("page-modal-cancel");
+            modalDiv.style.display = "block";
+        }
+
+        function closeModalCancel(){
+            var modalDiv = document.getElementById("page-modal-cancel");
+            modalDiv.style.display = "none";
+        }
+
+        function displayModalDelete(){
+            var modalDiv = document.getElementById("page-modal-delete");
+            modalDiv.style.display = "block";
+        }
+
+        function closeModalDelete(){
+            var modalDiv = document.getElementById("page-modal-delete");
+            modalDiv.style.display = "none";
+        }
+            
+    </script>
+
+    <!-- SocketIO -->
+    <script>
+    	namespace = '/editPattern';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        //Se elimina la pauta
+        function deletePattern(){
+            socket.emit('deletePatternEv', document.getElementById("patternId").value);
+        }
+
+
+        socket.on('deleted', function() {
+            window.location.href = '/index?flash=editPattern';
+        });
+    </script>
+
+    <!-- Scripts para activar o desactivar la edición -->
+    <script>
+
+        function changeEditable(){
+            if(document.getElementById("activateEdit").checked == true){
+                isEditable();
+            } else {
+                isNotEditable();                
+            }
+        }
+
+        function isEditable(){
+            document.getElementById("editLabel").innerHTML =" Edición <b>habilitada</b> &nbsp;&nbsp;&nbsp;&nbsp;"
+
+            document.getElementById('name').removeAttribute('readonly');
+            document.getElementById('description').removeAttribute('readonly');
+            
+            document.getElementById("name").style.backgroundColor = "";
+            document.getElementById("description").style.backgroundColor = "";
+
+            $('#patientsSelect').multipleSelect('enable');
+            $('#groupsSelect').multipleSelect('enable');
+
+            document.getElementById("divBtns").style.visibility = "visible" ;
+
+            document.getElementById("intensity1").disabled = false;
+            document.getElementById("intensity2").disabled = false;
+            document.getElementById("intensity3").disabled = false;
+
+            document.getElementById("titlePage").innerHTML = "Editar una pauta"
+       }
+
+        function isNotEditable(){
+			document.getElementById("editLabel").innerHTML =" Edición <b>deshabilitada</b> &nbsp;&nbsp;&nbsp;&nbsp;"
+
+            document.getElementById('name').setAttribute("readonly", "");
+            document.getElementById('description').setAttribute("readonly", "");
+            
+            document.getElementById("name").style.backgroundColor = "#f1f1f1";
+            document.getElementById("description").style.backgroundColor = "#f1f1f1";
+
+            $('#patientsSelect').multipleSelect('disable');
+            $('#groupsSelect').multipleSelect('disable');
+
+            document.getElementById("divBtns").style.visibility = "hidden" ;
+
+            document.getElementById("intensity1").disabled = true;
+            document.getElementById("intensity2").disabled = true;
+            document.getElementById("intensity3").disabled = true;
+
+            document.getElementById("titlePage").innerHTML = "Ver una pauta"
+        }    
+
+    </script>
+
+{% endblock %}
+
+{% block content %}	
+
+<!-- Modal[Persist changes] -->
+<div class="modal" id="page-modal-save">
+    <div class="modal-background" onclick="closeModalSave()"></div>
+    <div class="modal-content box" style="background-color:#A9A9A9;width:800px;height:150px;top:30%;border-style:solid" align="center">
+        <br>
+        <span> <b>Por favor, confirma si quieres modificar los datos de la pauta. </b></span><br><br>
+        <button class="button is-primary" onclick="confirmSave();">Confirmar</button>
+        <button class="button is-warning" onclick="closeModalSave()">Volver</button>
+    </div>
+    <button class="modal-close is-large" aria-label="close" onclick="closeModalSave()"></button>
+</div>
+
+<!-- Modal[Cancel] -->
+<div class="modal" id="page-modal-cancel">
+    <div class="modal-background" onclick="closeModalCancel()"></div>
+    <div class="modal-content box" style="background-color:#A9A9A9;width:800px;height:150px;top:30%;border-style:solid" align="center">
+        <br>
+        <span> <b>Los datos que no hayan sigo guardados se perderán. Por favor, confirma si quieres realizar esta acción. </b></span><br><br>
+        <button class="button is-primary" onclick="window.location.reload();">Confirmar</button>
+        <button class="button is-warning" onclick="closeModalCancel()">Volver</button>
+    </div>
+    <button class="modal-close is-large" aria-label="close" onclick="closeModalCancel()"></button>
+</div>
+
+<!-- Modal[Delete] -->
+<div class="modal" id="page-modal-delete">
+    <div class="modal-background" onclick="closeModalDelete()"></div>
+    <div class="modal-content box" style="background-color:#A9A9A9;width:800px;height:150px;top:30%;border-style:solid" align="center">
+        <br>
+        <span> <b>Esta acción borrará todos los datos relativos a esta pauta. ¿Estás seguro de que quieres hacer eso? </b></span><br><br>
+        <button class="button is-primary" onclick="deletePattern();">Confirmar</button>
+        <button class="button is-warning" onclick="closeModalDelete()">Volver</button>
+    </div>
+    <button class="modal-close is-large" aria-label="close" onclick="closeModalDelete()"></button>
+</div>
+
+
+<!-- Title -->
+
+<div class="columns is-vcentered is-centered" style="height: 10px; margin-top:30px">
+
+	<div class="column is-one-third">
+		<hr>
+	</div>
+
+	<div class="column is-one-third" align="center">
+		<h3 class="title is-3" id="titlePage">Editar una pauta</h3>
+	</div>
+	
+	<div class="column is-one-third">
+		<hr>
+	</div>
+</div>
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered" style="margin-top:50px">
+	<div class="column is-1">
+	</div>
+
+	<div class="column is-8 box">
+
+		<div align="center">
+			<h4 class="title is-4">Datos de la pauta</h4>
+		    <form action="" id="generalForm" method="post" novalidate>
+		        {{ form.hidden_tag() }}
+                {{ form.csrf_token }}
+
+		        <div class="columns is-vcentered is-centered" style="margin-top:50px">
+					<div class="column is-2">
+					</div>
+		        	<div class="column is-8">
+							<div class="field" align="center">
+                                <span id="editLabel"> Edición <b>habilitada</b> &nbsp;&nbsp;&nbsp;&nbsp;</span>
+                                {{ form.activateEdit() }}
+                                {{ form.activateEdit.label }}
+                            </div>
+
+
+				        <p>
+				            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+				            
+				            {% for error in form.name.errors %}
+				            <span style="color: red;">[{{ error }}]</span>
+				            {% endfor %}
+				        </p>
+			        </div>
+			        <div class="column is-2">
+					</div>
+		        </div>
+
+		        <br>
+
+
+	            <b>{{ form.description.label }}</b> <br>
+	            {{ form.description(maxlength=50) }}
+
+		        <br>
+
+	            <b>{{ form.intensity1.label }}</b> &nbsp;&nbsp; {{ form.intensity1 }}
+
+		        <br>
+
+	            <b>{{ form.intensity2.label }}</b> &nbsp;&nbsp; {{ form.intensity2 }}
+
+		        <br>
+
+		        <b>{{ form.intensity3.label }}</b> &nbsp;&nbsp; {{ form.intensity3 }}
+
+		        <br>
+
+		        <!-- Link to patients -->
+				<div class="columns is-vcentered is-centered" style="margin-top:50px">
+					<div class="column is-1">
+					</div>
+
+	              	  <div align="center">
+              	  		{{ form.patients.label }} {{ form.patients }}
+			        </div>
+					<div class="column is-1">
+					</div>
+				</div>
+
+				<br>
+
+				<!-- Link to groups -->
+				<div class="columns is-vcentered is-centered">
+					<div class="column is-1">
+					</div>
+
+	              	  <div align="center">
+              	  		{{ form.groups.label }} {{ form.groups }}
+			        </div>
+					<div class="column is-1">
+					</div>
+				</div>
+		        
+		        <br>
+		        
+				<div id="divBtns" align="center">
+			        {{ form.saveBtn }}
+			        {{ form.cancelBtn }}
+			        {{ form.deleteBtn }}
+		        </div>
+
+		    </form>
+		</div>
+
+		<br>
+
+	</div>
+
+
+	<div class="column is-1">
+	</div>
+
+
+</div>
+
+{% endblock %}

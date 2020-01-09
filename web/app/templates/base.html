@@ -1,0 +1,180 @@
+<html>
+    <head>
+        {% set therapistName = therapistLiteral %}
+
+        {% assets "mainCss" %}
+            <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        {% endassets %}
+
+        {% assets "mainJs" %}
+            <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        {% endassets %}
+
+        <!-- Flash messages from flash calls -->
+        <script type='text/javascript'>
+            $(document).ready(function() {
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            generateNotification("{{category}}", "{{message}}");
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            });
+        </script>
+
+        {% block head %}{% endblock %}
+
+        {% if title %}
+        <title>{{ title }} - TFM</title>
+        {% else %}
+        <title>TFM</title>
+        {% endif %}
+    </head>
+
+    <body>    
+
+      <!-- Menu bar -->
+
+      <nav class="navbar has-shadow is-spaced" role="navigation" aria-label="main navigation">
+        <div class="container">
+
+          <div id="navbarBasicExample" class="navbar-menu">
+            <!-- Align left -->
+            <div class="navbar-start">
+              
+              <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
+
+              <a class="navbar-item" href="/index">
+                <i class="fas fa-home fa-2x"></i>
+                <span style="margin-left: 10px;"> Pantalla principal</span>
+              </a>
+
+               <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
+
+              
+                {% if notLogged %}
+                  <a class="navbar-item" title="No has iniciado sesión.">
+                      <i class="fas fa-user fa-2x" style="color:grey"></i>
+                      <span style="margin-left: 10px;" style="font-color:grey">Pacientes</span>
+                  </a>
+                {% else %}
+
+                  <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">
+                      <i class="fas fa-user fa-2x"></i>
+                      <span style="margin-left: 10px;">Pacientes</span>
+                    </a>
+
+                    <div class="navbar-dropdown">
+                      <a class="navbar-item" href="/registrarPaciente">
+                        <i class="fas fa-user fa-2x"></i>
+                        <span style="margin-left: 10px;">Registrar paciente</span>
+                      </a>
+                      <a class="navbar-item" href="/verPacientes">
+                        <i class="fas fa-user fa-2x"></i>
+                        <span style="margin-left: 10px;">Ver pacientes</span>
+                      </a>
+                    </div>
+                  </div>
+
+                {% endif %}
+              
+              <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
+
+                {% if notLogged %}
+                  <a class="navbar-item" title="No has iniciado sesión.">
+                      <i class="fas fa-sticky-note fa-2x" style="color:grey"></i>
+                      <span style="margin-left: 10px;" style="font-color:grey">Pautas</span>
+                  </a>
+                {% else %}
+
+                  <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">
+                      <i class="fas fa-sticky-note fa-2x"></i>
+                      <span style="margin-left: 10px;">Pautas</span>
+                    </a>
+
+                    <div class="navbar-dropdown">
+                      <a class="navbar-item" href="/registrarPauta">
+                        <i class="fas fa-sticky-note fa-2x"></i>
+                        <span style="margin-left: 10px;">Crear una pauta</span>
+                      </a>
+                      <a class="navbar-item" href="/verPautas">
+                        <i class="fas fa-sticky-note fa-2x"></i>
+                        <span style="margin-left: 10px;">Ver pautas</span>
+                      </a>
+                      <hr class="dropdown-divider">
+                      <a class="navbar-item" href="/registrarGrupo">
+                        <i class="fas fa-sticky-note fa-2x"></i>
+                        <span style="margin-left: 10px;">Crear un grupo de pautas</span>
+                      </a>
+                      <a class="navbar-item" href="/verGrupos">
+                        <i class="fas fa-sticky-note fa-2x"></i>
+                        <span style="margin-left: 10px;">Ver grupos de pautas</span>
+                      </a>
+                    </div>
+                  </div>
+
+                {% endif %}
+
+                {% if notLogged %}
+
+                  <a class="navbar-item" title="No has iniciado sesión.">
+                    <i class="fas fa-thermometer-three-quartersfa-2x" style="color:grey"></i>
+                    <span style="margin-left: 10px;" style="font-color:grey">Ver episodios</span>
+                  </a>                  
+                {% else %}
+
+                  <a class="navbar-item" href="/verEpisodios">
+                    <i class="fas fa-thermometer-three-quarters fa-2x"></i>
+                    <span style="margin-left: 10px;">Ver episodios</span>
+                  </a>
+
+                {% endif %}
+
+              <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
+            </div>
+
+
+            {% if logged %}
+              <div class="navbar-end">
+                <div class="navbar-item">
+
+                  <nav class="navbar" role="navigation" aria-label="dropdown navigation">
+                    
+                    <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
+
+                    <div class="navbar-item has-dropdown is-hoverable">
+
+                      <a class="navbar-link">
+                          <i class="fas fa-user fa-2x"></i>
+                          <span style="margin-left: 20px;">{{ therapistName }}</span>
+                      </a>
+
+                      <div class="navbar-dropdown">
+                        <a class="navbar-item">
+                          <i class="fas fa-cog fa-2x"></i>
+                          <span style="margin-left: 10px;">Configuración</span>
+                        </a>
+                        <hr class="navbar-divider">
+                        <a class="navbar-item" href="/logout">
+                          <i class="fas fa-sign-out-alt fa-2x"></i>
+                          <span style="margin-left: 10px;">Cerrar sesión</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
+                  </nav>
+                </div>
+              </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </nav>      
+
+        {% block content %}{% endblock %}
+    </body>
+</html>

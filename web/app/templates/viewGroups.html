@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+<!-- Import macros -->
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import groupsTableMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            $(function () {
+              $('#patientsSelect').multipleSelect();
+              $('#patternsSelect').multipleSelect();
+            })
+        });
+    </script>
+
+{% endblock %}
+
+{% block content %} 
+
+<!-- Title -->
+<section id="contact" class="section section-light-grey">
+    {{ titleMacro("Ver todos los grupos de pautas") }}
+</section>
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+    <div class="column is-1">
+    </div>
+
+    <div class="column is-8 box">
+
+        <div align="center">
+            <h4 class="title is-4">Filtrar resultados</h4>
+            <form action="" id="generalForm" method="post" novalidate>
+                {{ form.hidden_tag() }}
+                {{ form.csrf_token }}
+
+                <div class="columns is-vcentered is-centered">
+                    <div class="column is-5">
+                        <div class="columns is-vcentered is-centered">
+                            <div class="column is-3">
+                                {{ form.name.label }}
+                            </div>
+                            <div class="column is-7">
+                                {{ form.name(size=5, maxlength=15) }}
+                                {% for error in form.name.errors %}
+                                    <span style="color: red;">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column is-5">
+                        <div class="columns is-vcentered is-centered">
+                            <div class="column is-3">
+                                {{ form.description.label }}
+                            </div>
+                            <div class="column is-7">
+                                {{ form.description(size=5, maxlength=15) }}
+                                {% for error in form.description.errors %}
+                                    <span style="color: red;">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New line -->
+
+                <div class="columns is-vcentered is-centered">
+                    <div class="column is-5">
+                        <div class="columns is-vcentered is-centered">
+                            <div class="column is-5">
+                                {{ form.patients.label }}
+                            </div>
+                            <div class="column is-5">
+                                {{ form.patients }}
+                                {% for error in form.patients.errors %}
+                                    <span style="color: red;">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column is-5">
+                        <div class="columns is-vcentered is-centered">
+                            <div class="column is-5">
+                                {{ form.patterns.label }}
+                            </div>
+                            <div class="column is-5">
+                                {{ form.patterns }}
+                                {% for error in form.patterns.errors %}
+                                    <span style="color: red;">[{{ error }}]</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>              
+
+                {{ form.searchBtn() }}
+
+            </form>
+
+            {{ groupsTableMacro(rowGroups) }}
+
+
+        </div>
+
+
+    <div class="column is-1">
+    </div>
+
+
+</div>
+
+{% endblock %}
