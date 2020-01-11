@@ -2,6 +2,8 @@
 
 {% set notLogged = True %}
 
+{% from 'macros.html' import titleMacro with context %}
+
 {% block content %}
 
  <div style="background-color:#F2F2F2">
@@ -9,7 +11,7 @@
     <section id="contact" class="section section-light-grey">
         <div class="container">
             <div class="title-wrapper has-text-centered">
-                <h2 class="title is-2 is-spaced">Iniciar sesión</h2>
+                {{ titleMacro("Iniciar sesión") }}
                 <p class="subtitle is-5 is-muted">
                     Inicia sesión con tus credenciales
                 </p>

@@ -2,31 +2,16 @@
 
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
-{% from 'macros.html' import insertPatternMacro with context %}
-{% from 'macros.html' import patternsTableMacro with context %}
 
 {% block head %}
-
-    {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
-    {% endassets %}
-
-    {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
-    {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
 
         $(document).ready(function() {
-            //Accordion
-            bulmaAccordion.attach();
 
-            //Multiselect 
             $(function () {
-                $('#patternsSelect').multipleSelect();
-                $('#groupSelect').multipleSelect();
 
-                if(document.getElementById('syncHidden')!= null && document.getElementById('syncHidden').value == "True"){
+                if(document.getElementById('syncHidden')!= null && document.getElementById('syncHidden').value=="True"){
                     isNotEditable();
 
 
@@ -49,82 +34,24 @@
         namespace = '/registerPatient';
         var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
 
-        //Update new pattern on the table
-        socket.on('getPatterns', function(message) {
-            
-            if(message.error.length > 0){
-                generateNotification("error", message.error);
-            }
-
-            var bodyContent = "";
-            document.getElementById("pattIds").value = "";
-            
-            //No registers, but also no errors
-            if(message.body == ""){
-                $("#tablePatterns tbody").html("");
-            }else {
-                var rows = message.body.split(";");
-                for(i=0; i<rows.length; i++){
-                    var cols = rows[i].split(",");
-
-                    document.getElementById("pattIds").value += cols[0] + ",";
-                    bodyContent += "<tr>"
-                    //Name
-                    bodyContent += "<td>"+cols[1]+"</td>"
-                    //Description
-                    bodyContent += "<td>"+cols[2]+"</td>"
-                    //Yellow intensity
-                    var intensity1 = cols[3].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
-                    bodyContent += "<td>"+intensity1+"</td>"
-                    //Orange intensity
-                    var intensity2 = cols[4].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
-                    bodyContent += "<td>"+intensity2+"</td>"
-                    //Red intensity
-                    var intensity3 = cols[5].trim() == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
-                    bodyContent += "<td>"+intensity3+"</td>"
-
-                    //View pattern
-                    var viewPattern = cols[6].trim() == "insertPattern" ? "-" : "<a onclick='viewPattern(\"" + cols[0] + "\")'><i class='fas fa-eye'></i> Ver pauta</a>";
-
-                    bodyContent += "<td>"+viewPattern+"</td>"
-                    //Unlink pattern
-                    bodyContent += "<td><a class='unlinkCells' onclick='unlinkPattern(" + cols[0] + ")'><i class='fas fa-trash-alt'></i> Desvincular pauta</a></td>"
-                    bodyContent += "</tr>"
-                }
-            }
-
-            //Remove last comma
-            document.getElementById("pattIds").value = document.getElementById("pattIds").value.replace(/,\s*$/, "");
-
-            $("#tablePatterns tbody").html(bodyContent);
-        });
-
-
         function isEditable(){
             document.getElementById('name').removeAttribute('readonly');
             document.getElementById('surname1').removeAttribute('readonly');
             document.getElementById('surname2').removeAttribute('readonly');
             document.getElementById('age').removeAttribute('readonly');
 
-
             document.getElementById("name").style.backgroundColor = "";
             document.getElementById("surname1").style.backgroundColor = "";
             document.getElementById("surname2").style.backgroundColor = "";
             document.getElementById("age").style.backgroundColor = "";
 
-            $('#patternsSelect').multipleSelect('enable');
-            $('#groupSelect').multipleSelect('enable');
-
-            document.getElementById("newPatt").style.display = "block";
-
-            document.getElementById("tablearea").style.display = "block";
-
-            //document.getElementById("syncNow").disabled=false;
-
             document.getElementById("submitBtn").style.display = "block";
             document.getElementById("cancelBtn").style.display = "none";
 
             document.getElementById("syncDiv").style.display = "none";
+
+            document.getElementById("gender-0").disabled = false;
+            document.getElementById("gender-1").disabled = false;
         }
 
         function isNotEditable(){
@@ -138,19 +65,13 @@
             document.getElementById("surname2").style.backgroundColor = "#f1f1f1";
             document.getElementById("age").style.backgroundColor = "#f1f1f1";
 
-            $('#patternsSelect').multipleSelect('disable');
-            $('#groupSelect').multipleSelect('disable');
-
-            document.getElementById("newPatt").style.display = "none";
-
-            document.getElementById("tablearea").style.display = "none";
-
-            //document.getElementById("syncNow").disabled=true;
-
             document.getElementById("submitBtn").style.display = "none";
             document.getElementById("cancelBtn").style.display = "block";
 
             document.getElementById("syncDiv").style.display = "block";
+
+            document.getElementById("gender-0").disabled = true;
+            document.getElementById("gender-1").disabled = true;
         }
 
 
@@ -250,33 +171,29 @@
 
                             <br>
 
-                            <div align="center">
-                                {{ form.patterns.label }} {{ form.patterns }}
+                            <div class="field" align="center">
+                                <!--<label for="gender">Género</label> &nbsp;&nbsp;&nbsp;&nbsp; <input id="gender-0" name="gender" type="radio" value="M"> <label for="gender-0">Masculino</label>&nbsp;&nbsp;&nbsp;&nbsp;<input id="gender-1" name="gender" type="radio" value="F"> <label for="gender-1">Femenino</label>-->
+                                <div class="columns is-centered"">
+                                        {{ form.gender.label }}: &nbsp;&nbsp;&nbsp;&nbsp;
+
+                                        {% for subfield in form.gender %}
+                                            {{ subfield }} &nbsp;&nbsp;
+                                            {{ subfield.label }}
+                                            &nbsp;&nbsp;
+                                        {% endfor %} 
+                                </div>
                             </div>
-
-                            <br>
-
-                            <div align="center">
-                                {{ form.groups.label }} {{ form.groups }}
-                            </div>
-
-                            <br>
-
-                            {{ insertPatternMacro(form2) }}
-
-                            <br>
-
-                            {{ patternsTableMacro(patterns, 1) }}
+                            
 
                             <br>
 
                             <div align="center">
                                 <label class="checkbox" align="center">
-                                    {{ form.syncNow() }} {{ form.syncNow.label }}
+                                    {{ form.syncNow() }}{{ form.syncNow.label }}
                                 </label>
                             </div>
 
-                            <br><br>
+                            <br>
 
                             <div align="center" id="buttonDiv">
                                 {{ form.cancelBtn }}
@@ -290,7 +207,7 @@
                 </article>
 
                 <article class="card is-rounded" id="syncDiv" style="display:none">
-                    <div class="columns is-vcentered is-centered" style="margin-top:200px">
+                    <div class="columns is-vcentered is-centered" style="margin-top:100px">
                         <div class="column is-2">
                         </div>
                         <div class="column is-6 box">

@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% set logged = True %}
-{% from 'macros.html' import insertPatternMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 
 {% block head %}
@@ -183,10 +182,6 @@
 					<div class="column is-1">
 					</div>
 				</div>
-		        
-		        <br>
-
-		        {{ insertPatternMacro(form2) }}
 
                 <br>
 

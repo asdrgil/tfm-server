@@ -1,7 +1,8 @@
 from flask_socketio import SocketIO, emit
 from app import app, db, socketio, thread_lock, thread
 from pymongo import MongoClient, errors
-from .mongoMethods import deletePattern, insertPatternTmp, getTmpPatterns, getPatternsSelectPattern, getPatternsSelectGroup, insertPatient, getUnlinkPattern
+from .mongoMethods import deletePattern, insertPatternTmp, getTmpPatterns, getPatternsSelectPattern, \
+    getPatternsSelectGroup, insertPatient, getUnlinkPattern
 
 #Constants
 mongoClient = MongoClient('localhost:27017').tfm
@@ -15,7 +16,6 @@ def editPatternSocket(message):
 
 ################ registerPatient & editPatient ################
 
-@socketio.on('insertNewPattern', namespace='/registerPatient')
 @socketio.on('insertNewPattern', namespace='/editPatient')
 @socketio.on('insertNewPattern', namespace='/registerGroup')
 @socketio.on('insertNewPattern', namespace='/editGroup')
@@ -24,7 +24,6 @@ def insertNewPattern(message):
     emit("getPatterns", {'body': body, "error": error})
 
 #Event that fires onChange event of selectPattern
-@socketio.on('changedSelectPattern', namespace='/registerPatient')
 @socketio.on('changedSelectPattern', namespace='/editPatient')
 @socketio.on('changedSelectPattern', namespace='/registerGroup')
 @socketio.on('changedSelectPattern', namespace='/editGroup')
@@ -35,7 +34,6 @@ def changedSelectPattern(message):
     emit("getPatterns", {'body': body, "error": ""})
 
 #Event that fires onChange event of selectGroup
-@socketio.on('changedSelectGroup', namespace='/registerPatient')
 @socketio.on('changedSelectGroup', namespace='/editPatient')
 def changedSelectGroup(message):
     body = getPatternsSelectGroup(message)
@@ -50,7 +48,9 @@ def background_thread(registrationToken, windowToken):
     #If a token has been marked as synced, redirect to index. If not, the user has pressed cancel
     if mongoClient["tmpPatientToken"].count_documents({'id': registrationToken, 'synced': True}) == 1:
         cursorRegistrationToken = mongoClient["tmpPatientToken"].find_one({'id': registrationToken})
-        insertPatient(windowToken, cursorRegistrationToken["name"], cursorRegistrationToken["surname1"], cursorRegistrationToken["surname2"], cursorRegistrationToken["age"], cursorRegistrationToken["groups"], True)
+        insertPatient(windowToken, cursorRegistrationToken["name"], cursorRegistrationToken["surname1"], \
+            cursorRegistrationToken["surname2"], cursorRegistrationToken["age"], cursorRegistrationToken["gender"], \
+            cursorRegistrationToken["groups"], True)
         mongoClient["tmpPatientToken"].delete_one({'id': registrationToken})
 
         socketio.emit('redirect',

@@ -119,14 +119,14 @@
 
 {% macro patientsTableMacro(rows) %}
     <div id="tablearea">
-        <h4 class="title is-4 is-spaced">Pacientes asociados</h4>
+        <!--<h4 class="title is-4 is-spaced">Pacientes asociados</h4>-->
         <table class="table" id="tablePatients">
           <thead>
               <th> <span> Nombre </span></th>
               <th> <span> Primer apellido </span></th>
               <th> <span> Segundo apellido </span></th>
+              <th> <span> Género </span></th>
               <th> <span> Edad </span></th>
-              <th> <span> Ver episodios </span></th>
               <th> <span> Ver paciente </span></th>
           </thead>
           <tbody>
@@ -135,9 +135,9 @@
                 <td>{{ row.name }}</td>
                 <td>{{ row.surname1 }}</td>
                 <td>{{ row.surname2 }}</td>
+                <td>{{ row.gender }}</td>
                 <td>{{ row.age }}</td>
-                <td><a href=/episodiosPaciente/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> Ver</a> </td>
-                <td><a href=/verPaciente/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> Ver</a> </td>
+                <td><a href=/verPaciente/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
               </tr>
             {% endfor %}
           <tbody>                 
@@ -160,7 +160,7 @@
                     <tr>
                         <td>{{ row.name }}</td>
                         <td>{{ row.description }}</td>
-                        <td><a href=/verGrupo/{{ row.id }} target="_blank"><i class='fas fa-eye'></i>Ver</a> </td>
+                        <td><a href=/verGrupo/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
                     </tr>
                 {% endfor %}
             <tbody>                 

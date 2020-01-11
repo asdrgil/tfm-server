@@ -9,6 +9,9 @@ import re
 #Constants
 mongoClient = MongoClient('localhost:27017').tfm
 
+def getCurentUser():
+    current_user.get_id()
+    
 def searchPatterns(form):
 
     result = []
@@ -93,7 +96,8 @@ def searchPatterns(form):
             if 3 in cur["intensities"]:
                 intensity3 = "Sí"
 
-        result.append({"id": cur["id"], "name": cur["name"], "description": description, "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
+        result.append({"id": cur["id"], "name": cur["name"], "description": description, \
+            "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
 
     return result
 
@@ -148,7 +152,8 @@ def searchPatients(form):
     cursor = mongoClient["patients"].find(query)
 
     for cur in cursor:
-        result.append({"id": cur["id"], "name": cur["name"] , "surname1": cur["surname1"], "surname2": cur["surname2"], "age": cur["age"]})
+        result.append({"id": cur["id"], "name": cur["name"] , "surname1": cur["surname1"], \
+            "surname2": cur["surname2"], "age": cur["age"]})
 
     return result
 
@@ -212,7 +217,9 @@ def insertPatternTmp(msg):
 
 
     #If there is not already a pattern with the given name for the given therapist: raise error
-    if mongoClient["patterns"].count_documents({"name": patternName, "therapist": therapist, "windowId": {"$exists":False}}) == 0 and mongoClient["tmpPatterns"].count_documents({"windowId":windowId, "name":patternName}) == 0:
+    if mongoClient["patterns"].count_documents({"name": patternName, "therapist": therapist, \
+        "windowId": {"$exists":False}}) == 0 and mongoClient["tmpPatterns"]\
+        .count_documents({"windowId":windowId, "name":patternName}) == 0:
 
         idPattern = 1
 
@@ -222,8 +229,10 @@ def insertPatternTmp(msg):
             for cur in cursor:
                 idPattern = cur["id"] + 1
 
-        mongoClient["patterns"].insert_one({"id":idPattern, 'name': patternName, 'description': patternDescription, 'intensities': intensities, "windowId":windowId, "therapist":therapist})
-        mongoClient["tmpPatterns"].insert_one({"id": idPattern, "pattType": "insertPattern", "windowId": windowId, "name":patternName})
+        mongoClient["patterns"].insert_one({"id":idPattern, 'name': patternName, 'description': patternDescription, \
+            'intensities': intensities, "windowId":windowId, "therapist":therapist})
+        mongoClient["tmpPatterns"].insert_one(\
+            {"id": idPattern, "pattType": "insertPattern", "windowId": windowId, "name":patternName})
     else:
         error = "Ya existe una pauta con este nombre"
 
@@ -271,7 +280,8 @@ def getTmpPatterns(windowId, outputFormat="str"):
                     pattType = "selectPatt"
                     if "pattType" in cursorTmpPatt:
                         pattType = cursorTmpPatt["pattType"]
-                    result += str(cur2["id"]) + "," + cur2["name"]+ "," + cur2["description"] + "," + intensity1 + "," + intensity2 + "," + intensity3 + "," + pattType + ";"
+                    result += str(cur2["id"]) + "," + cur2["name"]+ "," + cur2["description"] + "," + \
+                    intensity1 + "," + intensity2 + "," + intensity3 + "," + pattType + ";"
                 else:
                     result.append({"name": cur["name"], "description": cur["description"], "id": str(cur["id"])})
 
@@ -332,11 +342,13 @@ def getPatternsSelectGroup(msg):
                         #Se hace la comprobación para no meter duplicados de pautas que puedan pertenecer a varios grupos
                         if patt not in patterns:
                             patterns.extend(str(patt))
-                            mongoClient["tmpPatterns"].insert_one({"id": patt, "pattType": "selectGroup", "windowId": windowId})
+                            mongoClient["tmpPatterns"].insert_one({"id": patt, "pattType": "selectGroup", \
+                                "windowId": windowId})
 
     return getTmpPatterns(windowId)
 
-def insertPatient(windowId, name, surname1, surname2, age, groups, synced):
+#TODO: check usages (added gender)
+def insertPatient(windowId, name, surname1, surname2, age, gender, groups, synced):
 
     cursor = mongoClient["patients"].find({}).sort("id",-1).limit(1)
     idPatient = 1
@@ -345,7 +357,9 @@ def insertPatient(windowId, name, surname1, surname2, age, groups, synced):
 
     patternsAll = getTmpPatterns(windowId)
 
-    mongoClient["patients"].insert_one({"name":name, "surname1":surname1, "surname2":surname2, "age":age, "wristbandCallibated": False, "synced":synced, "id":idPatient, "patterns": patternsAll, "therapist":current_user.get_id()})
+    mongoClient["patients"].insert_one({"name":name, "surname1":surname1, "surname2":surname2, "age":age, \
+        "gender":gender, "wristbandCallibated": False, "synced":synced, "id":idPatient, "patterns": patternsAll, \
+        "therapist":current_user.get_id()})
 
     #Update all selected groups to include the given patient
     for group in groups:
@@ -489,7 +503,10 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient):
         dateFirst = datetime.fromtimestamp(firstDateTimestamp)
         dateLast = datetime.fromtimestamp(lastDateTimestamp)
 
-        result.append({"firstDate": dateFirst.strftime("%d/%m/%Y, %H:%M:%S"), "lastDate":dateLast.strftime("%d/%m/%Y, %H:%M:%S"), "timestampFrom":timestampFrom, "timestampTo":timestampTo, "alerts1": totalAlerts[0], "alerts2": totalAlerts[1], "alerts3": totalAlerts[2]})
+        result.append({"firstDate": dateFirst.strftime("%d/%m/%Y, %H:%M:%S"), \
+            "lastDate":dateLast.strftime("%d/%m/%Y, %H:%M:%S"), "timestampFrom":timestampFrom, \
+            "timestampTo":timestampTo, "alerts1": totalAlerts[0], "alerts2": totalAlerts[1], \
+            "alerts3": totalAlerts[2]})
 
     return result
 
@@ -505,3 +522,11 @@ def getOneEpisode(timestampFrom, timestampTo, idPatient):
             #[Date.UTC(2007, 0, 1, 0, 0, 0), 0.7537]
             #plotData += "Date.UTC(), {}"
     return rows
+
+def generateUniqueRandom(collection, field):
+    token = ''.join(random.choice('0123456789ABCDEF') for i in range(6))
+
+    while mongoClient[collection].find({field:token}).count() > 0:
+        generateUniqueRandom(token)
+
+    return token

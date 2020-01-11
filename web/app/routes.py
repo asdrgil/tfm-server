@@ -3,7 +3,9 @@ from flask import render_template, flash, redirect, url_for, request, session
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.urls import url_parse
 from app import app, db, socketio, thread_lock, thread
-from app.forms import LoginForm, RegisterTherapistForm, RegisterPatientForm, RegisterPatternForm, RegistrationGroupForm, ViewPatternForm, SearchPatternsForm, SearchPatientsForm, SearchGroupsForm, EditPatientForm, RegisterPatternForm2, GenericEditForm, FilterByDateForm, TryoutForm
+from app.forms import LoginForm, RegisterTherapistForm, RegisterPatientForm, RegisterPatternForm, \
+    RegistrationGroupForm, ViewPatternForm, SearchPatternsForm, SearchPatientsForm, SearchGroupsForm, EditPatientForm, \
+    RegisterPatternForm2, GenericEditForm, FilterByDateForm, TryoutForm
 from app.models import User
 import random
 from threading import Lock
@@ -19,23 +21,16 @@ import datetime as dt
 from datetime import datetime
 from datetime import timedelta
 from datetime import date
+import time
 from operator import itemgetter
-from .socketIOMethods import editPatternSocket, changedSelectGroup, changedSelectPattern, registerPatientEvent, insertNewPattern, insertPatient, getTmpPatterns
-from .mongoMethods import searchPatterns, searchPatients, searchGroups, getMultipleEpisodes, getOneEpisode
+from .socketIOMethods import editPatternSocket, changedSelectGroup, changedSelectPattern, registerPatientEvent, \
+    insertNewPattern, getTmpPatterns
+from .mongoMethods import searchPatterns, searchPatients, searchGroups, getMultipleEpisodes, getOneEpisode, \
+    insertPatient, generateUniqueRandom
 
 
 #Constants
 mongoClient = MongoClient('localhost:27017').tfm
-
-def generateUniqueRandom(tokenType):
-    token = ''.join(random.choice('0123456789ABCDEF') for i in range(6))
-
-    while mongoClient[tokenType].find({"communicationId":token}).count() > 0:
-        generateUniqueRandom(token)
-
-    print("Token: {}".format(token))
-
-    return token
 
 @app.before_request
 def before_request():
@@ -91,15 +86,16 @@ def login():
 @app.route('/registrarPauta', methods=['GET', 'POST'])
 @login_required
 def registerPattern():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
-    form = RegisterPatternForm()
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+    form = RegisterPatternForm(current_user.get_id())
 
     if form.validate_on_submit():
 
         form.name.data = form.name.data.strip()
 
         #The patternName must be univoque
-        if mongoClient["patterns"].count_documents({"name":form.name.data, "therapist": current_user.get_id()}) == 0:
+        if mongoClient["patterns"].count_documents({"therapist": current_user.get_id(), "name":form.name.data}) == 0:
 
             cursor = mongoClient["patterns"].find({}).sort("id",-1).limit(1)
             
@@ -128,7 +124,8 @@ def registerPattern():
             if form.intensity3.data:
                 intensities.append(3)                
 
-            mongoClient["patterns"].insert_one({'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities, "id":idPattern, "therapist":current_user.get_id()})
+            mongoClient["patterns"].insert_one({"therapist":current_user.get_id(), "id":idPattern, \
+                'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities})
             
             flash("Pauta creada correctamente.", "success")
             return redirect(url_for('index'))
@@ -137,98 +134,76 @@ def registerPattern():
 
 
 
-    return render_template('registerPattern.html', title='Registrar una pauta', form=form, therapistLiteral=therapistLiteral)
+    return render_template('registerPattern.html', title='Registrar una pauta', form=form, \
+        therapistLiteral=therapistLiteral)
 
 
 @app.route('/verPauta/<int:idPattern>', methods=['GET', 'POST'])
 @login_required
-def editPattern(idPattern):
-    if mongoClient["patterns"].count_documents({"id":int(idPattern), "therapist":current_user.get_id()}) == 0:
+def viewPattern(idPattern):
+    if mongoClient["patterns"].count_documents({"therapist":current_user.get_id(), "id":int(idPattern)}) == 0:
         flash("No existe la pauta especificada", "error")
         return redirect(url_for('index'))
 
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
-    form = ViewPatternForm()
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
 
-    if form.validate_on_submit():
+    
 
-        intensities = []
+    cursorPattern = mongoClient["patterns"].find_one({"therapist":current_user.get_id(), "id":int(idPattern)})
 
-        if form.intensity1.data:
-            intensities.append(1)
+    intensity1 = "Sí" if 1 in cursorPattern["intensities"] else "no"
+    intensity2 = "Sí" if 2 in cursorPattern["intensities"] else "no"
+    intensity3 = "Sí" if 3 in cursorPattern["intensities"] else "no"
 
-        if form.intensity2.data:
-            intensities.append(2)
-
-        if form.intensity3.data:
-            intensities.append(3)
+    patternInfo  = {"id": idPattern, "name":cursorPattern["name"], "description":cursorPattern["description"], 
+        "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3}
 
 
-        mongoClient["patterns"].update_one({"id" : idPattern}, {"$set" : {"name" : form.name.data, "description" : form.description.data, "intensities" : intensities, "patients" : list(map(int, form.patients.data)), "groups" : list(map(int, form.groups.data))}})
-        flash("Pauta modificada correctamente", "success")
-        return redirect(url_for('index'))
+    rowsGroups = []
+    cursorGroups = mongoClient["groups"].find({"therapist":current_user.get_id(), "patterns" :idPattern})
 
-    else:
+    for cur in cursorGroups:
+        rowsGroups.append({"id":cur["id"], "name":cur["name"], "description":cur["description"]})  
 
-        form.patternId.data = idPattern
+    rowsPatients = []
+    cursorPatients = mongoClient["patients"].find({"therapist":current_user.get_id(), "patterns" :idPattern})
 
-        patternData = mongoClient["patterns"].find_one({"id":int(idPattern), "therapist":current_user.get_id()})
-        cursorPatients = mongoClient["patients"].find({"patterns" :int(idPattern), "therapist":current_user.get_id()})
-        cursorGroups = mongoClient["groups"].find({"patterns" :int(idPattern), "therapist":current_user.get_id()})
+    for cur in cursorPatients:
+        rowsPatients.append({"id":cur["id"], "name":cur["name"], "surname1":cur["surname1"], \
+            "surname2":cur["surname2"], "gender":cur["gender"], "age":cur["age"]})      
 
-        form.name.data = patternData["name"]
-        form.description.data = patternData["description"]
-
-        if "intensities" in patternData:
-            form.intensity1.data = 1 in patternData["intensities"] or "1" in patternData["intensities"]
-            form.intensity2.data = 2 in patternData["intensities"] or "2" in patternData["intensities"]
-            form.intensity3.data = 3 in patternData["intensities"] or "3" in patternData["intensities"]
-
-        selectedPatients = []
-
-        for cur in cursorPatients:
-            selectedPatients.append(str(cur["id"]))
-
-        selectedGroups = []
-
-        for cur in cursorGroups:
-            selectedGroups.append(str(cur["id"]))
-
-        form.patients.data = selectedPatients
-        form.groups.data = selectedGroups
-
-        return render_template('editPattern.html', form=form, therapistLiteral=therapistLiteral)
-        return render_template('editPattern.html', form=form, therapistLiteral=therapistLiteral)
+    return render_template('viewPattern.html', therapistLiteral=therapistLiteral, patternInfo=patternInfo,
+        rowsGroups=rowsGroups, rowsPatients=rowsPatients)
 
 
 @app.route('/registrarPaciente', methods=['GET', 'POST'])
 @login_required
 def registerPatient():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
     form = RegisterPatientForm()
-    form2 = RegisterPatternForm2()
 
-    #Submit | New entry
+    #syncNow is always checked
+    form.syncNow.data = True
+
     if form.validate_on_submit():
 
-        #{name, surname1, surname2, age} must be univoque
-        if mongoClient["patients"].count_documents({"name": form.name.data, "surname1": form.surname1.data, "surname2": form.surname2.data, "age": form.age.data}) == 0:
-
-            #If the sync process will be done now
-            if form.syncHidden.data == "True":
-                #Sometimes it unchecks when doing the submit for unknown
-                form.syncNow.data = True
+        #{name, surname1, surname2, gender, age} must be univoque
+        if mongoClient["patients"].count_documents({"therapist":current_user.get_id(), "name": form.name.data, \
+            "surname1": form.surname1.data, "surname2": form.surname2.data, "age": form.age.data, \
+            "gender": form.gender.data}) == 0:
                 
-                registrationToken = generateUniqueRandom("patients")
+            registrationToken = generateUniqueRandom("tmpPatientToken", 'id')
 
-                mongoClient["tmpPatientToken"].delete_many({'name': form.name.data, 'surname1': form.surname1.data, 'surname2': form.surname2.data, 'surname2': form.surname2.data})
+            #Delete all possible temporal registers of tryouts to register this same user as they are no longer usefull
+            mongoClient["tmpPatientToken"].delete_many({'name': form.name.data, 'surname1': form.surname1.data, \
+                'surname2': form.surname2.data, 'surname2': form.surname2.data, "gender": form.gender.data})
 
-                mongoClient["tmpPatientToken"].insert_one({'id': registrationToken, 'synced': False, "name": form.name.data, "surname1": form.surname1.data, "surname2": form.surname2.data, "age": form.age.data, "groups": list(map(int, form.groups.data))})
-                form.registrationToken.data = registrationToken
-            else:
-                insertPatient(form.windowToken.data, form.name.data, form.surname1.data, form.surname2.data, form.age.data, form.groups.data, False)
-                flash("Usuario registrado correctamente", "info")
-                return redirect(url_for('index'))
+            mongoClient["tmpPatientToken"].insert_one({'id': registrationToken, 'synced': False, \
+                "name": form.name.data, "surname1": form.surname1.data, "surname2": form.surname2.data, \
+                "age": form.age.data, "gender": form.gender.data, "timestamp" : int(time.time())})
+            form.registrationToken.data = registrationToken
 
         
         else:
@@ -252,13 +227,9 @@ def registerPatient():
 
         if form.windowToken.data == None:
             form.windowToken.data = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
-    
-    patterns = []
 
-    if form.groups.data != None:
-        patterns = getTmpPatterns(form.windowToken.data, "arr")
-
-    return render_template('registerPatient.html', title='RegisterPatient', form=form, form2=form2, patterns=patterns, therapistLiteral=therapistLiteral)
+    return render_template('registerPatient.html', title='RegisterPatient', form=form, \
+        therapistLiteral=therapistLiteral)
 
 
 @app.route('/verPaciente/<int:idPatient>', methods=['GET', 'POST'])
@@ -271,7 +242,8 @@ def editPatient(idPatient):
 
     cursorPatient = mongoClient["patients"].find_one({"id":idPatient, "therapist":current_user.get_id()})
 
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
     form = EditPatientForm()
     form2 = RegisterPatternForm2()
 
@@ -363,16 +335,21 @@ def editPatient(idPatient):
                 if 3 in cur["intensities"]:
                     intensity3 = "Sí"
 
-            rowPatterns.append({"id": cur["id"], "name": cur["name"], "description": description, "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
-            mongoClient["tmpPatterns"].insert_one({"windowId": form.windowToken.data, "id": cur["id"], "name": cur["name"], "decription": description, "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3, "pattType":"selectPatt"})
+            rowPatterns.append({"id": cur["id"], "name": cur["name"], "description": description, \
+                "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
+            mongoClient["tmpPatterns"].insert_one({"windowId": form.windowToken.data, "id": cur["id"], \
+                "name": cur["name"], "decription": description, \
+                "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3, "pattType":"selectPatt"})
 
-        return render_template('editPatient.html', form=form, form2=form2, rowPatterns=rowPatterns, therapistLiteral=therapistLiteral)
+        return render_template('editPatient.html', form=form, form2=form2, rowPatterns=rowPatterns, \
+            therapistLiteral=therapistLiteral)
 
 
 @app.route('/registrarGrupo', methods=['GET', 'POST'])
 @login_required
 def registerGroup():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
     form = RegistrationGroupForm()
     form2 = RegisterPatternForm2()
 
@@ -402,12 +379,14 @@ def registerGroup():
 
             for patt in newPatterns:
                 cols = patt.split(",")
-                mongoClient["patterns"].insert_one({'name': cols[0], 'description': cols[1], "intensities": cols[2:], "id": idPattern})
+                mongoClient["patterns"].insert_one({'name': cols[0], 'description': cols[1], "intensities": cols[2:], \
+                    "id": idPattern})
                 patternsIds.extend(str(idPattern))
                 idPattern += 1
 
         if mongoClient["groups"].count_documents({"name":form.name.data}) == 0:
-            mongoClient["groups"].insert_one({'name': form.name.data, 'description': form.description.data, 'patientsIds': list(map(int, form.patients.data)), 'patterns': patternsIds})
+            mongoClient["groups"].insert_one({'name': form.name.data, 'description': form.description.data, \
+                'patientsIds': list(map(int, form.patients.data)), 'patterns': patternsIds})
             flash("Grupo creado correctamente", "info")
             #return render_template('index.html')
         else:
@@ -423,7 +402,8 @@ def registerGroup():
 @app.route('/verGrupo/<int:idGroup>', methods=['GET', 'POST'])
 @login_required
 def editGroup(idGroup):
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
     therapist = current_user.get_id()
     idGroup = int(idGroup)
     form = RegistrationGroupForm()
@@ -433,7 +413,7 @@ def editGroup(idGroup):
     if form.validate_on_submit():
 
         #The group's name must be univoque
-        if mongoClient["groups"].count_documents({"id":{"$ne":idGroup, "name":form.name.data, "therapist":therapist}}) > 0:
+        if mongoClient["groups"].count_documents({"id":{"$ne":idGroup,"name":form.name.data,"therapist":therapist}})> 0:
             flash("Ya exise un grupo con este nombre", "error")
 
         else:
@@ -460,7 +440,8 @@ def editGroup(idGroup):
             discardedPatients = list(set(oldSelectedPatients) - set(newSelectedPatients))
 
             #1) UPDATE GROUPS with all the fields
-            mongoClient["groups"].update_one({"id":int(idGroup)}, {"$set": {"name":form.name.data, "description":form.description.data, "patterns": newSelectedPatterns, "patients": newSelectedPatients}})
+            mongoClient["groups"].update_one({"id":int(idGroup)}, {"$set": {"name":form.name.data, \
+                "description":form.description.data, "patterns": newSelectedPatterns, "patients": newSelectedPatients}})
 
             #2) DELETE OLD PATTERNS from PATIENTS that are no longer linked to this group
             cursor = mongoClient["patients"].find({"id":{"$in": oldSelectedPatients}})
@@ -535,21 +516,27 @@ def editGroup(idGroup):
                     intensity3 = "Sí"
 
 
-            mongoClient["tmpPatterns"].insert_one({"windowId": form.windowToken.data, "id": cur["id"], "name": cur["name"], "decription": description, "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3, "pattType":"selectPatt"})
-            rowPatterns.append({"id": cur["id"], "name": cur["name"], "description": description, "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
+            mongoClient["tmpPatterns"].insert_one({"windowId": form.windowToken.data, "id": cur["id"], \
+                "name": cur["name"], "decription": description, "intensity1": intensity1, "intensity2": intensity2, \
+                "intensity3": intensity3, "pattType":"selectPatt"})
+            rowPatterns.append({"id": cur["id"], "name": cur["name"], "description": description, \
+                "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
 
-        return render_template('editGroup.html', form=form, form2=form2, form3=form3, rowPatterns=rowPatterns, therapistLiteral=therapistLiteral)
+        return render_template('editGroup.html', form=form, form2=form2, form3=form3, rowPatterns=rowPatterns, \
+            therapistLiteral=therapistLiteral)
 
 
 @app.route('/verPautas', methods=['GET', 'POST'])
 @login_required
 def viewPatterns():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
     form = SearchPatternsForm()
 
     if form.validate_on_submit():
         rowPatterns = searchPatterns(form)
-        return render_template('viewPatterns.html', form=form, rowPatterns=rowPatterns, therapistLiteral=therapistLiteral)
+        return render_template('viewPatterns.html', form=form, rowPatterns=rowPatterns, \
+            therapistLiteral=therapistLiteral)
 
     return render_template('viewPatterns.html', form=form, therapistLiteral=therapistLiteral)
 
@@ -557,19 +544,22 @@ def viewPatterns():
 @app.route('/verPacientes', methods=['GET', 'POST'])
 @login_required
 def viewPatients():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
     form = SearchPatientsForm()
 
     if form.validate_on_submit():
         rowPatients = searchPatients(form)
-        return render_template('viewPatients.html', form=form, rowPatients=rowPatients, therapistLiteral=therapistLiteral)
+        return render_template('viewPatients.html', form=form, rowPatients=rowPatients, \
+            therapistLiteral=therapistLiteral)
 
     return render_template('viewPatients.html', form=form, therapistLiteral=therapistLiteral)
 
 @app.route('/verGrupos', methods=['GET', 'POST'])
 @login_required
 def viewGroups():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
 
     form = SearchGroupsForm()
 
@@ -586,11 +576,13 @@ def viewEpisodes():
     
     idPatient = 0 if request.args.get('idPatient') is None else request.args.get('idPatient')
 
-    if idPatient is not 0 and mongoClient["patients"].count_documents({"id":idPatient, "therapist": current_user.get_id()}) == 0:
+    if idPatient is not 0 and mongoClient["patients"].count_documents({"id":idPatient, \
+        "therapist": current_user.get_id()}) == 0:
         flash("No se ha encontrado el paciente especificado", "error")
         return redirect(url_for('index'))
 
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
 
     form = FilterByDateForm()
 
@@ -619,18 +611,21 @@ def viewEpisodes():
 
         timestampTo = 0
 
-        timestampFrom = int(datetime.strptime('{} {}'.format(form.date1.data, form.time1.data), '%Y-%m-%d %H:%M').strftime("%s"))
-        timestampTo = int(datetime.strptime('{} {}'.format(form.date2.data, form.time2.data), '%Y-%m-%d %H:%M').strftime("%s"))
+        timestampFrom = int(datetime.strptime('{} {}'.format(form.date1.data, form.time1.data), '%Y-%m-%d %H:%M')\
+            .strftime("%s"))
+        timestampTo = int(datetime.strptime('{} {}'.format(form.date2.data, form.time2.data), '%Y-%m-%d %H:%M')\
+            .strftime("%s"))
 
         rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient)
-        return render_template('viewEpisodes.html', form=form, therapistLiteral=therapistLiteral, rowEpisodes=rowEpisodes)
+        return render_template('viewEpisodes.html', form=form,therapistLiteral=therapistLiteral,rowEpisodes=rowEpisodes)
 
     return render_template('viewEpisodes.html', form=form, therapistLiteral=therapistLiteral)
 
 @app.route('/verUnEpisodio', methods=['GET', 'POST'])
 @login_required
 def viewOneEpisode():
-    if request.args.get('idPatient') is None or request.args.get('timestampFrom') is None or request.args.get('timestampTo') is None:
+    if request.args.get('idPatient') is None or request.args.get('timestampFrom') is None or \
+        request.args.get('timestampTo') is None:
         flash("Es necesario especificar el paciente y el intervalo temporal", "error")
 
     idPatient = int(request.args.get('idPatient'))
@@ -639,7 +634,8 @@ def viewOneEpisode():
         flash("No se ha encontrado el paciente especificado", "error")
         return redirect(url_for('index'))
 
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
 
     timestampFrom = int(request.args.get('timestampFrom'))
     timestampTo = int(request.args.get('timestampTo'))
@@ -652,7 +648,7 @@ def viewOneEpisode():
 
     return render_template('viewOneEpisode.html', rowEpisodes=rowEpisodes, therapistLiteral=therapistLiteral, form=form)
 
-####################################################################################################################################################
+########################################################################################################################
 
 #TODO
 
@@ -660,7 +656,8 @@ def viewOneEpisode():
 @app.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), current_user.get_surname2())
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
     return render_template('index.html', therapistLiteral=therapistLiteral)
 
 @app.route('/logout')

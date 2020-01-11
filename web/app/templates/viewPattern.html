@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import groupsTableMacro with context %}
+{% from 'macros.html' import patientsTableMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+    	$(document).ready(function() {
+    		$(function () {
+    		  	$('#patientsSelect').multipleSelect();
+            	$('#groupsSelect').multipleSelect();
+    		})
+    	});
+    </script>
+
+{% endblock %}
+
+{% block content %}	
+
+<br>
+
+{{ titleMacro("Ver una pauta") }}
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+
+	<div class="column is-8 box" align="center">
+
+		<div align="center">
+			<h4 class="title is-4">Datos de la pauta</h4>
+
+			<b> Nombre</b>:&nbsp;&nbsp; {{ patternInfo.name }}
+			<br><br>
+			<b> Descripción </b>:&nbsp;&nbsp; {{ patternInfo.description }}
+			
+			<br><br>
+            
+			<b>Intensidad amarilla</b>:&nbsp;&nbsp;&nbsp;&nbsp;
+
+			{% if patternInfo.intensity1=="No" %}
+                No&nbsp;&nbsp;<span style='color:red;'><i class='fas fa-times'></i></span>
+            {% else %}
+                Sí&nbsp;&nbsp;<span style='color:green;'><i class='fas fa-check'></i></span>
+            {% endif %}
+			
+			<br><br>
+            
+			<b>Intensidad naranja</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+			{% if patternInfo.intensity2=="No" %}
+                No&nbsp;&nbsp;<span style='color:red;'><i class='fas fa-times'></i></span>
+            {% else %}
+                Sí&nbsp;&nbsp;<span style='color:green;'><i class='fas fa-check'></i></span>
+            {% endif %}
+
+			<br><br>
+            
+			<b>Intensidad roja</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+			{% if patternInfo.intensity2=="No" %}
+                No&nbsp;&nbsp;<span style='color:red;'><i class='fas fa-times'></i></span>
+            {% else %}
+                Sí&nbsp;&nbsp;<span style='color:green;'><i class='fas fa-check'></i></span>
+            {% endif %}            
+
+		</div>
+
+		<br><br>
+
+    <div class="box" style='max-width:1000px'>
+        <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
+        {{ patientsTableMacro(rowsPatients) }}
+    </div>
+    
+    <div style='max-width:400px'><hr></div>
+
+    <div class="box" style='max-width:1000px'>
+        <h4 class="title is-4 is-spaced">Grupos de pautas que incluyen esta pauta</h4>
+        {{ groupsTableMacro(rowsGroups) }}
+    </div>
+
+    <div style='max-width:400px'><hr></div>
+
+    <div id="divBtns" align="center">
+        <a href=/editarPauta/{{ patternInfo.id }} target="_blank"><input class="button is-warning" type="button" value="Editar pauta" ></a>
+    </div>
+
+</div>
+
+{% endblock %}
