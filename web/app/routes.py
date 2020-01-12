@@ -4,8 +4,8 @@ from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.urls import url_parse
 from app import app, db, socketio, thread_lock, thread
 from app.forms import LoginForm, RegisterTherapistForm, RegisterPatientForm, RegisterPatternForm, \
-    RegistrationGroupForm, ViewPatternForm, SearchPatternsForm, SearchPatientsForm, SearchGroupsForm, EditPatientForm, \
-    RegisterPatternForm2, GenericEditForm, FilterByDateForm, TryoutForm
+    RegistrationGroupForm, EditPatternForm, SearchPatternsForm, SearchPatientsForm, SearchGroupsForm, EditPatientForm, \
+    RegisterPatternForm2, GenericEditForm, FilterByDateForm, TryoutForm, PaginationForm, PaginationForm2
 from app.models import User
 import random
 from threading import Lock
@@ -26,11 +26,8 @@ from operator import itemgetter
 from .socketIOMethods import editPatternSocket, changedSelectGroup, changedSelectPattern, registerPatientEvent, \
     insertNewPattern, getTmpPatterns
 from .mongoMethods import searchPatterns, searchPatients, searchGroups, getMultipleEpisodes, getOneEpisode, \
-    insertPatient, generateUniqueRandom
-
-
-#Constants
-mongoClient = MongoClient('localhost:27017').tfm
+    insertPatient, generateUniqueRandom, updatePattern, searchGroupsPattern, searchPatientsPattern
+from .constants import mongoClient, rowsPerPage
 
 @app.before_request
 def before_request():
@@ -141,16 +138,12 @@ def registerPattern():
 @app.route('/verPauta/<int:idPattern>', methods=['GET', 'POST'])
 @login_required
 def viewPattern(idPattern):
+
     if mongoClient["patterns"].count_documents({"therapist":current_user.get_id(), "id":int(idPattern)}) == 0:
         flash("No existe la pauta especificada", "error")
         return redirect(url_for('index'))
 
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
-        current_user.get_surname2())
-
-    
-
-    cursorPattern = mongoClient["patterns"].find_one({"therapist":current_user.get_id(), "id":int(idPattern)})
+    cursorPattern = mongoClient["patterns"].find_one({"therapist":current_user.get_id(), "id": idPattern})
 
     intensity1 = "Sí" if 1 in cursorPattern["intensities"] else "no"
     intensity2 = "Sí" if 2 in cursorPattern["intensities"] else "no"
@@ -159,12 +152,14 @@ def viewPattern(idPattern):
     patternInfo  = {"id": idPattern, "name":cursorPattern["name"], "description":cursorPattern["description"], 
         "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3}
 
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
 
-    rowsGroups = []
-    cursorGroups = mongoClient["groups"].find({"therapist":current_user.get_id(), "patterns" :idPattern})
+    form = PaginationForm(1)
+    form2 = PaginationForm2(1)
 
-    for cur in cursorGroups:
-        rowsGroups.append({"id":cur["id"], "name":cur["name"], "description":cur["description"]})  
+    queryResultGroups = searchGroupsPattern(idPattern, 1)
+    queryResultPatients = searchPatientsPattern(idPattern, 1)
 
     rowsPatients = []
     cursorPatients = mongoClient["patients"].find({"therapist":current_user.get_id(), "patterns" :idPattern})
@@ -174,7 +169,90 @@ def viewPattern(idPattern):
             "surname2":cur["surname2"], "gender":cur["gender"], "age":cur["age"]})      
 
     return render_template('viewPattern.html', therapistLiteral=therapistLiteral, patternInfo=patternInfo,
-        rowsGroups=rowsGroups, rowsPatients=rowsPatients)
+        rowsGroups=queryResultGroups["rows"], rowsPatients=queryResultPatients["rows"], form=form, form2=form2, \
+        idPattern=idPattern, pagesGroups=queryResultGroups["numberPages"], \
+        pagesPatients=queryResultPatients["numberPages"], numberRowsPatient=queryResultPatients["numberTotalRows"], \
+        numberRowsGroup=queryResultGroups["numberTotalRows"])
+
+    '''
+    return render_template('viewPatterns.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
+            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+            numberPages=queryResult["numberPages"])
+    '''
+
+
+@app.route('/editarPauta/<int:idPattern>', methods=['GET', 'POST'])
+@login_required
+def editPattern(idPattern):
+    if mongoClient["patterns"].count_documents({"id":idPattern, "therapist":current_user.get_id()}) == 0:
+        flash("No existe la pauta especificada", "error")
+        return redirect(url_for('index'))
+
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+    
+    form = EditPatternForm(current_user.get_id())
+
+    if form.validate_on_submit():
+        updatePattern(form, current_user.get_id())
+        
+        flash("Pauta modificada correctamente", "success")
+        return redirect(url_for('index'))
+
+    else:
+
+        form.patternId.data = idPattern
+
+        patternData = mongoClient["patterns"].find_one({"id":int(idPattern), "therapist":current_user.get_id()})
+        cursorPatients = mongoClient["patients"].find({"patterns" :int(idPattern), "therapist":current_user.get_id()})
+        cursorGroups = mongoClient["groups"].find({"patterns" :int(idPattern), "therapist":current_user.get_id()})
+
+        form.name.data = patternData["name"]
+        form.description.data = patternData["description"]
+
+        if "intensities" in patternData:
+            form.intensity1.data = 1 in patternData["intensities"]
+            form.intensity2.data = 2 in patternData["intensities"]
+            form.intensity3.data = 3 in patternData["intensities"]
+
+        selectedPatients = []
+
+        for cur in cursorPatients:
+            selectedPatients.append(str(cur["id"]))
+
+        selectedGroups = []
+
+        for cur in cursorGroups:
+            selectedGroups.append(str(cur["id"]))
+
+        form.patients.data = selectedPatients
+        form.groups.data = selectedGroups
+
+        return render_template('editPattern.html', form=form, therapistLiteral=therapistLiteral)
+
+
+@app.route('/verPautas', methods=['GET', 'POST'])
+@login_required
+def viewPatterns():
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+    form = SearchPatternsForm()
+    form2 = PaginationForm(1)
+
+    if form.validate_on_submit():
+        form.submitDone.data = 1
+
+        queryResult = searchPatterns(form, int(form.pageNumber.data))
+        form2 = PaginationForm(queryResult["numberPages"])
+        form2.pagination.data = form.pageNumber.data
+
+        return render_template('viewPatterns.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
+            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+            numberPages=queryResult["numberPages"])
+    else:
+        form.submitDone.data = 0
+        return render_template('viewPatterns.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
+
 
 
 @app.route('/registrarPaciente', methods=['GET', 'POST'])
@@ -524,21 +602,6 @@ def editGroup(idGroup):
 
         return render_template('editGroup.html', form=form, form2=form2, form3=form3, rowPatterns=rowPatterns, \
             therapistLiteral=therapistLiteral)
-
-
-@app.route('/verPautas', methods=['GET', 'POST'])
-@login_required
-def viewPatterns():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
-        current_user.get_surname2())
-    form = SearchPatternsForm()
-
-    if form.validate_on_submit():
-        rowPatterns = searchPatterns(form)
-        return render_template('viewPatterns.html', form=form, rowPatterns=rowPatterns, \
-            therapistLiteral=therapistLiteral)
-
-    return render_template('viewPatterns.html', form=form, therapistLiteral=therapistLiteral)
 
 
 @app.route('/verPacientes', methods=['GET', 'POST'])

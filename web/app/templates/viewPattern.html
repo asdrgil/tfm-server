@@ -22,8 +22,86 @@
     		$(function () {
     		  	$('#patientsSelect').multipleSelect();
             	$('#groupsSelect').multipleSelect();
+            	$('#paginationSelect').multipleSelect();
+            	$('#paginationSelect2').multipleSelect();
     		})
     	});
+    </script>
+
+    <!-- SocketIO methods -->
+    <script>
+    	namespace = '/viewPattern';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        function paginationFunc(){
+        	socket.emit('paginationGroup', {"idPattern": {{ idPattern }}, "groupPage": document.getElementById("paginationSelect").value});
+        }
+
+        function paginationFunc2(){
+        	socket.emit('paginationPatient', {"idPattern": {{ idPattern }}, "patientPage": document.getElementById("paginationSelect2").value});
+        }
+
+        socket.on('paginationGroup', function(message) {
+
+            var bodyContent = "";
+
+            //No registers, but also no errors
+            if(message.body == ""){
+                $("#tablePatterns tbody").html("");
+            }else {
+                var rows = message.body.split(";");
+
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    bodyContent += "<tr>"
+                    
+                    //Name
+                    bodyContent += "<td>"+cols[1]+"</td>"
+                    //View pattern
+                    bodyContent += "<td><a href=/verGrupo/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
+                    
+                    bodyContent += "</tr>"
+                }
+            }
+
+            $("#tableGroups tbody").html(bodyContent);
+        });
+
+        socket.on('paginationPatient', function(message) {
+
+            var bodyContent = "";
+
+            //No registers, but also no errors
+            if(message.body == ""){
+                $("#tablePatients tbody").html("");
+            }else {
+                var rows = message.body.split(";");
+
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    bodyContent += "<tr>"
+                    
+                    //Name
+                    bodyContent += "<td>"+cols[1]+"</td>"
+                    //Surname1
+                    bodyContent += "<td>"+cols[2]+"</td>"
+                    //Surname2
+                    bodyContent += "<td>"+cols[3]+"</td>"
+                    //Gender
+                    bodyContent += "<td>"+cols[4]+"</td>"
+                    //Age
+                    bodyContent += "<td>"+cols[5]+"</td>"
+                    //View pattern
+                    bodyContent += "<td><a href=/verPaciente/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
+                    
+                    bodyContent += "</tr>"
+                }
+            }
+
+            $("#tablePatients tbody").html(bodyContent);
+        });
     </script>
 
 {% endblock %}
@@ -83,14 +161,34 @@
 
     <div class="box" style='max-width:1000px'>
         <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
-        {{ patientsTableMacro(rowsPatients) }}
+        {% if rowsPatients|length > 0 %}
+        	{{ patientsTableMacro(rowsPatients) }}
+        {% endif %}
+
+        Número de registros totales: <b>{{ numberRowsPatient }}</b>
+
+    	{% if pagesPatients > 1 %}
+    		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+		{% endif %}
     </div>
     
     <div style='max-width:400px'><hr></div>
 
     <div class="box" style='max-width:1000px'>
         <h4 class="title is-4 is-spaced">Grupos de pautas que incluyen esta pauta</h4>
-        {{ groupsTableMacro(rowsGroups) }}
+
+
+
+    	<div id="tablearea" align="center" class="box">
+    	{% if rowsGroups|length > 0 %}
+	    	{{ groupsTableMacro(rowsGroups) }}
+    	{% endif %}
+    	
+    	Número de registros totales: <b>{{ numberRowsGroup }}</b>
+    	
+    	{% if pagesGroups > 1 %}
+    		{{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
+    	{% endif %}
     </div>
 
     <div style='max-width:400px'><hr></div>

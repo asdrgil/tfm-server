@@ -5,17 +5,19 @@ import random
 import string
 from datetime import datetime
 import re
-
-#Constants
-mongoClient = MongoClient('localhost:27017').tfm
+import math
+from .constants import mongoClient, rowsPerPage
 
 def getCurentUser():
     current_user.get_id()
-    
-def searchPatterns(form):
 
-    result = []
-    query = {"therapist":current_user.get_id()}
+def searchPatterns(form, pageNum=1):
+
+    numberRows = 0
+    numberPages = 0
+    rows = []
+
+    query = {"therapist":current_user.get_id(), "windowId": {"$exists":False}}
 
     #NAME
     if len(form.name.data.strip()) > 0:
@@ -75,7 +77,10 @@ def searchPatterns(form):
     if len(form.intensities.data) > 0:
         query.update({"intensities": { "$in": list(map(int, form.intensities.data))}})
 
-    cursorPatterns = mongoClient["patterns"].find(query)
+    numberTotalRows = mongoClient["patterns"].count_documents(query)
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
+
+    cursorPatterns = mongoClient["patterns"].find(query).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
 
     for cur in cursorPatterns:
         description = "" if "description" not in cur else cur["description"]
@@ -96,10 +101,67 @@ def searchPatterns(form):
             if 3 in cur["intensities"]:
                 intensity3 = "Sí"
 
-        result.append({"id": cur["id"], "name": cur["name"], "description": description, \
+        rows.append({"id": cur["id"], "name": cur["name"], \
             "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
 
-    return result
+    return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+
+
+def searchGroupsPattern(idPattern, pageNum=1, outputFormat="arr"):
+    numberTotalRows = mongoClient["groups"].count_documents({"therapist":current_user.get_id(), "patterns" :idPattern})
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
+
+    if outputFormat == "arr":
+        rows = []
+    else:
+        rows = ""
+    
+    cursorGroups = mongoClient["groups"].find({"therapist":current_user.get_id(), "patterns" :idPattern})\
+        .skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+
+    for cur in cursorGroups:
+        if outputFormat == "arr":
+            rows.append({"id":cur["id"], "name":cur["name"]})
+        else:
+            rows += "{},{};".format(cur["id"], cur["name"])
+
+    if outputFormat == "arr":
+        return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+    else:
+        if len(rows) > 0 and rows[-1] == ";":
+            rows = rows[:-1]
+
+        return rows
+
+def searchPatientsPattern(idPattern, pageNum=1, outputFormat="arr"):
+    numberTotalRows = mongoClient["patients"].count_documents({"therapist":current_user.get_id(), "patterns" :idPattern})
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
+
+    if outputFormat == "arr":
+        rows = []
+    else:
+        rows = ""
+    
+    cursorGroups = mongoClient["patients"].find({"therapist":current_user.get_id(), "patterns" :idPattern})\
+        .skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+
+    for cur in cursorGroups:
+        if outputFormat == "arr":
+            rows.append({"id":cur["id"], "name":cur["name"], "surname1":cur["surname1"], "surname2":cur["surname2"], \
+                "gender":cur["gender"], "age": cur["age"]})
+        else:
+            rows += "{},{},{},{},{},{};".format(cur["id"], cur["name"], cur["surname1"], cur["surname2"], \
+                cur["gender"], cur["age"])
+
+    if outputFormat == "arr":
+        return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+    else:
+        if len(rows) > 0 and rows[-1] == ";":
+            rows = rows[:-1]
+
+        return rows
+
+
 
 def searchPatients(form):
 
@@ -530,3 +592,52 @@ def generateUniqueRandom(collection, field):
         generateUniqueRandom(token)
 
     return token
+
+
+def updatePattern(form, therapistId):
+    idPattern = int(form.patternId.data)
+
+    #Update patients which are no longer linked with the current pattern
+    cursor = mongoClient["patients"].find({"therapist":therapistId, "patterns":idPattern, \
+        "id":{"$nin": list(map(int, form.patients.data))}})
+
+    for cur in cursor:
+        mongoClient["patients"].update({"id":cur["id"]}, {"$pull": {"patterns":idPattern}})
+
+    #Update groups which are no longer linked with the current pattern
+    cursor = mongoClient["groups"].find({"therapist":therapistId, "patterns":idPattern, \
+        "id":{"$nin": list(map(int, form.patients.data))}})
+
+    for cur in cursor:
+        mongoClient["groups"].update({"id":cur["id"]}, {"$pull": {"patterns":idPattern}})
+
+    #Update patients which are now linked with the current pattern
+    cursor = mongoClient["patients"].find({"therapist":therapistId, "patterns": {"$ne": idPattern}, \
+        "id":{"$in": list(map(int, form.patients.data))}})
+
+    for cur in cursor:
+        mongoClient["patients"].update({"id":cur["id"]}, {"$push": {"patterns":idPattern}})
+
+    #Update groups which are now linked with the current pattern
+    cursor = mongoClient["groups"].find({"therapist":therapistId, "patterns": {"$ne": idPattern}, \
+        "id":{"$in": list(map(int, form.groups.data))}})
+
+    for cur in cursor:
+        mongoClient["groups"].update({"id":cur["id"]}, {"$push": {"patterns":idPattern}})
+
+    #Update the information of the pattern itself
+
+    intensities = []
+
+    if form.intensity1.data:
+        intensities.append(1)
+
+    if form.intensity2.data:
+        intensities.append(2)
+
+    if form.intensity3.data:
+        intensities.append(3)
+
+    #Update the pattern info
+    mongoClient["patterns"].update_one({"id" : idPattern}, {"$set" : {"name" : form.name.data, \
+        "description" : form.description.data, "intensities" : intensities}})

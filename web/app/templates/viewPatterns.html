@@ -6,6 +6,7 @@
 <!-- Import macros -->
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
+{% from 'macros.html' import pagination with context %}
 
 {% block head %}
 
@@ -23,11 +24,24 @@
 			  $('#patientsSelect').multipleSelect();
 			  $('#groupsSelect').multipleSelect();
 			  $('#intensitiesSelect').multipleSelect();
+			  $('#paginationSelect').multipleSelect();
 			})
 		});
 
 		function submitFunc(){
+			//Store pagination
+			if(document.getElementById("paginationSelect") == null){
+				document.getElementById("pageNumber").value = 1;
+			} else {
+				document.getElementById("pageNumber").value = parseInt(document.getElementById("paginationSelect").value);
+			}
+			
 			document.getElementById("generalForm").submit();
+		}
+
+		//This is done just to allow code reuse of forms
+		function paginationFunc(){
+			submitFunc();
 		}
 	</script>
 
@@ -43,8 +57,6 @@
 <!-- Input data -->
 
 <div class="columns is-vcentered is-centered">
-	<div class="column is-1">
-	</div>
 
 	<div class="column is-8 box">
 
@@ -53,6 +65,8 @@
 		    <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
 		        {{ form.hidden_tag() }}
 		        {{ form.csrf_token }}
+		        {{ form2.pageNumber }}
+		        {{ form2.submitDone }}
 
 		        <div class="columns is-vcentered is-centered">
 		        	<div class="column is-5">
@@ -133,14 +147,24 @@
 
 		    </form>
 
-		    {{ patternsTableMacro(rowPatterns, 0) }}
+		    {% if form.submitDone.data > 0 %}
+		    	<br>
+		    	<div id="tablearea" align="center" class="box">
+			    	{% if rowPatterns|length > 0 %}
+				    	{{ patternsTableMacro(rowPatterns) }}
+			    	{% endif %}
+			    	
+			    	Número de registros totales: <b>{{ numberTotalRows }}</b>
+			    	
+			    	{% if numberPages > 1 %}
+			    		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+			    	{% endif %}
+		    	</div>
+	    	{% endif %}
+	    	
+
 		
 		</div>
-
-
-	<div class="column is-1">
-	</div>
-
 
 </div>
 

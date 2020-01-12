@@ -67,54 +67,45 @@
     </section>
 {% endmacro %}
 
-{% macro patternsTableMacro(rows, unlinkPattern) %}
-    <div id="tablearea" align="center" class="box">
-        <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
-        <table class="table" id="tablePatterns">
-            <thead>
-                <th> <span> Nombre </span></th>
-                <th> <span> Descripción </span></th>
-                <th> <span> Intensidad amarilla </span></th>
-                <th> <span> Intensidad naranja </span></th>
-                <th> <span> Intensidad roja </span></th>
-                <th> <span> Ver pauta </span></th>
-                {% if unlinkPattern == 1 %}
-                <th> <span> Desvincular pauta </span></th>
-                {% endif %}
-            </thead>
-            <tbody>
-                {% for row in rows %}
-                    <tr>
-                        <td>{{ row.name }}</td>
-                        <td>{{ row.description }}</td>
+{% macro patternsTableMacro(rows) %}
+    <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
+    <table class="table" id="tablePatterns">
+        <thead>
+            <th> <span> Nombre </span></th>
+            <th> <span> Intensidad amarilla </span></th>
+            <th> <span> Intensidad naranja </span></th>
+            <th> <span> Intensidad roja </span></th>
+            <th> <span> Ver pauta </span></th>
+            <th> <span> Editar pauta </span></th>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td>{{ row.name }}</td>
 
-                        {% if row.intensity1=="No" %}
-                            <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
-                        {% else %}
-                            <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
-                        {% endif %}
+                    {% if row.intensity1=="No" %}
+                        <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
+                    {% else %}
+                        <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
+                    {% endif %}
 
-                        {% if row.intensity2=="No" %}
-                            <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
-                        {% else %}
-                            <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
-                        {% endif %}
+                    {% if row.intensity2=="No" %}
+                        <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
+                    {% else %}
+                        <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
+                    {% endif %}
 
-                        {% if row.intensity3=="No" %}
-                            <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
-                        {% else %}
-                            <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
-                        {% endif %}
-
-                        <td><a onclick='viewPattern({{ row.id }})'><i class='fas fa-eye'></i> Ver pauta</a></td>
-                        {% if unlinkPattern== 1 %}
-                            <td><a class="unlinkCells" onclick='unlinkPattern({{ row.id }})'><i class='fas fa-trash-alt'></i> Desvincular pauta</a></td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}                                    
-            </tbody>
-        </table>
-    </div>
+                    {% if row.intensity3=="No" %}
+                        <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
+                    {% else %}
+                        <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
+                    {% endif %}
+                    <td><a href=/verPauta/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                    <td><a href=/editarPauta/{{ row.id }} target="_blank"><i class='fas fa-pencil-alt'></i> &nbsp; Editar </a> </td>
+                </tr>
+            {% endfor %}                                    
+        </tbody>
+    </table>
 {% endmacro %}
 
 {% macro patientsTableMacro(rows) %}
@@ -140,7 +131,7 @@
                 <td><a href=/verPaciente/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
               </tr>
             {% endfor %}
-          <tbody>                 
+          </tbody>                 
         </table>
 
     </div>
@@ -149,21 +140,19 @@
 {% macro groupsTableMacro(rows) %}
     <div id="idTable">
 
-        <table class="table">
+        <table class="table" id="tableGroups">
             <thead>
                 <th> <span> Nombre </span></th>
-                <th> <span> Descripción </span></th>
                 <th> <span> Ver grupo </span></th>
             </thead>
             <tbody>
                 {% for row in rows %}
                     <tr>
                         <td>{{ row.name }}</td>
-                        <td>{{ row.description }}</td>
                         <td><a href=/verGrupo/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
                     </tr>
                 {% endfor %}
-            <tbody>                 
+            </tbody>                 
         </table>
     </div>
 {% endmacro %}
@@ -233,6 +222,7 @@
         </div>
     </div>
 {% endmacro %}
+
 
 <!-- Modals -->
 

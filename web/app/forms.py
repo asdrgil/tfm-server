@@ -47,6 +47,7 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Guardar contraseña')
     submit = SubmitField('Iniciar sesión', render_kw={"class":"button is-primary"})
 
+
 class RegisterPatternForm(FlaskForm):
 
     name = StringField('Nombre', validators=[DataRequired()], \
@@ -96,24 +97,8 @@ class RegisterPatternForm(FlaskForm):
 
         return result
 
-#TODO: esto se puede mejorar heredando los campos de RegisterPatternForm
-class ViewPatternForm(FlaskForm):
-    cursorPatients = mongoClient["patients"].find({"therapist": therapist})\
-    .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
-    patientOpts = []
 
-    for pt in cursorPatients:
-        row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
-        patientOpts.append(row)
-
-    cursorGroups = mongoClient["groups"].find({"therapist": therapist, "windowId": {"$exists":False}})\
-    .sort([("name", 1)])
-    groupOpts = []
-
-    for pt in cursorGroups:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
-        groupOpts.append(row)
-
+class EditPatternForm(FlaskForm):
 
     name = StringField('Nombre', validators=[DataRequired()], render_kw={"class":"input is-medium", \
         "placeholder":"Nombre de la pauta (obligatorio)", "style":"text-align:center;"})
@@ -124,22 +109,50 @@ class ViewPatternForm(FlaskForm):
     intensity2 = BooleanField('Intensidad naranja')
     intensity3 = BooleanField('Intensidad roja')
 
-    patients = SelectMultipleField('Asociar a pacientes (opcional)', validators=[Optional()], choices=patientOpts, \
+    patients = SelectMultipleField('Pacientes asociados', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'patientsSelect'})
-    groups = SelectMultipleField('Asociar a grupos (opcional)', validators=[Optional()], choices=groupOpts, \
+    groups = SelectMultipleField('Grupos asociados', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'groupsSelect'})
 
     saveBtn = SubmitField('Guardar cambios', \
         render_kw={"class":"button is-primary", "onclick": "displayModalSave(); return false;",'type':'button'})
     cancelBtn = SubmitField('Cancelar', \
         render_kw={"class":"button is-warning", 'onclick': 'displayModalCancel();','type':'button'})
+    viewBtn = SubmitField('Ver pauta', \
+        render_kw={"class":"button is-info", 'type':'button'})
     deleteBtn = SubmitField('Borrar pauta', \
         render_kw={"class":"button is-danger", "onclick": "displayModalDelete()",'type':'button'})
 
-    #Auxiliary variables
-    activateEdit = BooleanField('', default=True, \
-        render_kw={"class": "switch is-rounded is-info", 'onchange':'changeEditable();'})
     patternId = HiddenField("patternId")
+
+    def __init__(self, therapistId: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.therapistId = therapistId
+        self.patients.choices = self.patientOpts()
+        self.groups.choices = self.groupOpts()
+
+
+    def patientOpts(self) -> list:
+        cursorPatients = mongoClient["patients"].find({"therapist": self.therapistId})\
+        .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
+        result = []
+
+        for pt in cursorPatients:
+            row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
+            result.append(row)
+
+        return result
+
+    def groupOpts(self) -> list:
+        cursorGroups = mongoClient["groups"].find({"therapist": self.therapistId, "windowId": {"$exists":False}})\
+        .sort([("name", 1)])
+        result = []
+
+        for pt in cursorGroups:
+            row = (str(pt.get("id")), "{}".format(pt.get("name")))
+            result.append(row)
+
+        return result    
 
 
 class RegisterPatientForm(FlaskForm):
@@ -313,6 +326,10 @@ class SearchPatternsForm(FlaskForm):
         render_kw={'multiple':'multiple', 'id':'intensitiesSelect'})
     searchBtn = SubmitField('Buscar',    render_kw={"class":"button is-primary", "onclick": "saveChanges()"})
 
+    #Auxiliary variables
+    pageNumber = HiddenField("pageNumber")
+    submitDone = HiddenField("submitDone")
+
 
 class SearchPatientsForm(FlaskForm):
     cursorGroups = mongoClient["groups"].find({"therapist":therapist}).sort([("name", 1)])
@@ -408,6 +425,25 @@ class FilterByDateForm(FlaskForm):
 
     def validate(self):
         return True
+
+class PaginationForm(FlaskForm):
+    pagination = SelectField('Página', validators=[Optional()], choices=[], \
+        render_kw={'id':'paginationSelect', 'onchange':'paginationFunc();'})
+
+    def __init__(self, numberPages: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.numberPages = numberPages
+        self.pagination.choices = tuple((i,i,) for i in range(1, numberPages+1))
+
+class PaginationForm2(FlaskForm):
+    pagination = SelectField('Página', validators=[Optional()], choices=[], \
+        render_kw={'id':'paginationSelect2', 'onchange':'paginationFunc2();'})
+
+    def __init__(self, numberPages: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.numberPages = numberPages
+        self.pagination.choices = tuple((i,i,) for i in range(1, numberPages+1))
+
 
 class TryoutForm(FlaskForm):
     aux = HiddenField("aux")
