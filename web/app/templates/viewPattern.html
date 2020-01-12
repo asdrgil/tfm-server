@@ -20,8 +20,6 @@
     <script type="text/javascript" charset="utf-8">
     	$(document).ready(function() {
     		$(function () {
-    		  	$('#patientsSelect').multipleSelect();
-            	$('#groupsSelect').multipleSelect();
             	$('#paginationSelect').multipleSelect();
             	$('#paginationSelect2').multipleSelect();
     		})
@@ -157,46 +155,48 @@
 
 		</div>
 
-		<br><br>
+		<br><div style='max-width:400px'><hr></div><br>
 
-    <div class="box" style='max-width:1000px'>
-        <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
-        {% if rowsPatients|length > 0 %}
-        	{{ patientsTableMacro(rowsPatients) }}
-        {% endif %}
+        <div class="box" style='max-width:1000px'>
+            <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
+            {% if rowsPatients|length > 0 %}
+            	{{ patientsTableMacro(rowsPatients) }}
+            {% endif %}
 
-        Número de registros totales: <b>{{ numberRowsPatient }}</b>
+            Número de registros totales: <b>{{ numberRowsPatient }}</b>
 
-    	{% if pagesPatients > 1 %}
-    		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
-		{% endif %}
+        	{% if pagesPatients > 1 %}
+                <br>
+        		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+    		{% endif %}
+        </div>
+        
+        <div style='max-width:400px'><hr></div>
+
+        <div class="box" style='max-width:1000px'>
+            <h4 class="title is-4 is-spaced">Grupos de pautas que incluyen esta pauta</h4>
+
+
+
+        	<div id="tablearea" align="center" class="box">
+        	{% if rowsGroups|length > 0 %}
+    	    	{{ groupsTableMacro(rowsGroups) }}
+        	{% endif %}
+        	
+        	Número de registros totales: <b>{{ numberRowsGroup }}</b>
+        	
+        	{% if pagesGroups > 1 %}
+                <br>
+        		{{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
+        	{% endif %}
+        </div>
+
+        <div style='max-width:400px'><hr></div>
+
+        <div id="divBtns" align="center">
+            <a href=/editarPauta/{{ patternInfo.id }} target="_blank"><input class="button is-warning" type="button" value="Editar pauta" ></a>
+        </div>
     </div>
-    
-    <div style='max-width:400px'><hr></div>
-
-    <div class="box" style='max-width:1000px'>
-        <h4 class="title is-4 is-spaced">Grupos de pautas que incluyen esta pauta</h4>
-
-
-
-    	<div id="tablearea" align="center" class="box">
-    	{% if rowsGroups|length > 0 %}
-	    	{{ groupsTableMacro(rowsGroups) }}
-    	{% endif %}
-    	
-    	Número de registros totales: <b>{{ numberRowsGroup }}</b>
-    	
-    	{% if pagesGroups > 1 %}
-    		{{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
-    	{% endif %}
-    </div>
-
-    <div style='max-width:400px'><hr></div>
-
-    <div id="divBtns" align="center">
-        <a href=/editarPauta/{{ patternInfo.id }} target="_blank"><input class="button is-warning" type="button" value="Editar pauta" ></a>
-    </div>
-
 </div>
 
 {% endblock %}

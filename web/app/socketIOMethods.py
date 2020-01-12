@@ -2,7 +2,8 @@ from flask_socketio import SocketIO, emit
 from app import app, db, socketio, thread_lock, thread
 from pymongo import MongoClient, errors
 from .mongoMethods import deletePattern, insertPatternTmp, getTmpPatterns, getPatternsSelectPattern, \
-    getPatternsSelectGroup, insertPatient, getUnlinkPattern, searchGroupsPattern, searchPatientsPattern
+    getPatternsSelectGroup, insertPatient, getUnlinkPattern, searchGroupsPattern, searchPatientsPattern, \
+    searchPatientsGroup, searchPatternsGroup
 
 #Constants
 mongoClient = MongoClient('localhost:27017').tfm
@@ -88,13 +89,27 @@ def paginationGroupViewPattern(message):
     body = searchGroupsPattern(int(message["idPattern"]), int(message["groupPage"]), "str")
     emit("paginationGroup", {'body': body, "error": ""})
 
-#Event that fires onChange event of selectPatient
+
+@socketio.on('paginationPattern', namespace='/viewGroup')
+def paginationPatternViewPattern(message):
+    body = searchPatternsGroup(int(message["idGroup"]), int(message["patternPage"]), "str")
+    emit("paginationPattern", {'body': body, "error": ""})
+
+
 @socketio.on('paginationPatient', namespace='/viewPattern')
 def paginationPatientViewPattern(message):
     body = searchPatientsPattern(int(message["idPattern"]), int(message["patientPage"]), "str")
 
     print("[DEBUG] body:")
     print(body)
+
+    emit("paginationPatient", {'body': body, "error": ""})
+
+
+
+@socketio.on('paginationPatient', namespace='/viewGroup')
+def paginationGroupViewPattern(message):
+    body = searchPatientsGroup(int(message["idGroup"]), int(message["patientPage"]), "str")
 
     emit("paginationPatient", {'body': body, "error": ""})
 ################################

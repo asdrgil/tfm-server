@@ -13,6 +13,40 @@ therapist = 4
 
 mongoClient = MongoClient('localhost:27017').tfm
 
+def patientOpts(therapistId) -> list:
+    cursorPatients = mongoClient["patients"].find({"therapist": therapistId})\
+    .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
+    result = []
+
+    for pt in cursorPatients:
+        row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
+        result.append(row)
+
+    return result
+
+def patternOpts(therapistId) -> list:
+    cursorPatterns = mongoClient["patterns"].find({"therapist": therapistId, "windowId": {"$exists":False}})\
+    .sort([("name", 1)])
+    result = []
+
+    for pt in cursorPatterns:
+        row = (str(pt.get("id")), "{}".format(pt.get("name")))
+        result.append(row)
+
+    return result
+
+def groupOpts(therapistId) -> list:
+    cursorGroups = mongoClient["groups"].find({"therapist": therapistId, "windowId": {"$exists":False}})\
+    .sort([("name", 1)])
+    result = []
+
+    for pt in cursorGroups:
+        row = (str(pt.get("id")), "{}".format(pt.get("name")))
+        result.append(row)
+
+    return result    
+
+
 class RegisterTherapistForm(FlaskForm):
     name = StringField('Nombre', validators=[DataRequired(message="Este campo es obligatorio.")], \
         render_kw={"class":"input is-medium", "placeholder":"Nombre (obligatorio)", "style":"text-align:center;"})
@@ -71,31 +105,9 @@ class RegisterPatternForm(FlaskForm):
 
     def __init__(self, therapistId: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.therapistId = therapistId
-        self.patients.choices = self.patientOpts()
-        self.groups.choices = self.groupOpts()
+        self.patients.choices = patientOpts(therapistId)
+        self.groups.choices = groupOpts(therapistId)
 
-    def patientOpts(self) -> list:
-        cursorPatients = mongoClient["patients"].find({"therapist": self.therapistId})\
-        .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
-        result = []
-
-        for pt in cursorPatients:
-            row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
-            result.append(row)
-
-        return result
-
-    def groupOpts(self) -> list:
-        cursorGroups = mongoClient["groups"].find({"therapist": self.therapistId, "windowId": {"$exists":False}})\
-        .sort([("name", 1)])
-        result = []
-
-        for pt in cursorGroups:
-            row = (str(pt.get("id")), "{}".format(pt.get("name")))
-            result.append(row)
-
-        return result
 
 
 class EditPatternForm(FlaskForm):
@@ -127,32 +139,8 @@ class EditPatternForm(FlaskForm):
 
     def __init__(self, therapistId: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.therapistId = therapistId
-        self.patients.choices = self.patientOpts()
-        self.groups.choices = self.groupOpts()
-
-
-    def patientOpts(self) -> list:
-        cursorPatients = mongoClient["patients"].find({"therapist": self.therapistId})\
-        .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
-        result = []
-
-        for pt in cursorPatients:
-            row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
-            result.append(row)
-
-        return result
-
-    def groupOpts(self) -> list:
-        cursorGroups = mongoClient["groups"].find({"therapist": self.therapistId, "windowId": {"$exists":False}})\
-        .sort([("name", 1)])
-        result = []
-
-        for pt in cursorGroups:
-            row = (str(pt.get("id")), "{}".format(pt.get("name")))
-            result.append(row)
-
-        return result    
+        self.patients.choices = patientOpts(therapistId)
+        self.groups.choices = groupOpts(therapistId)
 
 
 class RegisterPatientForm(FlaskForm):
@@ -248,42 +236,21 @@ class EditPatientForm(FlaskForm):
 
 class RegistrationGroupForm(FlaskForm):
     name = StringField('Nombre', validators=[DataRequired()], render_kw={"class":"input is-medium", \
-        "placeholder":"Nombre del grupo", "style":"text-align:center;"})
-    description = TextAreaField('Descripción', render_kw={"class":"input is-medium", \
-        "placeholder":"Descripción del grupo", "style":"text-align:center;width:617px;height:85px"})
-    
-    selectPatient = RadioField('Pacientes que incluye', choices=[('1','Sí'),('0','No')], default="0", \
-        render_kw={"onchange":"selectPatient();"})
+        "placeholder":"Nombre del grupo (obligatorio)", "style":"text-align:center;"})
+    description = TextAreaField('Descripción', validators=[Optional()], render_kw={"class":"input is-medium", \
+        "placeholder":"Descripción del grupo (opcional)", "style":"text-align:center;width:617px;height:85px"})
 
-    cursorPatients = mongoClient["patients"].find({"therapist": therapist})\
-    .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
-    patientOpts = []
-
-    for pt in cursorPatients:
-        row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
-        patientOpts.append(row)
-
-    cursorPatterns = mongoClient["patterns"].find({"therapist": therapist, "windowId": {"$exists":False}})\
-    .sort([("name", 1), ("description", 1)])
-    patternOpts = []
-
-    for pt in cursorPatterns:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
-        patternOpts.append(row)
-
-
-    patients = SelectMultipleField('Pacientes asociados al grupo', validators=[Optional()], choices=patientOpts, \
-        render_kw={'multiple':'multiple', 'id':'patientsSelect', 'onchange':'changedSelectPatient()'})
+    patients = SelectMultipleField('Pacientes asociados al grupo', validators=[Optional()], choices=[], \
+        render_kw={'multiple':'multiple', 'id':'patientsSelect'})
     patterns = SelectMultipleField('Pautas ya creadas asociadas al grupo', validators=[Optional()], \
-        choices=patternOpts, \
-        render_kw={'multiple':'multiple', 'id':'patternsSelect', 'onchange':'changedSelectPattern();'})
+        choices=[], render_kw={'multiple':'multiple', 'id':'patternsSelect'})
 
-    #Auxiliary variables
-    pattIds = HiddenField('pattIds')
-    windowToken = HiddenField("windowToken")
-    oldPatterns = HiddenField("oldPatterns")
+    submit = SubmitField('Registrar grupo', render_kw={"class":"button is-primary"})
 
-    submit = SubmitField('Registrar grupo', render_kw={"class":"button is-primary", "onclick":"persistData()"})
+    def __init__(self, therapistId: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.patients.choices = patientOpts(therapistId)
+        self.patterns.choices = patternOpts(therapistId)
 
 
 class GenericEditForm(FlaskForm):
@@ -297,29 +264,13 @@ class GenericEditForm(FlaskForm):
 
 
 class SearchPatternsForm(FlaskForm):
-
-    cursorPatients = mongoClient["patients"]\
-    .find({"therapist":therapist}).sort([("surname1", 1), ("surname2", 1), ("name", 1)])
-    patientOpts = []
-
-    for pt in cursorPatients:
-        row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
-        patientOpts.append(row)
-
-    cursorGroups = mongoClient["groups"].find({"therapist":therapist}).sort([("name", 1)])
-    groupOpts = []
-
-    for pt in cursorGroups:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
-        groupOpts.append(row)
-
     name = StringField('Nombre', validators=[Optional()], \
         render_kw={"class":"input is-medium", "placeholder":"Nombre", "style":"text-align:center;"})
     description = StringField('Descripción', validators=[Optional()], \
         render_kw={"class":"input is-medium", "placeholder":"Descripción", "style":"text-align:center"})
-    patients = SelectMultipleField('Pacientes', validators=[Optional()], choices=patientOpts, \
+    patients = SelectMultipleField('Pacientes', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'patientsSelect'})
-    groups = SelectMultipleField('Grupos', validators=[Optional()], choices=groupOpts, \
+    groups = SelectMultipleField('Grupos', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'groupsSelect'})
     intensities = SelectMultipleField('Intensidades', validators=[Optional()], \
         choices=[("1", "Amarilla"), ("2", "Naranja"), ("3", "Roja")], \
@@ -329,6 +280,12 @@ class SearchPatternsForm(FlaskForm):
     #Auxiliary variables
     pageNumber = HiddenField("pageNumber")
     submitDone = HiddenField("submitDone")
+
+    def __init__(self, therapistId: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.patients.choices = patientOpts(therapistId)
+        self.groups.choices = groupOpts(therapistId)
+
 
 
 class SearchPatientsForm(FlaskForm):

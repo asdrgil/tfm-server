@@ -142,10 +142,10 @@ def searchPatientsPattern(idPattern, pageNum=1, outputFormat="arr"):
     else:
         rows = ""
     
-    cursorGroups = mongoClient["patients"].find({"therapist":current_user.get_id(), "patterns" :idPattern})\
+    cursorPatients = mongoClient["patients"].find({"therapist":current_user.get_id(), "patterns" :idPattern})\
         .skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
 
-    for cur in cursorGroups:
+    for cur in cursorPatients:
         if outputFormat == "arr":
             rows.append({"id":cur["id"], "name":cur["name"], "surname1":cur["surname1"], "surname2":cur["surname2"], \
                 "gender":cur["gender"], "age": cur["age"]})
@@ -161,6 +161,76 @@ def searchPatientsPattern(idPattern, pageNum=1, outputFormat="arr"):
 
         return rows
 
+
+def searchPatientsGroup(idGroup, pageNum=1, outputFormat="arr"):
+    cursorGroup = mongoClient["groups"].find_one({"therapist":current_user.get_id(), "id":idGroup})
+    patientsAll = cursorGroup["patients"]
+    patientsAll.sort()
+    patientIds = patientsAll[(pageNum-1)*rowsPerPage : pageNum*rowsPerPage]
+    numberTotalRows = len(patientsAll)
+    numberPages = numberPages = math.ceil(numberTotalRows/rowsPerPage)
+    
+    cursorPatients = mongoClient["patients"].find({"therapist":current_user.get_id(), "id" : {"$in": patientIds}})\
+        .skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+
+    if outputFormat == "arr":
+        rows = []
+    else:
+        rows = ""
+
+    for cur in cursorPatients:
+        if outputFormat == "arr":
+            rows.append({"id":cur["id"], "name":cur["name"], "surname1":cur["surname1"], "surname2":cur["surname2"], \
+                "gender":cur["gender"], "age": cur["age"]})
+        else:
+            rows += "{},{},{},{},{},{};".format(cur["id"], cur["name"], cur["surname1"], cur["surname2"], \
+                cur["gender"], cur["age"])
+
+    if outputFormat == "arr":
+        return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+    else:
+        if len(rows) > 0 and rows[-1] == ";":
+            rows = rows[:-1]
+
+    return rows
+
+
+
+def searchPatternsGroup(idGroup, pageNum=1, outputFormat="arr"):
+    cursorGroup = mongoClient["groups"].find_one({"therapist":current_user.get_id(), "id":idGroup})
+    patternsAll = cursorGroup["patterns"]
+    patternsAll.sort()
+    patternsIds = patternsAll[(pageNum-1)*rowsPerPage : pageNum*rowsPerPage]
+    numberTotalRows = len(patternsAll)
+    numberPages = numberPages = math.ceil(numberTotalRows/rowsPerPage)
+    
+    cursorPatterns = mongoClient["patterns"].find({"therapist":current_user.get_id(), "id" : {"$in": patternsIds}})\
+        .skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+
+    if outputFormat == "arr":
+        rows = []
+    else:
+        rows = ""
+
+    for cur in cursorPatterns:
+        intensity1 = "Sí" if 1 in cur["intensities"] else "No"
+        intensity2 = "Sí" if 2 in cur["intensities"] else "No"
+        intensity3 = "Sí" if 3 in cur["intensities"] else "No"
+
+        if outputFormat == "arr":
+            rows.append({"id":cur["id"], "name":cur["name"], \
+                "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3})
+        else:
+            rows += "{},{},{},{},{};".format(cur["id"], cur["name"], \
+                intensity1, intensity2, intensity3)
+
+    if outputFormat == "arr":
+        return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+    else:
+        if len(rows) > 0 and rows[-1] == ";":
+            rows = rows[:-1]
+
+    return rows
 
 
 def searchPatients(form):

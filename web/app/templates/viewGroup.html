@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+<!-- Import macros -->
+
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import patternsTableMacro with context %}
+{% from 'macros.html' import patientsTableMacro with context %}
+
+{% from 'macros.html' import modalSaveMacro with context %}
+{% from 'macros.html' import modalCancelMacro with context %}
+{% from 'macros.html' import modalDeleteMacro with context %}
+
+
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            $(function () {
+                $('#paginationSelect').multipleSelect();
+                $('#paginationSelect2').multipleSelect();
+            })
+        });
+    </script>
+
+    <!-- SocketIO methods -->
+    <script>
+        namespace = '/viewGroup';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        function paginationFunc(){
+            socket.emit('paginationPattern', {"idGroup": {{ idGroup }}, "patternPage": document.getElementById("paginationSelect").value});
+        }
+
+        function paginationFunc2(){
+            socket.emit('paginationPatient', {"idGroup": {{ idGroup }}, "patientPage": document.getElementById("paginationSelect2").value});
+        }
+
+        socket.on('paginationPatient', function(message) {
+
+            var bodyContent = "";
+
+            //No registers, but also no errors
+            if(message.body == ""){
+                $("#tablePatients tbody").html("");
+            }else {
+                var rows = message.body.split(";");
+
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    bodyContent += "<tr>"
+                    
+                    //Name
+                    bodyContent += "<td>"+cols[1]+"</td>"
+                    //Surname1
+                    bodyContent += "<td>"+cols[2]+"</td>"
+                    //Surname2
+                    bodyContent += "<td>"+cols[3]+"</td>"
+                    //Gender
+                    var gender = cols[4] == "M" ? "<i class='fas fa-mars'></i> &nbsp; Masculino" : "<i class='fas fa-venus'></i> &nbsp; Femenino";
+                    //mars
+                    bodyContent += "<td>"+gender+"</td>"
+                    //Age
+                    bodyContent += "<td>"+cols[5]+"</td>"
+                    //View pattern
+                    bodyContent += "<td><a href=/verPaciente/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
+                    
+                    bodyContent += "</tr>"
+                }
+            }
+
+            $("#tablePatients tbody").html(bodyContent);
+        });
+
+        socket.on('paginationPattern', function(message) {
+
+            var bodyContent = "";
+
+            //No registers, but also no errors
+            if(message.body == ""){
+                $("#tablePatterns tbody").html("");
+            }else {
+                var rows = message.body.split(";");
+
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    bodyContent += "<tr>"
+                    
+                    //Name
+                    bodyContent += "<td>"+cols[1]+"</td>"
+                    //Intensity1
+                    var intensity1 = cols[2] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+ intensity1 +"</td>"
+                    //Intensity2
+                    var intensity2 = cols[3] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+ intensity2 +"</td>"
+                    //Intensity3
+                    var intensity2 = cols[4] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+ intensity3 +"</td>"
+                    //View pattern
+                    bodyContent += "<td><a href=/verPauta/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
+                    
+                    bodyContent += "</tr>"
+                }
+            }
+
+            $("#tablePatterns tbody").html(bodyContent);
+        });
+    </script>    
+
+{% endblock %}
+
+{% block content %} 
+
+<!-- Modal[Save] -->
+{{ modalSaveMacro("del grupo") }}
+
+<!-- Modal[Cancelar] -->
+{{ modalCancelMacro() }}
+
+<!-- Modal[Delete] -->
+{{ modalDeleteMacro("del grupo") }}
+
+<!-- Title -->
+{{ titleMacro("Crear un grupo de pautas") }}
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+
+    <div class="column is-8 box" align="center">
+        <h4 class="title is-4">Datos del grupo de pautas</h4>
+        <b> Nombre</b>:&nbsp;&nbsp; {{ groupInfo.name }}
+        <br><br>
+        <b> Descripción </b>:&nbsp;&nbsp; {{ groupInfo.description }}
+
+        <br><div style='max-width:400px'><hr></div><br>
+
+        <div class="box" style='max-width:1000px'>
+            <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
+            {% if rowsPatients|length > 0 %}
+                {{ patientsTableMacro(rowsPatients) }}
+            {% endif %}
+
+            Número de registros totales: <b>{{ numberRowsPatient }}</b>
+            {% if pagesPatients > 1 %}
+                <br>
+                {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+            {% endif %}
+        </div>
+
+        <div style='max-width:400px'><hr></div>
+
+        <div class="box" style='max-width:1000px'>
+            <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
+            {% if rowsPatterns|length > 0 %}
+                {{ patternsTableMacro(rowsPatterns) }}
+            {% endif %}
+
+            Número de registros totales: <b>{{ numberRowsPattern }}</b>
+            {% if pagesPatients > 1 %}
+                <br>
+                {{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

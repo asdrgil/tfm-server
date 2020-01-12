@@ -76,7 +76,6 @@
             <th> <span> Intensidad naranja </span></th>
             <th> <span> Intensidad roja </span></th>
             <th> <span> Ver pauta </span></th>
-            <th> <span> Editar pauta </span></th>
         </thead>
         <tbody>
             {% for row in rows %}
@@ -101,7 +100,6 @@
                         <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
                     {% endif %}
                     <td><a href=/verPauta/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
-                    <td><a href=/editarPauta/{{ row.id }} target="_blank"><i class='fas fa-pencil-alt'></i> &nbsp; Editar </a> </td>
                 </tr>
             {% endfor %}                                    
         </tbody>
@@ -126,7 +124,11 @@
                 <td>{{ row.name }}</td>
                 <td>{{ row.surname1 }}</td>
                 <td>{{ row.surname2 }}</td>
-                <td>{{ row.gender }}</td>
+                {% if row.gender=="M" %}
+                    <td><i class='fas fa-mars'></i> &nbsp; Masculino</td>
+                {% else %}
+                    <td><i class='fas fa-venus'></i> &nbsp; Femenino</td>
+                {% endif %}
                 <td>{{ row.age }}</td>
                 <td><a href=/verPaciente/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
               </tr>
