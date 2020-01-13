@@ -711,3 +711,35 @@ def updatePattern(form, therapistId):
     #Update the pattern info
     mongoClient["patterns"].update_one({"id" : idPattern}, {"$set" : {"name" : form.name.data, \
         "description" : form.description.data, "intensities" : intensities}})
+
+
+def updateGroup(form, therapistId, idGroup):
+    cursorGroupOld = mongoClient["groups"].find_one({"id" : idGroup})
+
+    oldPatients = cursorGroupOld["patients"]
+    oldPatterns = cursorGroupOld["patterns"]
+
+    newPatients = list(map(int, form.patients.data))
+    newPatterns = list(map(int, form.patterns.data))
+
+    discardedPatients = list(set(cursorGroupOld["patients"]) - set(newPatients))
+    discardedPatterns = list(set(cursorGroupOld["patterns"]) - set(newPatterns))
+
+    #Old patients that remain linked to the group
+    oldNewPatients = list(set(oldPatients) & set(newPatients))
+
+    #1. Delete all old patterns from all old discarded patients
+    for idPattern in oldPatterns:
+        mongoClient["patients"].update_many({"id":{"$in":discardedPatients}}, {"$pull": {"patterns":idPattern}})
+
+    #2. Delete all old discarded patterns from old patients not discarded
+    for idPattern in discardedPatterns:
+        mongoClient["patients"].update_many({"id":{"$in":oldNewPatients}}, {"$pull": {"patterns":idPattern}})
+
+    #3. Add new patterns to all new patients
+    for idPattern in newPatterns:
+        mongoClient["patients"].update_many({"id":{"$in":newPatients}}, {"$push": {"patterns":idPattern}})
+
+    #4. Update group info
+    mongoClient["groups"].update_one({"id" : idGroup}, {"$set" : {"name": form.name.data, \
+        "description": form.description.data, "patients": newPatients, "patterns": newPatterns }})

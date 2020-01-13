@@ -9,12 +9,6 @@
 {% from 'macros.html' import patternsTableMacro with context %}
 {% from 'macros.html' import patientsTableMacro with context %}
 
-{% from 'macros.html' import modalSaveMacro with context %}
-{% from 'macros.html' import modalCancelMacro with context %}
-{% from 'macros.html' import modalDeleteMacro with context %}
-
-
-
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
@@ -125,15 +119,6 @@
 
 {% block content %} 
 
-<!-- Modal[Save] -->
-{{ modalSaveMacro("del grupo") }}
-
-<!-- Modal[Cancelar] -->
-{{ modalCancelMacro() }}
-
-<!-- Modal[Delete] -->
-{{ modalDeleteMacro("del grupo") }}
-
 <!-- Title -->
 {{ titleMacro("Crear un grupo de pautas") }}
 
@@ -150,9 +135,9 @@
         <br><div style='max-width:400px'><hr></div><br>
 
         <div class="box" style='max-width:1000px'>
-            <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
+            <h4 class="title is-4 is-spaced">Pacientes que incluyen este grupo de pautas</h4>
             {% if rowsPatients|length > 0 %}
-                {{ patientsTableMacro(rowsPatients) }}
+                {{ patientsTableMacro(rowsPatients, 0) }}
             {% endif %}
 
             Número de registros totales: <b>{{ numberRowsPatient }}</b>
@@ -165,9 +150,8 @@
         <div style='max-width:400px'><hr></div>
 
         <div class="box" style='max-width:1000px'>
-            <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
             {% if rowsPatterns|length > 0 %}
-                {{ patternsTableMacro(rowsPatterns) }}
+                {{ patternsTableMacro(rowsPatterns, 0) }}
             {% endif %}
 
             Número de registros totales: <b>{{ numberRowsPattern }}</b>
@@ -176,6 +160,14 @@
                 {{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
             {% endif %}
         </div>
+
+        <div style='max-width:400px'><hr></div>
+
+        <div id="divBtns" align="center">
+            <a href=/editarGrupo/{{ idGroup }} target="_blank"><input class="button is-warning" type="button" value="Editar grupo de pautas" ></a>
+        </div>
+
+        <br>
 
     </div>
 

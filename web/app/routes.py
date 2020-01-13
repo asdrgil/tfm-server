@@ -27,7 +27,7 @@ from .socketIOMethods import editPatternSocket, changedSelectGroup, changedSelec
     insertNewPattern, getTmpPatterns
 from .mongoMethods import searchPatterns, searchPatients, searchGroups, getMultipleEpisodes, getOneEpisode, \
     insertPatient, generateUniqueRandom, updatePattern, searchGroupsPattern, searchPatientsPattern, \
-    searchPatientsGroup, searchPatternsGroup
+    searchPatientsGroup, searchPatternsGroup, updateGroup
 from .constants import mongoClient, rowsPerPage
 
 @app.before_request
@@ -147,6 +147,7 @@ def editPattern(idPattern):
         current_user.get_surname2())
     
     form = EditPatternForm(current_user.get_id())
+    form2 = GenericEditForm()
 
     if form.validate_on_submit():
         updatePattern(form, current_user.get_id())
@@ -183,7 +184,7 @@ def editPattern(idPattern):
         form.patients.data = selectedPatients
         form.groups.data = selectedGroups
 
-        return render_template('editPattern.html', form=form, therapistLiteral=therapistLiteral)
+        return render_template('editPattern.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
 
 
 @app.route('/verPautas', methods=['GET', 'POST'])
@@ -265,10 +266,9 @@ def registerPatient():
         therapistLiteral=therapistLiteral)
 
 
-@app.route('/verPaciente/<int:idPatient>', methods=['GET', 'POST'])
+@app.route('/editarPaciente/<int:idPatient>', methods=['GET', 'POST'])
 @login_required
 def editPatient(idPatient):
-    idPatient = int(idPatient)
     if mongoClient["patients"].count_documents({"id":idPatient, "therapist":current_user.get_id()}) == 0:
         flash("No existe ese paciente", "error")
         return redirect(url_for('index'))
@@ -277,64 +277,38 @@ def editPatient(idPatient):
 
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
-    form = EditPatientForm()
-    form2 = RegisterPatternForm2()
+
+    form = EditPatientForm(current_user.get_id())
+    form2 = GenericEditForm()
 
     if form.validate_on_submit():
+        patternsSelected = list(map(int, form.patterns.data))
+        groupsSelected = list(map(int, form.groups.data))
+        newPatterns = patternsSelected
         
-        #Update PATTERNS from the patient
-        if form.pattIds.data != None and len(form.pattIds.data) > 0:
-            pattIds = [int(elem) for elem in form.pattIds.data.split(",")]
-            windowToken = form.windowToken.data
-            queryPattIds = []
+        cursorGroups = mongoClient["groups"].find({"id": {"$in": groupsSelected}})
 
-            #Persist all patterns
-            for pattern in pattIds:
-                queryPattIds.append({'id': pattern, "windowId":windowToken})
-            
-            if mongoClient["patterns"].count_documents({"$or": queryPattIds}) > 0:
-                cursor = mongoClient["patterns"].find({"$or": queryPattIds})
+        for cur in cursorGroups:
+            newPatterns += cur["patterns"]
 
-                #Persist new created patterns
-                for cur in cursor:
-                    mongoClient["patterns"].update_one({"id":cur["id"]}, {"$unset": {"windowId":1}})
 
-            #Bond all patterns from select or new created patterns to the current user
-            mongoClient["patients"].update_one({"id":idPatient}, {"$set": {"patterns": pattIds}})
+        mongoClient["patients"].update_one({"id":idPatient}, {"name": form.name.data, "surname1": form.surname1.data, \
+            "surname2": form.surname2.data, "age": form.age.data, "gender": form.gender.data, "patterns": newPatterns})
+        
+        mongoClient["groups"].update_many({"id":{"$in": groupsSelected}}, {"$push": {"patients": idPatient}})
 
-        else:
-            mongoClient["patients"].update_one({"id":cur["id"]}, {"$unset": {"patterns":1}})
-
-        #Update GROUPS from the patient
-        if form.groups.data != None and len(form.groups.data) > 0:
-            for group in form.groups.data:
-                mongoClient["groups"].update({"id":int(group)}, {"$push": {"patients":idPatient}})
-
-        #Remove temporal registers as they are no longer neccesary
-        mongoClient["tmpPatterns"].delete_many({"windowId":windowToken})
-
-        #Redirect index and flash all OK
         flash("Paciente modificado correctamente", "success")
         return redirect(url_for('index'))
+    
     else:
-        if form.patientId.data == None:
-            form.patientId.data = idPatient
+        form.patientId.data = idPatient
 
-        if form.windowToken.data == None:
-            form.windowToken.data = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
-
-        if cursorPatient["synced"] == True:
-            form.synced.data = "True"
-        else:
-            form.synced.data = "False"
 
         cursor = mongoClient["patients"].find_one({"id":idPatient})
-        cursor2 = mongoClient["groups"].find({"patients" : idPatient})
-
-        if form.pattIds.data == None:
-            form.pattIds.data = ','.join(str(x) for x in cursor["patterns"])
+        cursor2 = mongoClient["groups"].find({"therapist": current_user.get_id(), "patients" : idPatient})
 
         selectedGroups = []
+
         for cur in cursor2:
             if "id" in cur:
                 selectedGroups.append(str(cur["id"]))
@@ -344,38 +318,11 @@ def editPatient(idPatient):
         form.surname1.data = cursor["surname1"]
         form.surname2.data = cursor["surname2"]
         form.age.data = cursor["age"]
+        form.gender.data = cursor["gender"]
         form.patterns.data = list(map(str, cursor["patterns"]))
         form.groups.data = selectedGroups
 
-        #Fill table of patterns
-        rowPatterns = []
-
-        cursor3 = mongoClient["patterns"].find({"therapist": current_user.get_id(), "id": {"$in" : cursor["patterns"]}})
-
-        for cur in cursor3:
-            description = ""
-            intensity1 = "No"
-            intensity2 = "No"
-            intensity3 = "No"
-            if "description" in cur:
-                description = cur["description"]
-
-            if "intensities" in cur:
-                if 1 in cur["intensities"]:
-                    intensity1 = "Sí"
-                if 2 in cur["intensities"]:
-                    intensity2 = "Sí"
-                if 3 in cur["intensities"]:
-                    intensity3 = "Sí"
-
-            rowPatterns.append({"id": cur["id"], "name": cur["name"], "description": description, \
-                "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
-            mongoClient["tmpPatterns"].insert_one({"windowId": form.windowToken.data, "id": cur["id"], \
-                "name": cur["name"], "decription": description, \
-                "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3, "pattType":"selectPatt"})
-
-        return render_template('editPatient.html', form=form, form2=form2, rowPatterns=rowPatterns, \
-            therapistLiteral=therapistLiteral)
+    return render_template('editPatient.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
 
 
 @app.route('/registrarGrupo', methods=['GET', 'POST'])
@@ -388,7 +335,9 @@ def registerGroup():
 
     if form.validate_on_submit():
 
-        if mongoClient["groups"].count_documents({"name":form.name.data}) == 0:
+        if mongoClient["groups"].count_documents({"therapist": current_user.get_id(), "name":form.name.data}) == 0:
+            #TODO: move this to a Mongo method
+
             idGroup = 1
 
             cursor = mongoClient["groups"].find({}).sort("id",-1).limit(1)
@@ -408,7 +357,7 @@ def registerGroup():
             flash("Grupo creado correctamente", "info")
             return render_template('index.html')
         else:
-            flash("Ya existe un grupo con ese nombre", "warning")
+            flash("Ya existe un grupo con ese nombre", "error")
 
     return render_template('registerGroup.html', form=form, therapistLiteral=therapistLiteral)
 
@@ -444,6 +393,42 @@ def viewPattern(idPattern):
         idPattern=idPattern, pagesGroups=queryResultGroups["numberPages"], \
         pagesPatients=queryResultPatients["numberPages"], numberRowsPatient=queryResultPatients["numberTotalRows"], \
         numberRowsGroup=queryResultGroups["numberTotalRows"])
+
+
+@app.route('/editarGrupo/<int:idGroup>', methods=['GET', 'POST'])
+@login_required
+def editGroup(idGroup):
+
+    if mongoClient["groups"].count_documents({"therapist":current_user.get_id(), "id":idGroup}) == 0:
+        flash("No existe el grupo de pautas especificado", "error")
+        return redirect(url_for('index'))
+
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+    therapist = current_user.get_id()
+
+    form = RegistrationGroupForm(current_user.get_id())
+    form2 = GenericEditForm()
+
+    if form.validate_on_submit():
+        if mongoClient["groups"].count_documents({"therapist": current_user.get_id(), "name":form.name.data, \
+            "id":{"$ne": idGroup}}) == 0:
+            updateGroup(form, current_user.get_id(), idGroup)
+
+            flash("Grupo modificado correctamente", "info")
+            return render_template('index.html')
+        else:
+            flash("Ya existe un grupo con este nombre", "error")
+
+    cursorGroup = mongoClient["groups"].find_one({"id":idGroup})
+
+    form.name.data = cursorGroup["name"]
+    form.description.data = cursorGroup["description"]
+    form.patients.data = list(map (str, cursorGroup["patients"]))
+    form.patterns.data = list(map (str, cursorGroup["patterns"]))
+
+    return render_template('editGroup.html', therapistLiteral=therapistLiteral, idGroup=idGroup, \
+        form=form, form2=form2)
 
 
 @app.route('/verGrupo/<int:idGroup>', methods=['GET', 'POST'])
@@ -484,7 +469,7 @@ def viewGroup(idGroup):
 def viewPatients():
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
-    form = SearchPatientsForm()
+    form = SearchPatientsForm(current_user.get_id())
 
     if form.validate_on_submit():
         rowPatients = searchPatients(form)

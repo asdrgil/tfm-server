@@ -22,49 +22,6 @@
             	$('#groupsSelect').multipleSelect();
     		})
     	});
-
-    	function confirmSave(){
-            document.getElementById("generalForm").submit();
-        }
-
-    	function cancelChanges(){
-    		 window.location.href = window.location.href; //Reload page losing all form modifications
-    	}
-    </script>
-
-    <!-- Modal scripts -->
-    <script>
-        
-        function displayModalSave(){
-            var modalDiv = document.getElementById("page-modal-save");
-            modalDiv.style.display = "block";
-        }
-
-        function closeModalSave(){
-            var modalDiv = document.getElementById("page-modal-save");
-            modalDiv.style.display = "none";
-        }
-        
-        function displayModalCancel(){
-            var modalDiv = document.getElementById("page-modal-cancel");
-            modalDiv.style.display = "block";
-        }
-
-        function closeModalCancel(){
-            var modalDiv = document.getElementById("page-modal-cancel");
-            modalDiv.style.display = "none";
-        }
-
-        function displayModalDelete(){
-            var modalDiv = document.getElementById("page-modal-delete");
-            modalDiv.style.display = "block";
-        }
-
-        function closeModalDelete(){
-            var modalDiv = document.getElementById("page-modal-delete");
-            modalDiv.style.display = "none";
-        }
-            
     </script>
 
     <!-- SocketIO -->
@@ -186,11 +143,10 @@
 		        <br>
 		        
 				<div id="divBtns" align="center">
-			        {{ form.saveBtn }}
-			        {{ form.cancelBtn }}
-                    <!--<a href=/verPauta/{{form.patternId}} target="_blank"></a>-->
-                    <a href=/verPauta/{{ form.patternId.data }} target="_blank">{{ form.viewBtn }}</a>
-			        {{ form.deleteBtn }}
+			        {{ form2.saveBtn }}
+			        {{ form2.cancelBtn }}
+                    <a href=/verPauta/{{ form.patternId.data }} target="_blank">{{ form2.viewPatternBtn }}</a>
+			        {{ form2.deleteBtn }}
 		        </div>
 
 		    </form>
