@@ -337,17 +337,6 @@ class SearchGroupsForm(FlaskForm):
 
 
 class FilterByDateForm(FlaskForm):
-    cursorPatients = mongoClient["patients"].find({"therapist":therapist})\
-    .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
-    patientOpts = []
-
-    for pt in cursorPatients:
-        row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
-        patientOpts.append(row)
-
-    patients = SelectField('Paciente seleccionado', validators=[Optional()], choices=patientOpts, \
-        render_kw={'id':'patientsSelect', 'onchange':"updatePatientValue();"})
-
     date1 = StringField('Desde (fecha)', validators=[Optional()], render_kw={"class":"input is-medium", \
         "type": "date", "data-display-mode": "inline", "data-is-range":"true", "data-close-on-select":"false"})
     time1 = StringField('Desde (hora)', validators=[Optional()], render_kw={"class":"input is-medium", "type": "time", \
@@ -357,12 +346,17 @@ class FilterByDateForm(FlaskForm):
     time2 = StringField('Hasta (hora)', validators=[Optional()], render_kw={"class":"input is-medium", "type": "time", \
         "data-display-mode": "inline", "data-is-range":"true"})
 
+    pagination = SelectField('Página', validators=[Optional()], choices=[], \
+        render_kw={'id':'paginationSelect', 'onchange':'paginationFunc();'})
+
     searchBtn = SubmitField('Buscar', render_kw={"class":"button is-primary"})
 
-    patientId = HiddenField("patientId")
+    submitDone = HiddenField("submitDone")
 
-    def validate(self):
-        return True
+    def __init__(self, numberPages: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.numberPages = numberPages
+        self.pagination.choices = tuple((i,i,) for i in range(1, numberPages+1))
 
 class PaginationForm(FlaskForm):
     pagination = SelectField('Página', validators=[Optional()], choices=[], \

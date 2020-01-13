@@ -27,7 +27,8 @@ from .socketIOMethods import editPatternSocket, changedSelectGroup, changedSelec
     insertNewPattern, getTmpPatterns
 from .mongoMethods import searchPatterns, searchPatients, searchGroups, getMultipleEpisodes, getOneEpisode, \
     insertPatient, generateUniqueRandom, updatePattern, searchGroupsPattern, searchPatientsPattern, \
-    searchPatientsGroup, searchPatternsGroup, updateGroup
+    searchPatientsGroup, searchPatternsGroup, updateGroup, searchGroupsPatient, searchPatternsPatient, \
+    getCountMultipleEpisodes
 from .constants import mongoClient, rowsPerPage
 
 @app.before_request
@@ -259,9 +260,6 @@ def registerPatient():
         if form.age.data is None:
             form.age.data = ""
 
-        if form.windowToken.data == None:
-            form.windowToken.data = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
-
     return render_template('registerPatient.html', title='RegisterPatient', form=form, \
         therapistLiteral=therapistLiteral)
 
@@ -388,11 +386,42 @@ def viewPattern(idPattern):
     queryResultGroups = searchGroupsPattern(idPattern, 1)
     queryResultPatients = searchPatientsPattern(idPattern, 1)
 
-    return render_template('viewPattern.html', therapistLiteral=therapistLiteral, patternInfo=patternInfo,
+    return render_template('viewPattern.html', therapistLiteral=therapistLiteral, patternInfo=patternInfo, \
         rowsGroups=queryResultGroups["rows"], rowsPatients=queryResultPatients["rows"], form=form, form2=form2, \
         idPattern=idPattern, pagesGroups=queryResultGroups["numberPages"], \
         pagesPatients=queryResultPatients["numberPages"], numberRowsPatient=queryResultPatients["numberTotalRows"], \
         numberRowsGroup=queryResultGroups["numberTotalRows"])
+
+
+@app.route('/verPaciente/<int:idPatient>', methods=['GET', 'POST'])
+@login_required
+def viewPatient(idPatient):
+
+    if mongoClient["patients"].count_documents({"therapist":current_user.get_id(), "id":idPatient}) == 0:
+        flash("No existe la pauta especificada", "error")
+        return redirect(url_for('index'))
+
+    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
+
+    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
+        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+
+    form = PaginationForm(1)
+    form2 = PaginationForm2(1)
+
+    
+    queryResultPatterns = searchPatternsPatient(idPatient, 1)
+    queryResultGroups = searchGroupsPatient(idPatient, 1)
+    
+
+    return render_template('viewPatient.html', therapistLiteral=therapistLiteral, patientInfo=patientInfo, \
+        rowsPatterns=queryResultPatterns["rows"], rowsGroups=queryResultGroups["rows"], form=form, form2=form2, \
+        idPatient=idPatient, pagesPatterns=queryResultPatterns["numberPages"], \
+        pagesGroups=queryResultGroups["numberPages"], numberRowsPattern=queryResultPatterns["numberTotalRows"], \
+        numberRowsGroup=queryResultGroups["numberTotalRows"])    
 
 
 @app.route('/editarGrupo/<int:idGroup>', methods=['GET', 'POST'])
@@ -493,11 +522,9 @@ def viewGroups():
     return render_template('viewGroups.html', form=form, therapistLiteral = therapistLiteral)
 
 
-@app.route('/verEpisodios', methods=['GET', 'POST'])
+@app.route('/verEpisodios/<int:idPatient>', methods=['GET', 'POST'])
 @login_required
-def viewEpisodes():
-    
-    idPatient = 0 if request.args.get('idPatient') is None else request.args.get('idPatient')
+def viewEpisodes(idPatient):
 
     if idPatient is not 0 and mongoClient["patients"].count_documents({"id":idPatient, \
         "therapist": current_user.get_id()}) == 0:
@@ -507,14 +534,20 @@ def viewEpisodes():
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
 
-    form = FilterByDateForm()
+    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
 
-    form.patients.data = idPatient
+    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
+        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}    
 
+    form = FilterByDateForm(1)
+    form.submitDone.data = 0
+    numberPages = 0
 
     if form.validate_on_submit():
 
-        idPatient = int(form.patientId.data)
+        form.submitDone.data = 1
+
+        pageNumber = 1 if form.pagination.data == str(None) else int(form.pagination.data)
 
         #FROM
         if len(form.date1.data) == 0:
@@ -539,10 +572,14 @@ def viewEpisodes():
         timestampTo = int(datetime.strptime('{} {}'.format(form.date2.data, form.time2.data), '%Y-%m-%d %H:%M')\
             .strftime("%s"))
 
-        rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient)
-        return render_template('viewEpisodes.html', form=form,therapistLiteral=therapistLiteral,rowEpisodes=rowEpisodes)
+        rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber)
+        numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)
+        numberPages = math.ceil(numberTotalRows/rowsPerPage)
 
-    return render_template('viewEpisodes.html', form=form, therapistLiteral=therapistLiteral)
+        return render_template('viewEpisodes.html', form=form, therapistLiteral=therapistLiteral, \
+            patientInfo=patientInfo, rowEpisodes=rowEpisodes, numberTotalRows=numberTotalRows, numberPages=numberPages)
+
+    return render_template('viewEpisodes.html', form=form, therapistLiteral=therapistLiteral, patientInfo=patientInfo)
 
 @app.route('/verUnEpisodio', methods=['GET', 'POST'])
 @login_required

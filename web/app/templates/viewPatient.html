@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import groupsTableMacro with context %}
+{% from 'macros.html' import patternsTableMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+    	$(document).ready(function() {
+    		$(function () {
+            	$('#paginationSelect').multipleSelect();
+            	$('#paginationSelect2').multipleSelect();
+    		})
+    	});
+    </script>
+
+    <!-- SocketIO methods -->
+    <script>
+    	namespace = '/viewPatient';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        function paginationFunc(){
+        	socket.emit('paginationPattern', {"idPatient": {{ idPatient }}, "patternPage": document.getElementById("paginationSelect").value});
+        }
+
+        function paginationFunc2(){
+        	socket.emit('paginationGroup', {"idPatient": {{ idPatient }}, "groupPage": document.getElementById("paginationSelect2").value});
+        }
+
+        socket.on('paginationPattern', function(message) {
+
+            var bodyContent = "";
+
+            //No registers, but also no errors
+            if(message.body == ""){
+                $("#tablePatterns tbody").html("");
+            }else {
+                var rows = message.body.split(";");
+
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    bodyContent += "<tr>"
+                    
+                    //Name
+                    bodyContent += "<td>"+cols[1]+"</td>"
+                    //Intensity1
+                    var intensity1 = cols[2] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+ intensity1 +"</td>"
+                    //Intensity2
+                    var intensity2 = cols[3] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+ intensity2 +"</td>"
+                    //Intensity3
+                    var intensity3 = cols[4] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
+                    bodyContent += "<td>"+ intensity3 +"</td>"
+                    //View pattern
+                    bodyContent += "<td><a href=/verPauta/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
+                    
+                    bodyContent += "</tr>"
+                }
+            }
+
+            $("#tablePatterns tbody").html(bodyContent);
+        });
+
+        socket.on('paginationGroup', function(message) {
+
+            var bodyContent = "";
+
+            //No registers, but also no errors
+            if(message.body == ""){
+                $("#tablePatterns tbody").html("");
+            }else {
+                var rows = message.body.split(";");
+
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    bodyContent += "<tr>"
+                    
+                    //Name
+                    bodyContent += "<td>"+cols[1]+"</td>"
+                    //View pattern
+                    bodyContent += "<td><a href=/verGrupo/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
+                    
+                    bodyContent += "</tr>"
+                }
+            }
+
+            $("#tableGroups tbody").html(bodyContent);
+        });
+    </script>
+
+{% endblock %}
+
+{% block content %}	
+
+<br>
+
+{{ titleMacro("Ver un paciente") }}
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+
+	<div class="column is-8 box" align="center">
+
+		<div align="center">
+			<h4 class="title is-4">Datos del paciente</h4>
+
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Nombre</b>:&nbsp;&nbsp; {{ patientInfo.name }}
+			<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Primer apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname1 }}
+            <br>
+            <b> Segundo apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname2 }}
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Edad </b>:&nbsp;&nbsp; {{ patientInfo.age }}
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
+            {% if patientInfo.gender == "M" %}
+                <td>Masculino</td>
+            {% else %}
+                <td>Femenino</td>
+            {% endif %}
+
+		</div>
+
+		<br><div style='max-width:400px'><hr></div><br>
+
+        <div class="box" style='max-width:1000px'>
+            <h4 class="title is-4 is-spaced">Pautas asociadas a este paciente</h4>
+            {% if rowsPatterns|length > 0 %}
+            	{{ patternsTableMacro(rowsPatterns, 0) }}
+            {% endif %}
+
+            Número de registros totales: <b>{{ numberRowsPattern }}</b>
+            {% if pagesPatterns > 1 %}
+                <br>
+        		{{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
+            {% endif %}
+
+        </div>
+        
+        <div style='max-width:400px'><hr></div>
+
+        <div class="box" style='max-width:1000px'>
+            <h4 class="title is-4 is-spaced">Grupos de pautas asociadas a este paciente</h4>
+
+
+
+        	<div id="tablearea" align="center" class="box">
+        	{% if rowsGroups|length > 0 %}
+    	    	{{ groupsTableMacro(rowsGroups, 0) }}
+        	{% endif %}
+        	
+        	Número de registros totales: <b>{{ numberRowsGroup }}</b>
+        	
+        	{% if pagesGroups > 1 %}
+                <br>
+        		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+        	{% endif %}
+        </div>
+
+        <div style='max-width:400px'><hr></div>
+
+        <div id="divBtns" align="center">
+            <a href=/editarPaciente/{{ patientInfo.id }} target="_blank"><input class="button is-warning" type="button" value="Editar paciente" ></a>
+            <a href=/verEpisodios/{{ patientInfo.id }} target="_blank"><input class="button is-info" type="button" value="Ver episodios" ></a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

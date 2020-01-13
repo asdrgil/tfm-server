@@ -133,8 +133,71 @@ def searchGroupsPattern(idPattern, pageNum=1, outputFormat="arr"):
 
         return rows
 
+
+def searchPatternsPatient(idPatient, pageNum=1, outputFormat="arr"):
+    cursorPatient = mongoClient["patients"].find_one({"id":idPatient})
+
+    numberTotalRows = len(cursorPatient["patterns"])
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
+
+    if outputFormat == "arr":
+        rows = []
+    else:
+        rows = ""
+
+    cursorPatterns = mongoClient["patterns"].find({"therapist":current_user.get_id(), \
+        "id" :{"$in": cursorPatient["patterns"]}}).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+
+    for cur in cursorPatterns:
+        intensity1 = "Sí" if 1 in cur["intensities"] else "No"
+        intensity2 = "Sí" if 2 in cur["intensities"] else "No"
+        intensity3 = "Sí" if 3 in cur["intensities"] else "No"
+
+        if outputFormat == "arr":
+            rows.append({"id":cur["id"], "name":cur["name"], "description":cur["description"], \
+                "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3})
+        else:
+            rows += "{},{},{},{},{};".format(cur["id"], cur["name"], intensity1, intensity2, intensity3)
+
+    if outputFormat == "arr":
+        return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+    else:
+        if len(rows) > 0 and rows[-1] == ";":
+            rows = rows[:-1]
+
+        return rows
+
+def searchGroupsPatient(idPatient, pageNum=1, outputFormat="arr"):
+    numberTotalRows = mongoClient["groups"].count_documents({"therapist":current_user.get_id(), \
+        "patients" :idPatient})
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
+
+    if outputFormat == "arr":
+        rows = []
+    else:
+        rows = ""
+
+    cursorGroups = mongoClient["groups"].find({"therapist":current_user.get_id(), "patients" : idPatient})\
+        .skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+
+    for cur in cursorGroups:
+        if outputFormat == "arr":
+            rows.append({"id":cur["id"], "name":cur["name"]})
+        else:
+            rows += "{},{};".format(cur["id"], cur["name"])
+
+    if outputFormat == "arr":
+        return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+    else:
+        if len(rows) > 0 and rows[-1] == ";":
+            rows = rows[:-1]
+
+        return rows
+
+
 def searchPatientsPattern(idPattern, pageNum=1, outputFormat="arr"):
-    numberTotalRows = mongoClient["patients"].count_documents({"therapist":current_user.get_id(), "patterns" :idPattern})
+    numberTotalRows = mongoClient["patients"].count_documents({"therapist":current_user.get_id(), \
+        "patterns" :idPattern})
     numberPages = math.ceil(numberTotalRows/rowsPerPage)
 
     if outputFormat == "arr":
@@ -516,7 +579,7 @@ def getUnlinkPattern(msg):
 
     return tmpPatterns
 
-def getEpisodesCursor(timestampFrom, timestampTo, idPatient):
+def getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip=0, limit=rowsPerPage):
     #Query based on an answer in StackOverflow by @Valijon
     cursor = mongoClient["measurements"].aggregate([
         {
@@ -605,16 +668,124 @@ def getEpisodesCursor(timestampFrom, timestampTo, idPatient):
           "v": {
             "$ne": []
           },
-          
+
         }
+      },
+      {
+        "$skip": skip
+      },
+      {
+        "$limit": limit
       }
     ])
 
     return cursor
 
-def getMultipleEpisodes(timestampFrom, timestampTo, idPatient):
+
+def getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient):
+    #Query based on an answer in StackOverflow by @Valijon
+    cursor = mongoClient["measurements"].aggregate([
+        {
+        "$facet": {
+          "alerts": [
+            {
+              "$match": {
+                "value": 0,
+                "patient":idPatient,
+                "tmstamp": {"$gte": timestampFrom, "$lte": timestampTo}
+              }
+            },
+            {
+              "$group": {
+                "_id": "",
+                "ids": {
+                  "$push": "$_id"
+                }
+              }
+            }
+          ],
+          "episodes": [
+            {
+              "$match": {
+                "value": {
+                  "$gt": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "$unwind": "$alerts"
+      },
+      {
+        "$addFields": {
+          "alert_idx": "$alerts.ids"
+        }
+      },
+      {
+        "$unwind": "$alerts.ids"
+      },
+      {
+        "$project": {
+          "v": {
+            "$filter": {
+              "input": "$episodes",
+              "cond": {
+                "$and": [
+                  {
+                    "$gt": [
+                      "$$this._id",
+                      "$alerts.ids"
+                    ]
+                  },
+                  {
+                    "$lt": [
+                      "$$this._id",
+                      {
+                        "$arrayElemAt": [
+                          "$alert_idx",
+                          {
+                            "$sum": [
+                              {
+                                "$indexOfArray": [
+                                  "$alert_idx",
+                                  "$alerts.ids"
+                                ]
+                              },
+                              1
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "$match": {
+          "v": {
+            "$ne": []
+          },
+
+        }
+      }
+    ])
+
+    return len(list(cursor))
+
+
+
+def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
     result = []
-    cursor = getEpisodesCursor(timestampFrom, timestampTo, idPatient)
+    
+    skip = (pageNumber-1)*rowsPerPage
+
+    cursor = getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip)
 
     totalAlerts = [0, 0, 0]
 

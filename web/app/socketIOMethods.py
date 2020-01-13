@@ -3,7 +3,7 @@ from app import app, db, socketio, thread_lock, thread
 from pymongo import MongoClient, errors
 from .mongoMethods import deletePattern, insertPatternTmp, getTmpPatterns, getPatternsSelectPattern, \
     getPatternsSelectGroup, insertPatient, getUnlinkPattern, searchGroupsPattern, searchPatientsPattern, \
-    searchPatientsGroup, searchPatternsGroup
+    searchPatientsGroup, searchPatternsGroup, searchPatternsPatient, searchGroupsPatient
 
 #Constants
 mongoClient = MongoClient('localhost:27017').tfm
@@ -112,4 +112,16 @@ def paginationGroupViewPattern(message):
     body = searchPatientsGroup(int(message["idGroup"]), int(message["patientPage"]), "str")
 
     emit("paginationPatient", {'body': body, "error": ""})
+
+
+@socketio.on('paginationPattern', namespace='/viewPatient')
+def paginationPatternViewPatient(message):
+    body = searchPatternsPatient(int(message["idPatient"]), int(message["patternPage"]), "str")
+    emit("paginationPattern", {'body': body, "error": ""})
+
+
+@socketio.on('paginationGroup', namespace='/viewPatient')
+def paginationGroupViewPatient(message):
+    body = searchGroupsPatient(int(message["idPatient"]), int(message["groupPage"]), "str")
+    emit("paginationGroup", {'body': body, "error": ""})
 ################################
