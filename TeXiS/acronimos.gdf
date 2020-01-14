@@ -1,0 +1,56 @@
+% Fichero con acrónimos para su uso con GlossTeX
+%
+% El listado de acrónimos funciona de manera similar a las referencias
+% bibliográficas. Este  fichero es equivalente por tanto  al .bib, con
+% el listado de  los acrónimos disponibles. A lo  largo del documento,
+% cuando se  utilice alguno  de ellos, se  referencia para  indicar al
+% sistema que queremos que dicho  acrónimo aparezca en el glosario. En
+% contra de  lo que ocurre con  la bibliografía, el  texto original no
+% sufre ninguna modificación.
+%
+% Las entradas son:
+% @entry{<etiqueta>[,<item>[,<forma larga>]]} [<texto>]
+%
+% La etiqueta es el  nombre del acrónimo (equivalente a la etiqueta en
+% BibTeX) que luego se utiliza para "referenciarlo" en el texto.
+
+% Para  que  la  generación   en  Release  con  el  Makefile  funcione
+% correctamente, necesitarás  al menos tener  referenciado un acrónimo
+% dentro del  texto.  Si  no quieres usar  acrónimos, o de  momento no
+% tienes ninguno  referenciado, basta con que no  definas la constante
+% \acronimosEnRelease en config.tex
+@entry{ACC, , Aceleración}
+@entry{BDHI, , Inventario de hostilidad de Buss y Durkee}
+@entry{BVP, , Presión sanguínea}
+@entry{DFA, , Análisis de la función discriminante}
+@entry{ECG, , Electrocardiograma}
+@entry{EDA, , Actividad electrodérmica, también conocido como respuesta galvánica de la piel (GSR)}
+%, respuesta electrodérmica de la piel (EDR), reflejos psicogalvánicos de la piel (PGR), respuesta de conductancia de la piel (SCR), respuesta simpática de la piel (SSR) o nivel de conductancia de la piel (SCL)
+@entry{EMG, , Electromiograma}
+@entry{FKNN, , Método difuso de los k vecinos más cercanos}
+@entry{HHT, , Método de transformación de Hilbert-Huang}
+@entry{HR, , Ritmo cardiaco}
+@entry{IAPS, , Sistema internacional de fotografías afectivas}
+@entry{ICG, , Cardiograma de impedancia}
+@entry{IN, , Inclinación}
+@entry{IOT, , Internet de las cosas}
+@entry{IPRI, , Inventario de Pensamientos Relacionados con la Ira y la hostilidad}
+@entry{LDA, , Análisis de discriminación lineal}
+@entry{MBA, , Modelos de negocio multinivel}
+@entry{MBP, , Propagación hacia atrás de Marquardt}
+@entry{NFS, , Sistema neurodifuso}
+@entry{ORI, , Orientación}
+@entry{PA, , Presión atmosférica}
+@entry{PDD-NOS, , Trastorno generalizado del desarrollo no especificado}
+@entry{PPG, , Fotopletismógrafo}
+@entry{PCG, , Fonocardiograma}
+@entry{QDA, , Análisis discriminativo cuadrático}
+@entry{RF, , Bosques aleatorios}
+@entry{RNA, , Redes de neutoral artificales}
+@entry{RESP, , Actividad respiratoria}
+@entry{SAM, , Maniquies de auto evaluacion}
+@entry{SFFS, , Selección secuencial flotante hacia adelante}
+@entry{SDK, , Kit de desarrollo de software}
+@entry{SKT, , Temperatura de la piel}
+@entry{SVM, , Máquina de soporte de vectores}
+@entry{TEA, , Trastorno del espectro autista}
