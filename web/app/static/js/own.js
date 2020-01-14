@@ -15,10 +15,10 @@ function generateNotification(notifType, notifText){
 ** Common methods to call SocketIO for the pages registerPatient, viewPatient, registerGroup and viewGroup
 **/
 
+//TODO: probably, these socketIO methods will be deleted after reviewing the whole code
+
 //NEW PATTERN inserted on the accordion's formulary
 function insertNewPattern(){
-
-    console.log("[DEBUG] executed insertNewPattern[js]");
 
     var intensity1 = document.getElementById("patternIntensity1").checked ? 1 : 0;
     var intensity2 = document.getElementById("patternIntensity2").checked ? 1 : 0;
@@ -38,27 +38,6 @@ function changedSelectGroup(){
 //PATTERN select is changed
 function changedSelectPattern(){
     socket.emit('changedSelectPattern', document.getElementById('windowToken').value + "," + $('#patternsSelect').multipleSelect('getSelects'));
-}
-
-//OPEN PATTERN in new tab
-function viewPattern(pattId){
-    var win = window.open("/verPauta/" + pattId, '_blank');
-    win.focus();
-}
-
-//UNLINK PATTERN from table, select and temporal registers
-function unlinkPattern(pattId){
-    var selects = $('#patternsSelect').multipleSelect('getSelects');
-
-    var index = selects.indexOf(pattId.toString());
-    if (index > -1) {
-      selects.splice(index, 1);
-    }
-
-
-    $('#patternsSelect').multipleSelect('setSelects', selects);
-
-    socket.emit('unlinkPattern', document.getElementById('windowToken').value + "," + pattId);
 }
 
 //--- Modal scripts ---//
@@ -91,4 +70,12 @@ function displayModalDelete(){
 function closeModalDelete(){
     var modalDiv = document.getElementById("page-modal-delete");
     modalDiv.style.display = "none";
+}
+
+function confirmSave(){
+      document.getElementById("generalForm").submit();
+  }
+
+function cancelChanges(){
+   window.location.href = window.location.href;
 }

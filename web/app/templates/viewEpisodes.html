@@ -154,7 +154,7 @@
             </form>
 
             {% if rowEpisodes|length > 0 %}
-                {{ episodesTableMacro(rowEpisodes) }}
+                {{ episodesTableMacro(rowEpisodes, patientInfo.id) }}
             {% endif %}
 
             {% if form.submitDone.data == 1 %}

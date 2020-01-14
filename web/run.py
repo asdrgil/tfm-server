@@ -26,4 +26,8 @@ if __name__ == '__main__':
         'js/vendor/bulmaAccordionV2.0.1.js', 'js/vendor/multipleSelectV1.5.0.js', \
         output='cached4.js', filters='jsmin')
 
+    assets.register('highchartsJs', \
+        'js/vendor/highstockV8.0.0.js', 'js/vendor/highstockExportingV8.0.0.js',
+        output='cached5.js', filters='jsmin')
+
     socketio.run(app, debug=True)

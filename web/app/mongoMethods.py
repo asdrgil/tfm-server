@@ -579,7 +579,7 @@ def getUnlinkPattern(msg):
 
     return tmpPatterns
 
-def getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip=0, limit=rowsPerPage):
+def getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip=0, limit=1000):
     #Query based on an answer in StackOverflow by @Valijon
     cursor = mongoClient["measurements"].aggregate([
         {
@@ -785,7 +785,7 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
     
     skip = (pageNumber-1)*rowsPerPage
 
-    cursor = getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip)
+    cursor = getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip, rowsPerPage)
 
     totalAlerts = [0, 0, 0]
 
@@ -814,16 +814,37 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
     return result
 
 def getOneEpisode(timestampFrom, timestampTo, idPatient):
-    #plotData = ""
     rows = []
     cursor = getEpisodesCursor(timestampFrom, timestampTo, idPatient)
 
+    firstRow = True
+    valueFirstRow = {}
+    valueLastTimestamp = 0
+    valueLastRow = {}
+
     for episode in cursor:
         for alert in episode["v"]:
+            #Insert preceeding zero alert state
+            if firstRow:
+                currentDate = datetime.fromtimestamp(int(alert["tmstamp"])-5)
+                valueFirstRow = {"plotDate": currentDate.strftime("Date.UTC(%Y, %m, %d, %H, %M, %S)"), \
+                "alertLevel": 0}
+                firstRow = False
+            else:
+                valueLastTimestamp = int(alert["tmstamp"])
+        
             currentDate = datetime.fromtimestamp(int(alert["tmstamp"]))
-            rows.append({"date": currentDate.strftime("%d/%m/%Y, %H:%M:%S"), "alertLevel": alert["value"]})
-            #[Date.UTC(2007, 0, 1, 0, 0, 0), 0.7537]
-            #plotData += "Date.UTC(), {}"
+            rows.append({"plotDate": currentDate.strftime("Date.UTC(%Y, %m, %d, %H, %M, %S)"), \
+                "date": currentDate.strftime("%d/%m/%Y"), "time": currentDate.strftime("%H:%M:%S"), \
+                "alertLevel": alert["value"]})
+
+    #Insert succeeding zero alert state
+    currentDate = datetime.fromtimestamp(valueLastTimestamp+5)
+    valueLastRow = {"plotDate": currentDate.strftime("Date.UTC(%Y, %m, %d, %H, %M, %S)"), "alertLevel": 0}
+
+    rows.insert(0, valueFirstRow)
+    rows.insert(len(rows), valueLastRow)
+    
     return rows
 
 def generateUniqueRandom(collection, field):

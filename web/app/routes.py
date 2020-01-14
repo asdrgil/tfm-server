@@ -602,11 +602,7 @@ def viewOneEpisode():
 
     rowEpisodes = getOneEpisode(timestampFrom, timestampTo, idPatient)
 
-    form = TryoutForm()
-
-
-
-    return render_template('viewOneEpisode.html', rowEpisodes=rowEpisodes, therapistLiteral=therapistLiteral, form=form)
+    return render_template('viewOneEpisode.html', rowEpisodes=rowEpisodes, therapistLiteral=therapistLiteral)
 
 ########################################################################################################################
 
@@ -624,3 +620,6 @@ def index():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+
+

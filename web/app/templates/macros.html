@@ -181,7 +181,7 @@
 {% endmacro %}
 
 
-{% macro episodesTableMacro(rows) %}
+{% macro episodesTableMacro(rows, patientId) %}
     <div id="idTable">
 
         <table class="table">
@@ -201,7 +201,7 @@
                         <td>{{ row.alerts1 }}</td>
                         <td>{{ row.alerts2 }}</td>
                         <td>{{ row.alerts3 }}</td>
-                        <td><a href=/verUnEpisodio?idPatient={{ row.id }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }} target="_blank"><i class='fas fa-eye'></i>Ver</a> </td>
+                        <td><a href=/verUnEpisodio?idPatient={{ patientId }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }} target="_blank"><i class='fas fa-eye'></i>Ver</a> </td>
                     </tr>
                 {% endfor %}
             <tbody>                 
@@ -215,6 +215,7 @@
         <table class="table">
             <thead>
                 <th> <span> Fecha </span></th>
+                <th> <span> Hora </span></th>
                 <th> <span> Nivel de alerta </span></th>
                 <th> <span> Pauta sugerida </span></th>
                 <th> <span> Descartada </span></th>
@@ -222,13 +223,16 @@
             </thead>
             <tbody>
                 {% for row in rows %}
-                    <tr>
-                        <td>{{ row.date }}</td>
-                        <td>{{ row.alertLevel }}</td>
-                        <td>Nombre de la pauta</td>
-                        <td>Sí</td>
-                        <td>Esta pauta no me sirvió</td>
-                    </tr>
+                    {% if row.alertLevel > 0 %}
+                        <tr>
+                            <td>{{ row.date }}</td>
+                            <td>{{ row.time }}</td>
+                            <td>{{ row.alertLevel }}</td>
+                            <td>Nombre de la pauta</td>
+                            <td>Sí</td>
+                            <td>Esta pauta no me sirvió</td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
             <tbody>                 
         </table>

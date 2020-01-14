@@ -8,27 +8,17 @@
 
 {% block head %}
 
-    {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
-    {% endassets %}
-
-    {% assets "accordionMultiselectJs" %}
+    {% assets "highchartsJs" %}
         <script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
 
-    <script src="http://code.highcharts.com/stock/highstock.js"></script>
-    <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
-
     <script>
 
-        var usdeur = [
-    [Date.UTC(2007, 0, 1, 0, 0, 0), 0.7537],
-    [Date.UTC(2007, 0, 2, 0, 20, 0), 0.7537],
-    [Date.UTC(2007, 0, 3, 0, 30, 0), 0.7559],
-    [Date.UTC(2007, 0, 4, 0, 40, 0), 0.7631],
-    [Date.UTC(2007, 0, 5, 0, 50, 0), 0.7644],
-    [Date.UTC(2007, 0, 8, 0, 55, 0), 0.769],
-    ];
+    var data = [];
+
+    {% for row in rowEpisodes %}
+        data.push([{{row.plotDate}}, {{row.alertLevel}}]);
+    {% endfor %}
 
         $(function() {
             var chart = new Highcharts.StockChart({
@@ -37,14 +27,14 @@
                     renderTo: 'container'
                 },
                 
-                xAxis: {
+                /*xAxis: {
                     events: {
                         afterSetExtremes: function(e) {
                             $('#report').html('<b>Set extremes:</b> e.min: '+ Highcharts.dateFormat(null, e.min) +
                                 ' | e.max: '+ Highcharts.dateFormat(null, e.max));
                         }
                     }
-                },
+                },*/
                 
             rangeSelector: {
                 buttons: [{
@@ -65,8 +55,8 @@
             },
                 
                 series: [{
-                    name: 'Explorar episodio',
-                    data: usdeur
+                    name: 'Nivel de alerta',
+                    data: data
                 }]
             });
         });
@@ -81,8 +71,6 @@
 </section>
 
 <div class="columns is-vcentered is-centered">
-    <div class="column is-1">
-    </div>
 
     <div class="column is-8 box">
 
@@ -95,10 +83,8 @@
             {{ oneEpisodeTableMacro(rowEpisodes) }}
         </div>
 
-
-    <div class="column is-1">
-    </div>
-
 </div>
+
+<br>
 
 {% endblock %}
