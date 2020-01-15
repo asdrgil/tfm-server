@@ -206,10 +206,54 @@ def viewPatterns():
         return render_template('viewPatterns.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
             therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
             numberPages=queryResult["numberPages"])
-    else:
-        form.submitDone.data = 0
-        return render_template('viewPatterns.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
+        
+    form.submitDone.data = 0
+    return render_template('viewPatterns.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
 
+
+@app.route('/verGrupos', methods=['GET', 'POST'])
+@login_required
+def viewGroups():
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+
+    form = SearchGroupsForm()
+    form2 = PaginationForm(1)
+
+    if form.validate_on_submit():
+        form.submitDone.data = 1
+
+        queryResult = searchGroups(form, int(form.pageNumber.data))
+
+        return render_template('viewGroups.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
+            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+            numberPages=queryResult["numberPages"])
+
+    form.submitDone.data = 0
+    return render_template('viewGroups.html', form=form, form2=form2, therapistLiteral = therapistLiteral)
+
+
+@app.route('/verPacientes', methods=['GET', 'POST'])
+@login_required
+def viewPatients():
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+    form = SearchPatientsForm(current_user.get_id())
+    form2 = PaginationForm(1)
+
+    if form.validate_on_submit():
+        form.submitDone.data = 1
+
+        queryResult = searchPatients(form, int(form.pageNumber.data))
+        form2 = PaginationForm(queryResult["numberPages"])
+        form2.pagination.data = form.pageNumber.data
+
+        return render_template('viewPatients.html', form=form, form2=form2, rowPatients=queryResult["rows"], \
+            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+            numberPages=queryResult["numberPages"])        
+
+    form.submitDone.data = 0
+    return render_template('viewPatients.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
 
 
 @app.route('/registrarPaciente', methods=['GET', 'POST'])
@@ -491,35 +535,6 @@ def viewGroup(idGroup):
 
 
     return render_template('viewGroup.html', rowPatterns=rowPatterns, therapistLiteral=therapistLiteral)
-
-
-@app.route('/verPacientes', methods=['GET', 'POST'])
-@login_required
-def viewPatients():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
-        current_user.get_surname2())
-    form = SearchPatientsForm(current_user.get_id())
-
-    if form.validate_on_submit():
-        rowPatients = searchPatients(form)
-        return render_template('viewPatients.html', form=form, rowPatients=rowPatients, \
-            therapistLiteral=therapistLiteral)
-
-    return render_template('viewPatients.html', form=form, therapistLiteral=therapistLiteral)
-
-@app.route('/verGrupos', methods=['GET', 'POST'])
-@login_required
-def viewGroups():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
-        current_user.get_surname2())
-
-    form = SearchGroupsForm()
-
-    if form.validate_on_submit():
-        rowGroups = searchGroups(form)
-        return render_template('viewGroups.html', form=form, rowGroups=rowGroups, therapistLiteral = therapistLiteral)
-
-    return render_template('viewGroups.html', form=form, therapistLiteral = therapistLiteral)
 
 
 @app.route('/verEpisodios/<int:idPatient>', methods=['GET', 'POST'])

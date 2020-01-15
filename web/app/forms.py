@@ -263,20 +263,6 @@ class SearchPatternsForm(FlaskForm):
 
 
 class SearchPatientsForm(FlaskForm):
-    cursorGroups = mongoClient["groups"].find({"therapist":therapist}).sort([("name", 1)])
-    groupOpts = []
-
-    for pt in cursorGroups:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
-        groupOpts.append(row)
-
-
-    cursorPatterns = mongoClient["patterns"].find({"therapist":therapist}).sort([("name", 1), ("description", 1)])
-    patternOpts = []
-
-    for pt in cursorPatterns:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
-        patternOpts.append(row)    
 
     name = StringField('Nombre', validators=[Optional()], \
         render_kw={"class":"input is-medium", "placeholder":"Nombre", "style":"text-align:center;"})
@@ -294,6 +280,9 @@ class SearchPatientsForm(FlaskForm):
     groups = SelectMultipleField('Grupos', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'groupsSelect'})
     searchBtn = SubmitField('Buscar',    render_kw={"class":"button is-primary"})
+
+    pageNumber = HiddenField("pageNumber")
+    submitDone = HiddenField("submitDone")
 
     def __init__(self, therapistId: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -334,6 +323,9 @@ class SearchGroupsForm(FlaskForm):
     patterns = SelectMultipleField('Pautas asociadas al grupo', validators=[Optional()], choices=patternOpts, \
         render_kw={'multiple':'multiple', 'id':'patternsSelect'})
     searchBtn = SubmitField('Buscar',    render_kw={"class":"button is-primary"})
+
+    pageNumber = HiddenField("pageNumber")
+    submitDone = HiddenField("submitDone")
 
 
 class FilterByDateForm(FlaskForm):

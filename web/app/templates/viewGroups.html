@@ -22,8 +22,25 @@
             $(function () {
               $('#patientsSelect').multipleSelect();
               $('#patternsSelect').multipleSelect();
+              $('#paginationSelect').multipleSelect();
             })
         });
+
+        function submitFunc(){
+            //Store pagination
+            if(document.getElementById("paginationSelect") == null){
+                document.getElementById("pageNumber").value = 1;
+            } else {
+                document.getElementById("pageNumber").value = parseInt(document.getElementById("paginationSelect").value);
+            }
+            
+            document.getElementById("generalForm").submit();
+        }
+
+        //This is done just to allow code reuse of forms
+        function paginationFunc(){
+            submitFunc();
+        }        
     </script>
 
 {% endblock %}
@@ -45,7 +62,7 @@
 
         <div align="center">
             <h4 class="title is-4">Filtrar resultados</h4>
-            <form action="" id="generalForm" method="post" novalidate>
+            <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
                 {{ form.hidden_tag() }}
                 {{ form.csrf_token }}
 
@@ -116,8 +133,22 @@
 
             </form>
 
-            {{ groupsTableMacro(rowGroups, 1) }}
+            
 
+            {% if form.submitDone.data > 0 %}
+                <br>
+                <div id="tablearea" align="center" class="box">
+                    {% if rowGroups|length > 0 %}
+                        {{ groupsTableMacro(rowGroups, 1) }}
+                    {% endif %}
+                    
+                    Número de registros totales: <b>{{ numberTotalRows }}</b>
+                    
+                    {% if numberPages > 1 %}
+                        {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+                    {% endif %}
+                </div>
+            {% endif %}
 
         </div>
 

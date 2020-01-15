@@ -107,6 +107,103 @@ def searchPatterns(form, pageNum=1):
     return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
 
 
+def searchPatients(form, pageNum=1):
+
+    rows = []
+    query = {"therapist":current_user.get_id()}
+
+    #NAME
+    if len(form.name.data.strip()) > 0:
+        query.update({"name": re.compile('.*' + form.name.data.strip() + '.*', re.IGNORECASE)})
+
+    #SURNAME1
+    if len(form.surname1.data.strip()) > 0:
+        query.update({"surname1": re.compile('.*' + form.surname1.data.strip() + '.*', re.IGNORECASE)})
+
+    #SURNAME2
+    if len(form.surname2.data.strip()) > 0:
+        query.update({"surname2": re.compile('.*' + form.surname2.data.strip() + '.*', re.IGNORECASE)})
+
+
+    #AGE
+    if len(form.age.data.strip()) > 0:
+        query.update({"age": int(form.age.data)})
+
+    #PATTERNS
+    if len(form.patterns.data) > 0:
+        query.update({"patterns": { "$in": list(map(int, form.patterns.data))}})
+
+
+    #GROUPS
+    #Make an OR query of the selected groups
+    if len(form.groups.data) > 0:
+        patientIds = set([])
+        queryGroups = []
+
+        cursor = mongoClient["groups"].find({"id" : { "$in": list(map(int, form.groups.data))}})
+
+        #Add the id of the associated patterns
+        for cur in cursor:
+            if "patients" in cur:
+                for pati in cur["patients"]:
+                    if pati not in patientIds:
+                        queryGroups.append({'id': int(pati)})
+                        patientIds.add(int(pati))
+
+        query.update({"$or": queryGroups})
+
+    
+    ###################
+
+    numberTotalRows = mongoClient["patients"].count_documents(query)
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
+
+    cursor = mongoClient["patients"].find(query).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+
+    for cur in cursor:
+        rows.append({"id": cur["id"], "name": cur["name"] , "surname1": cur["surname1"], \
+            "surname2": cur["surname2"], "age": cur["age"]})
+
+    return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+
+
+def searchGroups(form, pageNum=1):
+
+    rows = []
+    query = {"therapist":current_user.get_id()}
+
+    #NAME
+    if len(form.name.data.strip()) > 0:
+        query.update({"name": re.compile('.*' + form.name.data.strip() + '.*', re.IGNORECASE)})
+
+    #DESCRIPTION
+    if len(form.description.data.strip()) > 0:
+        query.update({"description": re.compile('.*' + form.description.data.strip() + '.*', re.IGNORECASE)})
+
+    #PATIENTS
+    if len(form.patients.data) > 0:
+        query.update({"patients": { "$in": list(map(int, form.patients.data))}})
+
+    #PATTERNS
+    if len(form.patterns.data) > 0:
+        query.update({"patterns": { "$in": list(map(int, form.patterns.data))}})
+
+    
+    ###################
+    numberTotalRows = mongoClient["groups"].count_documents(query)
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
+    
+    cursor = mongoClient["groups"].find(query)
+
+    for cur in cursor:
+        description = ""
+        if "description" in cur:
+            description = cur["description"]
+        rows.append({"id": cur["id"], "name": cur["name"] , "description": description})
+
+    return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
+
+
 def searchGroupsPattern(idPattern, pageNum=1, outputFormat="arr"):
     numberTotalRows = mongoClient["groups"].count_documents({"therapist":current_user.get_id(), "patterns" :idPattern})
     numberPages = math.ceil(numberTotalRows/rowsPerPage)
@@ -295,97 +392,6 @@ def searchPatternsGroup(idGroup, pageNum=1, outputFormat="arr"):
 
     return rows
 
-
-def searchPatients(form):
-
-    result = []
-    query = {"therapist":current_user.get_id()}
-
-    #NAME
-    if len(form.name.data.strip()) > 0:
-        query.update({"name": re.compile('.*' + form.name.data.strip() + '.*', re.IGNORECASE)})
-
-    #SURNAME1
-    if len(form.surname1.data.strip()) > 0:
-        query.update({"surname1": re.compile('.*' + form.surname1.data.strip() + '.*', re.IGNORECASE)})
-
-    #SURNAME2
-    if len(form.surname2.data.strip()) > 0:
-        query.update({"surname2": re.compile('.*' + form.surname2.data.strip() + '.*', re.IGNORECASE)})
-
-
-    #AGE
-    if len(form.age.data.strip()) > 0:
-        query.update({"age": int(form.age.data)})
-
-    #PATTERNS
-    if len(form.patterns.data) > 0:
-        query.update({"patterns": { "$in": list(map(int, form.patterns.data))}})
-
-
-    #GROUPS
-    #Make an OR query of the selected groups
-    if len(form.groups.data) > 0:
-        patientIds = set([])
-        queryGroups = []
-
-        cursor = mongoClient["groups"].find({"id" : { "$in": list(map(int, form.groups.data))}})
-
-        #Add the id of the associated patterns
-        for cur in cursor:
-            if "patients" in cur:
-                for pati in cur["patients"]:
-                    if pati not in patientIds:
-                        queryGroups.append({'id': int(pati)})
-                        patientIds.add(int(pati))
-
-        query.update({"$or": queryGroups})
-
-    
-    ###################
-
-    cursor = mongoClient["patients"].find(query)
-
-    for cur in cursor:
-        result.append({"id": cur["id"], "name": cur["name"] , "surname1": cur["surname1"], \
-            "surname2": cur["surname2"], "age": cur["age"]})
-
-    return result
-
-
-def searchGroups(form):
-
-    result = []
-    query = {"therapist":current_user.get_id()}
-
-    #NAME
-    if len(form.name.data.strip()) > 0:
-        query.update({"name": re.compile('.*' + form.name.data.strip() + '.*', re.IGNORECASE)})
-
-    #DESCRIPTION
-    if len(form.description.data.strip()) > 0:
-        query.update({"description": re.compile('.*' + form.description.data.strip() + '.*', re.IGNORECASE)})
-
-    #PATIENTS
-    if len(form.patients.data) > 0:
-        query.update({"patients": { "$in": list(map(int, form.patients.data))}})
-
-    #PATTERNS
-    if len(form.patterns.data) > 0:
-        query.update({"patterns": { "$in": list(map(int, form.patterns.data))}})
-
-    
-    ###################
-
-    cursor = mongoClient["groups"].find(query)
-
-    for cur in cursor:
-        description = ""
-        if "description" in cur:
-            description = cur["description"]
-        result.append({"id": cur["id"], "name": cur["name"] , "description": description})
-
-    return result
 
 def deletePattern(patternId):
     mongoClient["patterns"].delete_one(int(patternId))
