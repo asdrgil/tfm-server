@@ -19,18 +19,10 @@
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             $(function () {
-              $('#patientsSelect').multipleSelect();
               $('#paginationSelect').multipleSelect();
             })
 
-            updatePatientValue();
         });
-    </script>
-
-    <script type="text/javascript" charset="utf-8">
-        function updatePatientValue(){
-            document.getElementById("patientId").value = document.getElementById("patientsSelect").value;
-        }
     </script>
 
         <!-- SocketIO methods -->

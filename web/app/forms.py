@@ -329,6 +329,9 @@ class SearchGroupsForm(FlaskForm):
 
 
 class FilterByDateForm(FlaskForm):
+    patients = SelectField('Paciente', validators=[Optional()], choices=[], \
+        render_kw={'id':'patientsSelect'})
+
     date1 = StringField('Desde (fecha)', validators=[Optional()], render_kw={"class":"input is-medium", \
         "type": "date", "data-display-mode": "inline", "data-is-range":"true", "data-close-on-select":"false"})
     time1 = StringField('Desde (hora)', validators=[Optional()], render_kw={"class":"input is-medium", "type": "time", \
@@ -345,9 +348,10 @@ class FilterByDateForm(FlaskForm):
 
     submitDone = HiddenField("submitDone")
 
-    def __init__(self, numberPages: int, *args, **kwargs):
+    def __init__(self, therapistId: int, numberPages: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.numberPages = numberPages
+        self.patients.choices = patientOpts(therapistId)
         self.pagination.choices = tuple((i,i,) for i in range(1, numberPages+1))
 
 class PaginationForm(FlaskForm):

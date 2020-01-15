@@ -225,7 +225,7 @@ def viewGroups():
 
         queryResult = searchGroups(form, int(form.pageNumber.data))
 
-        return render_template('viewGroups.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
+        return render_template('viewGroups.html', form=form, form2=form2, rowGroups=queryResult["rows"], \
             therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
             numberPages=queryResult["numberPages"])
 
@@ -537,6 +537,61 @@ def viewGroup(idGroup):
     return render_template('viewGroup.html', rowPatterns=rowPatterns, therapistLiteral=therapistLiteral)
 
 
+@app.route('/verEpisodios', methods=['GET', 'POST'])
+@app.route('/verEpisodios/', methods=['GET', 'POST'])
+@login_required
+def viewEpisodesGeneric():
+
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+
+    form = FilterByDateForm(current_user.get_id(), 1)
+    form.submitDone.data = 0
+    numberPages = 0
+    patientInfo  = {}
+
+    if form.validate_on_submit():
+
+        form.submitDone.data = 1
+        idPatient = int(form.patients.data)
+        patientInfo  = {"id": idPatient}
+
+        pageNumber = 1 if form.pagination.data == str(None) else int(form.pagination.data)
+
+        #FROM
+        if len(form.date1.data) == 0:
+            form.date1.data = "2000-01-01"
+            form.time1.data = "00:00"
+
+        if len(form.time1.data) == 0:
+            form.time1.data = "00:00"
+
+        #TO
+        if len(form.date2.data) == 0:
+            form.date2.data = "2050-01-01"
+            form.time2.data = "23:59"
+
+        if len(form.time2.data) == 0:
+            form.time2.data = "23:59"
+
+        timestampTo = 0
+
+        timestampFrom = int(datetime.strptime('{} {}'.format(form.date1.data, form.time1.data), '%Y-%m-%d %H:%M')\
+            .strftime("%s"))
+        timestampTo = int(datetime.strptime('{} {}'.format(form.date2.data, form.time2.data), '%Y-%m-%d %H:%M')\
+            .strftime("%s"))
+
+        rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber)
+        numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)
+        numberPages = math.ceil(numberTotalRows/rowsPerPage)
+
+        return render_template('viewEpisodesGeneric.html', form=form, therapistLiteral=therapistLiteral, \
+            patientInfo=patientInfo, rowEpisodes=rowEpisodes, numberTotalRows=numberTotalRows, numberPages=numberPages)
+
+    return render_template('viewEpisodesGeneric.html', form=form, therapistLiteral=therapistLiteral, \
+        patientInfo=patientInfo)
+
+
 @app.route('/verEpisodios/<int:idPatient>', methods=['GET', 'POST'])
 @login_required
 def viewEpisodes(idPatient):
@@ -554,7 +609,7 @@ def viewEpisodes(idPatient):
     patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
         "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}    
 
-    form = FilterByDateForm(1)
+    form = FilterByDateForm(current_user.get_id(), 1)
     form.submitDone.data = 0
     numberPages = 0
 
