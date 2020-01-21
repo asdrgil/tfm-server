@@ -3,7 +3,14 @@
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
 
+<!-- Import macros -->
+
 {% from 'macros.html' import titleMacro with context %}
+
+{% from 'macros.html' import modalSaveMacro with context %}
+{% from 'macros.html' import modalCancelMacro with context %}
+{% from 'macros.html' import modalDeleteMacro with context %}
+
 {% from 'macros.html' import groupsTableMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 
@@ -17,169 +24,205 @@
         <script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
 
+    <!-- Multiselect, accordion and general scripts -->
     <script type="text/javascript" charset="utf-8">
-    	$(document).ready(function() {
-    		$(function () {
-            	$('#paginationSelect').multipleSelect();
-            	$('#paginationSelect2').multipleSelect();
-    		})
-    	});
-    </script>
 
-    <!-- SocketIO methods -->
-    <script>
-    	namespace = '/viewPatient';
-        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+        $(document).ready(function() {     
+            //Multiselect 
+            $(function () {
+                $('#patternsSelect').multipleSelect();
+                $('#groupsSelect').multipleSelect();
 
-        function paginationFunc(){
-        	socket.emit('paginationPattern', {"idPatient": {{ idPatient }}, "patternPage": document.getElementById("paginationSelect").value});
-        }
-
-        function paginationFunc2(){
-        	socket.emit('paginationGroup', {"idPatient": {{ idPatient }}, "groupPage": document.getElementById("paginationSelect2").value});
-        }
-
-        socket.on('paginationPattern', function(message) {
-
-            var bodyContent = "";
-
-            //No registers, but also no errors
-            if(message.body == ""){
-                $("#tablePatterns tbody").html("");
-            }else {
-                var rows = message.body.split(";");
-
-                for(i=0; i<rows.length; i++){
-                    var cols = rows[i].split(",");
-
-                    bodyContent += "<tr>"
-                    
-                    //Name
-                    bodyContent += "<td>"+cols[1]+"</td>"
-                    //Intensity1
-                    var intensity1 = cols[2] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
-                    bodyContent += "<td>"+ intensity1 +"</td>"
-                    //Intensity2
-                    var intensity2 = cols[3] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
-                    bodyContent += "<td>"+ intensity2 +"</td>"
-                    //Intensity3
-                    var intensity3 = cols[4] == "No" ? "<span style='color:red;'><i class='fas fa-times'></i></span>" : "<span style='color:green;'><i class='fas fa-check'></i></span>";
-                    bodyContent += "<td>"+ intensity3 +"</td>"
-                    //View pattern
-                    bodyContent += "<td><a href=/verPauta/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
-                    
-                    bodyContent += "</tr>"
-                }
-            }
-
-            $("#tablePatterns tbody").html(bodyContent);
+                document.getElementById("gender-0").disabled = true;
+                document.getElementById("gender-1").disabled = true;
+            })
         });
 
-        socket.on('paginationGroup', function(message) {
 
-            var bodyContent = "";
 
-            //No registers, but also no errors
-            if(message.body == ""){
-                $("#tablePatterns tbody").html("");
-            }else {
-                var rows = message.body.split(";");
-
-                for(i=0; i<rows.length; i++){
-                    var cols = rows[i].split(",");
-
-                    bodyContent += "<tr>"
-                    
-                    //Name
-                    bodyContent += "<td>"+cols[1]+"</td>"
-                    //View pattern
-                    bodyContent += "<td><a href=/verGrupo/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
-                    
-                    bodyContent += "</tr>"
-                }
-            }
-
-            $("#tableGroups tbody").html(bodyContent);
-        });
     </script>
 
 {% endblock %}
 
-{% block content %}	
+{% block content %}
 
-<br>
+<!-- Modal[Save] -->
+{{ modalSaveMacro("del paciente") }}
 
-{{ titleMacro("Ver un paciente") }}
+<!-- Modal[Cancelar] -->
+{{ modalCancelMacro() }}
 
-<!-- Input data -->
-
-<div class="columns is-vcentered is-centered">
-
-	<div class="column is-8 box" align="center">
-
-		<div align="center">
-			<h4 class="title is-4">Datos del paciente</h4>
-
-			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Nombre</b>:&nbsp;&nbsp; {{ patientInfo.name }}
-			<br>
-			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Primer apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname1 }}
-            <br>
-            <b> Segundo apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname2 }}
-            <br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Edad </b>:&nbsp;&nbsp; {{ patientInfo.age }}
-            <br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
-            {% if patientInfo.gender == "M" %}
-                <td>Masculino</td>
-            {% else %}
-                <td>Femenino</td>
-            {% endif %}
-
-		</div>
-
-		<br><div style='max-width:400px'><hr></div><br>
-
-        <div class="box" style='max-width:1000px'>
-            <h4 class="title is-4 is-spaced">Pautas asociadas a este paciente</h4>
-            {% if rowsPatterns|length > 0 %}
-            	{{ patternsTableMacro(rowsPatterns, 0) }}
-            {% endif %}
-
-            Número de registros totales: <b>{{ numberRowsPattern }}</b>
-            {% if pagesPatterns > 1 %}
-                <br>
-        		{{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
-            {% endif %}
-
-        </div>
-        
-        <div style='max-width:400px'><hr></div>
-
-        <div class="box" style='max-width:1000px'>
-            <h4 class="title is-4 is-spaced">Grupos de pautas asociadas a este paciente</h4>
+<!-- Modal[Delete] -->
+{{ modalDeleteMacro("del paciente") }}
 
 
+<section id="contact" class="section section-light-grey">
+    {{ titleMacro("Ver paciente") }}
 
-        	<div id="tablearea" align="center" class="box">
-        	{% if rowsGroups|length > 0 %}
-    	    	{{ groupsTableMacro(rowsGroups, 0) }}
-        	{% endif %}
-        	
-        	Número de registros totales: <b>{{ numberRowsGroup }}</b>
-        	
-        	{% if pagesGroups > 1 %}
-                <br>
-        		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
-        	{% endif %}
-        </div>
+    <div class="hero-body" style="margin-top:-40px">
+        <div class="container">
+            <div class="columns is-centered">
+                <article class="card is-rounded">
+                    <div class="card-content">
+                        <form action="" method="post" id="generalForm" novalidate>
+                            {{ form.hidden_tag() }}
+                            {{ form.csrf_token }}
 
-        <div style='max-width:400px'><hr></div>
+                            <div class="columns is-centered is-vcentered">
+                                <div class="column is-9">
+                                    <div class="field">
 
-        <div id="divBtns" align="center">
-            <a href=/editarPaciente/{{ patientInfo.id }} target="_blank"><input class="button is-warning" type="button" value="Editar paciente" ></a>
-            <a href=/verEpisodios/{{ patientInfo.id }} target="_blank"><input class="button is-info" type="button" value="Ver episodios" ></a>
+                                        <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.name.label }} </b></div>
+
+                                        <div class="control has-icons-left">
+                                            <input type="text" id="name" name="name" class="input is-medium" placeholder="Nombre" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.name.data }} readonly>
+
+                                            {% for error in form.name.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
+
+                                            <span class="icon is-small is-left" id="nameIconInput"><i class="fas fa-lock fa-xs"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="column is-1" id="nameIconBtn" onclick="isEditable('nameIconInput','nameIconBtn','name');">
+                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                </div>
+                            </div>
+
+                            <div class="columns is-centered is-vcentered">
+                                <div class="column is-9">
+                                    <div class="field">
+                                        
+                                        <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.surname1.label }} </b></div>
+
+                                        <div class="control has-icons-left">
+                                            <input type="text" id="surname1" name="surname1" class="input is-medium" placeholder="Primer apellido" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.surname1.data }} readonly>
+
+                                            {% for error in form.surname1.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
+
+                                            <span class="icon is-small is-left" id="surname1IconInput"><i class="fas fa-lock fa-xs"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="column is-1" id="surname1IconBtn" onclick="isEditable('surname1IconInput','surname1IconBtn','surname1');">
+                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                </div>
+                            </div>
+
+
+                            <div class="columns is-centered is-vcentered">
+                                <div class="column is-9">
+                                    <div class="field">
+
+                                        <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.surname2.label }} </b></div>
+
+                                        <div class="control has-icons-left">
+                                            <input type="text" id="surname2" name="surname2" class="input is-medium" placeholder="Segundo apellido" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.surname2.data }} readonly>
+
+                                            {% for error in form.surname2.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
+
+                                            <span class="icon is-small is-left" id="surname2IconInput"><i class="fas fa-lock fa-xs"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="column is-1" id="surname2IconBtn" onclick="isEditable('surname2IconInput','surname2IconBtn','surname2');">
+                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                </div>
+                            </div>
+
+                            <div class="columns is-centered is-vcentered">
+                                <div class="column is-9">
+                                    <div class="field">
+
+                                        <div align="center"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.age.label }} </b></div>
+
+                                        <div class="control has-icons-left">
+                                            <input type="text" id="age" name="age" class="input is-medium" placeholder="Edad" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.age.data }} readonly>
+
+                                            {% for error in form.age.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
+
+                                            <span class="icon is-small is-left" id="ageIconInput"><i class="fas fa-lock fa-xs"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="column is-1" id="ageIconBtn" onclick="isEditable('ageIconInput','ageIconBtn','age');">
+                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                </div>
+                            </div>
+
+                            <br>
+
+                            <div class="columns is-centered is-vcentered">
+                                <div class="column is-9">
+                                    <div class="field" align="center">
+                                        <div class="columns is-centered"">
+                                                <b>{{ form.gender.label }}</b> &nbsp;&nbsp;&nbsp;&nbsp;
+
+                                                {% for subfield in form.gender %}
+                                                    {{ subfield }} &nbsp;&nbsp;
+                                                    {{ subfield.label }}
+                                                    &nbsp;&nbsp;
+                                                {% endfor %} 
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="column is-1" id="genderIconBtn" onclick="isEditableGender('genderIconBtn','gender');">
+                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                </div>
+                            </div>
+
+                            <br><div style='max-width:400px'><hr></div><br>
+
+                            <div class="box" style='max-width:1000px' align="center">
+                                <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
+                                {% if rowsPatterns|length > 0 %}
+                                    {{ patternsTableMacro(rowsPatterns, 0) }}
+                                {% endif %}
+
+                                Número de registros totales: <b>{{ numberRowsPattern }}</b>
+                                {% if pagesPatterns > 1 %}
+                                    <br>
+                                    {{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
+                                {% endif %}
+
+                            </div>
+                            
+                            <div style='max-width:400px'><hr></div>
+
+                            <div class="box" style='max-width:1000px' align="center">
+                                <h4 class="title is-4 is-spaced">Grupos de pautas asociados</h4>
+                                {% if rowsGroups|length > 0 %}
+                                    {{ groupsTableMacro(rowsGroups, 0) }}
+                                {% endif %}
+                                
+                                Número de registros totales: <b>{{ numberRowsGroup }}</b>
+                                
+                                {% if pagesGroups > 1 %}
+                                    <br>
+                                    {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+                                {% endif %}
+                            </div>
+
+                            <div id="divBtns" align="center">
+                                {{ form2.saveBtn }}
+                                {{ form2.cancelBtn }}
+                                {{ form2.deleteBtn }}
+                            </div>
+                        </form>
+                    </div>
+                </article>
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+
 
 {% endblock %}

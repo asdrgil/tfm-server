@@ -308,9 +308,9 @@ def registerPatient():
         therapistLiteral=therapistLiteral)
 
 
-@app.route('/editarPaciente/<int:idPatient>', methods=['GET', 'POST'])
+@app.route('/verPaciente/<int:idPatient>', methods=['GET', 'POST'])
 @login_required
-def editPatient(idPatient):
+def viewPatient(idPatient):
     if mongoClient["patients"].count_documents({"id":idPatient, "therapist":current_user.get_id()}) == 0:
         flash("No existe ese paciente", "error")
         return redirect(url_for('index'))
@@ -322,6 +322,8 @@ def editPatient(idPatient):
 
     form = EditPatientForm(current_user.get_id())
     form2 = GenericEditForm()
+    form3 = PaginationForm(1)
+    form4 = PaginationForm2(1)
 
     if form.validate_on_submit():
         patternsSelected = list(map(int, form.patterns.data))
@@ -364,7 +366,28 @@ def editPatient(idPatient):
         form.patterns.data = list(map(str, cursor["patterns"]))
         form.groups.data = selectedGroups
 
-    return render_template('editPatient.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
+
+
+    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
+
+    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
+        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+
+
+
+    
+    queryResultPatterns = searchPatternsPatient(idPatient, 1)
+    queryResultGroups = searchGroupsPatient(idPatient, 1)
+    
+
+    return render_template('viewPatient.html', therapistLiteral=therapistLiteral, patientInfo=patientInfo, \
+        rowsPatterns=queryResultPatterns["rows"], rowsGroups=queryResultGroups["rows"], form=form, form2=form2, \
+        form3=form3, form4=form4, idPatient=idPatient, pagesPatterns=queryResultPatterns["numberPages"], \
+        pagesGroups=queryResultGroups["numberPages"], numberRowsPattern=queryResultPatterns["numberTotalRows"], \
+        numberRowsGroup=queryResultGroups["numberTotalRows"])
 
 
 @app.route('/registrarGrupo', methods=['GET', 'POST'])
@@ -435,37 +458,6 @@ def viewPattern(idPattern):
         idPattern=idPattern, pagesGroups=queryResultGroups["numberPages"], \
         pagesPatients=queryResultPatients["numberPages"], numberRowsPatient=queryResultPatients["numberTotalRows"], \
         numberRowsGroup=queryResultGroups["numberTotalRows"])
-
-
-@app.route('/verPaciente/<int:idPatient>', methods=['GET', 'POST'])
-@login_required
-def viewPatient(idPatient):
-
-    if mongoClient["patients"].count_documents({"therapist":current_user.get_id(), "id":idPatient}) == 0:
-        flash("No existe la pauta especificada", "error")
-        return redirect(url_for('index'))
-
-    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
-
-    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
-        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
-
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
-        current_user.get_surname2())
-
-    form = PaginationForm(1)
-    form2 = PaginationForm2(1)
-
-    
-    queryResultPatterns = searchPatternsPatient(idPatient, 1)
-    queryResultGroups = searchGroupsPatient(idPatient, 1)
-    
-
-    return render_template('viewPatient.html', therapistLiteral=therapistLiteral, patientInfo=patientInfo, \
-        rowsPatterns=queryResultPatterns["rows"], rowsGroups=queryResultGroups["rows"], form=form, form2=form2, \
-        idPatient=idPatient, pagesPatterns=queryResultPatterns["numberPages"], \
-        pagesGroups=queryResultGroups["numberPages"], numberRowsPattern=queryResultPatterns["numberTotalRows"], \
-        numberRowsGroup=queryResultGroups["numberTotalRows"])    
 
 
 @app.route('/editarGrupo/<int:idGroup>', methods=['GET', 'POST'])
