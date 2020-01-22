@@ -7,9 +7,7 @@
 
 {% from 'macros.html' import titleMacro with context %}
 
-{% from 'macros.html' import modalSaveMacro with context %}
 {% from 'macros.html' import modalCancelMacro with context %}
-{% from 'macros.html' import modalDeleteMacro with context %}
 
 {% from 'macros.html' import groupsTableMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
@@ -32,197 +30,343 @@
             $(function () {
                 $('#patternsSelect').multipleSelect();
                 $('#groupsSelect').multipleSelect();
+                var accordions = bulmaAccordion.attach();
 
                 document.getElementById("gender-0").disabled = true;
                 document.getElementById("gender-1").disabled = true;
             })
         });
 
+        function newPattern(){
+            var win = window.open("/registrarPauta/"+{{idPatient}}+"?windowId="+document.getElementById("windowId").value, '_blank');
+            win.focus();
+        }
 
+        function linkPattern(){
+            var win = window.open("/enlazarPautas/"+{{idPatient}}, '_blank');
+            win.focus();
+        }
 
     </script>
+
+    <!-- SocketIO methods -->
+    <script>
+        namespace = '/viewPatient';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        function episodesFunc(){
+            socket.emit('episodes', {"idPatient": {{idPatient}}, "date1": document.getElementById("date1").value, "time1": document.getElementById("time1").value, "date2": document.getElementById("date2").value, "time2": document.getElementById("time2").value});
+        }
+
+        socket.on('patterns', function(message) {
+            console.log("[DEBUG] INN.");
+            console.log(message);
+        });
+
+        socket.on('episodes', function(message) {
+
+            var bodyContent = "";
+
+            //No registers, but also no errors
+            if(message.body == ""){
+                $("#episodesTable tbody").html("");
+            }else {
+                var rows = message.rowEpisodes.split(";");
+
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    bodyContent += "<tr>"
+                    
+                    //Date
+                    bodyContent += "<td>"+cols[0]+"</td>";
+                    //First date
+                    bodyContent += "<td>"+cols[1]+"</td>";
+                    //Last date
+                    bodyContent += "<td>"+cols[2]+"</td>";
+                    //Yellow alerts
+                    bodyContent += "<td>"+cols[5]+"</td>";
+                    //Orange alerts
+                    bodyContent += "<td>"+cols[6]+"</td>";
+                    //Red alerts
+                    bodyContent += "<td>"+cols[7]+"</td>";
+                    //View episode
+                    bodyContent += "<td><a href=/verUnEpisodio?idPatient="+{{idPatient}}+"&timestampFrom="+cols[3]+"&timestampTo="+cols[4]+" style='color:#3273dc'><i class='fas fa-eye'></i>Ver</a></td>";
+                    
+                    bodyContent += "</tr>"
+                }
+            }
+
+            $("#episodesTable tbody").html(bodyContent);
+
+            if(document.getElementById("date1").value.length == 0){
+                document.getElementById("date1").value = "2000-01-01";
+                document.getElementById("time1").value = "00:00";
+            } else if(document.getElementById("time1").value.length == 0){
+                document.getElementById("time1").value = "00:00";
+            }
+
+            if(document.getElementById("date2").value.length == 0){
+                document.getElementById("date2").value = "2050-01-01";
+                document.getElementById("time2").value = "23:59";
+            } else if(document.getElementById("time2").value.length == 0){
+                document.getElementById("time2").value = "23:59";
+            }            
+        });
+
+    </script>    
 
 {% endblock %}
 
 {% block content %}
-
-<!-- Modal[Save] -->
-{{ modalSaveMacro("del paciente") }}
-
 <!-- Modal[Cancelar] -->
 {{ modalCancelMacro() }}
 
-<!-- Modal[Delete] -->
-{{ modalDeleteMacro("del paciente") }}
 
+{{ titleMacro("Ver paciente") }}
 
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver paciente") }}
+<div class="columns is-vcentered is-centered">
+    <div class="column is-8" align="center">
+        <article class="card is-rounded">
+            <div class="card-content">
+                <form action="" method="post" id="generalForm" novalidate>
+                    {{ form.hidden_tag() }}
+                    {{ form.csrf_token }}
+                    {{ form.windowId }}
 
-    <div class="hero-body" style="margin-top:-40px">
-        <div class="container">
-            <div class="columns is-centered">
-                <article class="card is-rounded">
-                    <div class="card-content">
-                        <form action="" method="post" id="generalForm" novalidate>
-                            {{ form.hidden_tag() }}
-                            {{ form.csrf_token }}
+                    <div class="columns is-centered is-vcentered">
+                        <div class="column is-9">
+                            <div class="field">
 
-                            <div class="columns is-centered is-vcentered">
-                                <div class="column is-9">
-                                    <div class="field">
+                                <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.name.label }} </b></div>
 
-                                        <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.name.label }} </b></div>
+                                <div class="control has-icons-left">
+                                    <input type="text" id="name" name="name" class="input is-medium" placeholder="Nombre" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.name.data }} readonly>
 
-                                        <div class="control has-icons-left">
-                                            <input type="text" id="name" name="name" class="input is-medium" placeholder="Nombre" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.name.data }} readonly>
+                                    {% for error in form.name.errors %}
+                                        <span style="color: red;">[{{ error }}]</span>
+                                    {% endfor %}
 
-                                            {% for error in form.name.errors %}
-                                                <span style="color: red;">[{{ error }}]</span>
-                                            {% endfor %}
-
-                                            <span class="icon is-small is-left" id="nameIconInput"><i class="fas fa-lock fa-xs"></i></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="column is-1" id="nameIconBtn" onclick="isEditable('nameIconInput','nameIconBtn','name');">
-                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                    <span class="icon is-small is-left" id="nameIconInput"><i class="fas fa-lock fa-xs"></i></span>
                                 </div>
                             </div>
+                        </div>
+                        <div class="column is-1" id="nameIconBtn" onclick="isEditable('nameIconInput','nameIconBtn','name');">
+                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                        </div>
+                    </div>
 
-                            <div class="columns is-centered is-vcentered">
-                                <div class="column is-9">
-                                    <div class="field">
-                                        
-                                        <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.surname1.label }} </b></div>
+                    <div class="columns is-centered is-vcentered">
+                        <div class="column is-9">
+                            <div class="field">
+                                
+                                <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.surname1.label }} </b></div>
 
-                                        <div class="control has-icons-left">
-                                            <input type="text" id="surname1" name="surname1" class="input is-medium" placeholder="Primer apellido" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.surname1.data }} readonly>
+                                <div class="control has-icons-left">
+                                    <input type="text" id="surname1" name="surname1" class="input is-medium" placeholder="Primer apellido" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.surname1.data }} readonly>
 
-                                            {% for error in form.surname1.errors %}
-                                                <span style="color: red;">[{{ error }}]</span>
-                                            {% endfor %}
+                                    {% for error in form.surname1.errors %}
+                                        <span style="color: red;">[{{ error }}]</span>
+                                    {% endfor %}
 
-                                            <span class="icon is-small is-left" id="surname1IconInput"><i class="fas fa-lock fa-xs"></i></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="column is-1" id="surname1IconBtn" onclick="isEditable('surname1IconInput','surname1IconBtn','surname1');">
-                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
-                                </div>
-                            </div>
-
-
-                            <div class="columns is-centered is-vcentered">
-                                <div class="column is-9">
-                                    <div class="field">
-
-                                        <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.surname2.label }} </b></div>
-
-                                        <div class="control has-icons-left">
-                                            <input type="text" id="surname2" name="surname2" class="input is-medium" placeholder="Segundo apellido" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.surname2.data }} readonly>
-
-                                            {% for error in form.surname2.errors %}
-                                                <span style="color: red;">[{{ error }}]</span>
-                                            {% endfor %}
-
-                                            <span class="icon is-small is-left" id="surname2IconInput"><i class="fas fa-lock fa-xs"></i></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="column is-1" id="surname2IconBtn" onclick="isEditable('surname2IconInput','surname2IconBtn','surname2');">
-                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                    <span class="icon is-small is-left" id="surname1IconInput"><i class="fas fa-lock fa-xs"></i></span>
                                 </div>
                             </div>
+                        </div>
+                        <div class="column is-1" id="surname1IconBtn" onclick="isEditable('surname1IconInput','surname1IconBtn','surname1');">
+                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                        </div>
+                    </div>
 
-                            <div class="columns is-centered is-vcentered">
-                                <div class="column is-9">
-                                    <div class="field">
 
-                                        <div align="center"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.age.label }} </b></div>
+                    <div class="columns is-centered is-vcentered">
+                        <div class="column is-9">
+                            <div class="field">
 
-                                        <div class="control has-icons-left">
-                                            <input type="text" id="age" name="age" class="input is-medium" placeholder="Edad" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.age.data }} readonly>
+                                <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.surname2.label }} </b></div>
 
-                                            {% for error in form.age.errors %}
-                                                <span style="color: red;">[{{ error }}]</span>
-                                            {% endfor %}
+                                <div class="control has-icons-left">
+                                    <input type="text" id="surname2" name="surname2" class="input is-medium" placeholder="Segundo apellido" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.surname2.data }} readonly>
 
-                                            <span class="icon is-small is-left" id="ageIconInput"><i class="fas fa-lock fa-xs"></i></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="column is-1" id="ageIconBtn" onclick="isEditable('ageIconInput','ageIconBtn','age');">
-                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                    {% for error in form.surname2.errors %}
+                                        <span style="color: red;">[{{ error }}]</span>
+                                    {% endfor %}
+
+                                    <span class="icon is-small is-left" id="surname2IconInput"><i class="fas fa-lock fa-xs"></i></span>
                                 </div>
                             </div>
+                        </div>
+                        <div class="column is-1" id="surname2IconBtn" onclick="isEditable('surname2IconInput','surname2IconBtn','surname2');">
+                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                        </div>
+                    </div>
+
+                    <div class="columns is-centered is-vcentered">
+                        <div class="column is-9">
+                            <div class="field">
+
+                                <div align="center"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.age.label }} </b></div>
+
+                                <div class="control has-icons-left">
+                                    <input type="text" id="age" name="age" class="input is-medium" placeholder="Edad" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.age.data }} readonly>
+
+                                    {% for error in form.age.errors %}
+                                        <span style="color: red;">[{{ error }}]</span>
+                                    {% endfor %}
+
+                                    <span class="icon is-small is-left" id="ageIconInput"><i class="fas fa-lock fa-xs"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column is-1" id="ageIconBtn" onclick="isEditable('ageIconInput','ageIconBtn','age');">
+                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                        </div>
+                    </div>
+
+                    <br>
+
+                    <div class="columns is-centered is-vcentered">
+                        <div class="column is-9">
+                            <div class="field" align="center">
+                                <div class="columns is-centered"">
+                                        <b>{{ form.gender.label }}</b> &nbsp;&nbsp;&nbsp;&nbsp;
+
+                                        {% for subfield in form.gender %}
+                                            {{ subfield }} &nbsp;&nbsp;
+                                            {{ subfield.label }}
+                                            &nbsp;&nbsp;
+                                        {% endfor %} 
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column is-1" id="genderIconBtn" onclick="isEditableGender('genderIconBtn','gender');">
+                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                        </div>
+                    </div>
+
+                    <br><div style='max-width:400px'><hr></div><br>
+
+                    <div class="box" style='max-width:1000px' align="center">
+                        <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
+                        {% if rowsPatterns|length > 0 %}
+                            {{ patternsTableMacro(rowsPatterns, 0, 1) }}
+                        {% endif %}
+
+                        Número de registros totales: <b>{{ numberRowsPattern }}</b>
+                        {% if pagesPatterns > 1 %}
+                            <br>
+                            {{ form3.pagination.label }} &nbsp;&nbsp; {{ form3.pagination }}
+                        {% endif %}
+
+                        <br><br>
+
+                        {{ form.newPatternBtn }} {{ form.linkPatternBtn }}
+
+                    </div>
+
+                    <br>
+
+                    <div id="divBtns" align="center">
+                        {{ form2.saveBtn }}
+                        {{ form2.cancelBtn }}
+                    </div>
+                </form>
+
+                <br><div style='max-width:400px'><hr></div><br>
+
+
+                <div class="box" style='max-width:1000px' align="center">
+                    <h4> Ver episodios del paciente </h4>                        
+                        <h4 class="title is-4">Filtrar resultados</h4>
+                        <form action="" id="episodesForm" method="post" novalidate>
+                            {{ form4.hidden_tag() }}
+                            {{ form4.csrf_token }}
 
                             <br>
 
-                            <div class="columns is-centered is-vcentered">
-                                <div class="column is-9">
-                                    <div class="field" align="center">
-                                        <div class="columns is-centered"">
-                                                <b>{{ form.gender.label }}</b> &nbsp;&nbsp;&nbsp;&nbsp;
-
-                                                {% for subfield in form.gender %}
-                                                    {{ subfield }} &nbsp;&nbsp;
-                                                    {{ subfield.label }}
-                                                    &nbsp;&nbsp;
-                                                {% endfor %} 
+                            <!-- FROM -->
+                            <div class="columns is-vcentered is-centered">
+                                <div class="column is-5">
+                                    <div class="columns is-vcentered is-centered">
+                                        <div class="column is-3">
+                                            {{ form4.date1.label }}
+                                        </div>
+                                        <div class="column is-7">
+                                            {{ form4.date1 }}
+                                            {% for error in form4.date1.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
                                         </div>
                                     </div>
                                 </div>
-                                <div class="column is-1" id="genderIconBtn" onclick="isEditableGender('genderIconBtn','gender');">
-                                    <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
+                                <div class="column is-5">
+                                    <div class="columns is-vcentered is-centered">
+                                        <div class="column is-3">
+                                            {{ form4.time1.label }}
+                                        </div>
+                                        <div class="column is-7">
+                                            {{ form4.time1 }}
+                                            {% for error in form4.time1.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>                    
+                            </div>
+
+                            <!-- TO -->
+                            <div class="columns is-vcentered is-centered">
+                                <div class="column is-5">
+                                    <div class="columns is-vcentered is-centered">
+                                        <div class="column is-3">
+                                            {{ form4.date2.label }}
+                                        </div>
+                                        <div class="column is-7">
+                                            {{ form4.date2 }}
+                                            {% for error in form4.date2.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
+                                <div class="column is-5">
+                                    <div class="columns is-vcentered is-centered">
+                                        <div class="column is-3">
+                                            {{ form4.time2.label }}
+                                        </div>
+                                        <div class="column is-7">
+                                            {{ form4.time2 }}
+                                            {% for error in form4.time2.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>                    
                             </div>
 
-                            <br><div style='max-width:400px'><hr></div><br>
-
-                            <div class="box" style='max-width:1000px' align="center">
-                                <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
-                                {% if rowsPatterns|length > 0 %}
-                                    {{ patternsTableMacro(rowsPatterns, 0) }}
-                                {% endif %}
-
-                                Número de registros totales: <b>{{ numberRowsPattern }}</b>
-                                {% if pagesPatterns > 1 %}
-                                    <br>
-                                    {{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
-                                {% endif %}
-
-                            </div>
-                            
-                            <div style='max-width:400px'><hr></div>
-
-                            <div class="box" style='max-width:1000px' align="center">
-                                <h4 class="title is-4 is-spaced">Grupos de pautas asociados</h4>
-                                {% if rowsGroups|length > 0 %}
-                                    {{ groupsTableMacro(rowsGroups, 0) }}
-                                {% endif %}
-                                
-                                Número de registros totales: <b>{{ numberRowsGroup }}</b>
-                                
-                                {% if pagesGroups > 1 %}
-                                    <br>
-                                    {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
-                                {% endif %}
-                            </div>
-
-                            <div id="divBtns" align="center">
-                                {{ form2.saveBtn }}
-                                {{ form2.cancelBtn }}
-                                {{ form2.deleteBtn }}
-                            </div>
+                            <br>
+                            {{ form4.patientId }}
+                            {{ form4.searchBtn2 }}
+                        
                         </form>
-                    </div>
-                </article>
+
+                        <table id="episodesTable" class="table">
+                            <thead>
+                                <th> <span> Fecha </span></th>
+                                <th> <span> Hora de inicio </span></th>
+                                <th> <span> Fecha de fin </span></th>
+                                <th> <span> Alertas amarillas </span></th>
+                                <th> <span> Alertas naranjas </span></th>
+                                <th> <span> Alertas rojas </span></th>
+                                <th> <span> Ver episodio </span></th>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                </div>
             </div>
-        </div>
+        </article>
     </div>
-</section>
-
-
+</div>
 
 {% endblock %}

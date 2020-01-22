@@ -67,21 +67,28 @@
     </section>
 {% endmacro %}
 
-{% macro patternsTableMacro(rows, edit) %}
+{% macro patternsTableMacro(rows, edit, unlink) %}
     <table class="table" id="tablePatterns">
         <thead>
+            {% if edit == 1 %}
+                <th> <span> Seleccionar </span></th>
+            {% endif %}
             <th> <span> Nombre </span></th>
             <th> <span> Intensidad amarilla </span></th>
             <th> <span> Intensidad naranja </span></th>
             <th> <span> Intensidad roja </span></th>
             <th> <span> Ver pauta </span></th>
-            {% if edit == 1 %}
-                <th> <span> Editar pauta </span></th>
+            {% if unlink == 1 %}
+                <th> <span> Desvincular del paciente </span></th>
             {% endif %}
         </thead>
         <tbody>
             {% for row in rows %}
                 <tr>
+                    {% if edit == 1 %}
+                        <td> <input type="checkbox" id="checkbox_"{{loop.index}}> </td>
+                    {% endif %}
+
                     <td>{{ row.name }}</td>
 
                     {% if row.intensity1=="No" %}
@@ -102,8 +109,8 @@
                         <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
                     {% endif %}
                     <td><a href=/verPauta/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
-                    {% if edit == 1 %}
-                        <td><a href=/editarPauta/{{ row.id }} target="_blank"><i class='fas fa-pencil-alt'></i> &nbsp; Editar </a> </td>
+                    {% if unlink == 1 %}
+                        <td><i class='fas fa-trash'></i> &nbsp; Desvincular pauta </a> </td>
                     {% endif %}
                 </tr>
             {% endfor %}                                    
@@ -273,7 +280,7 @@
         <div class="modal-content box" style="background-color:#A9A9A9;width:800px;height:150px;top:30%;border-style:solid" align="center">
             <br>
             <span> <b>Los datos que no hayan sigo guardados se perderán. Por favor, confirma si quieres realizar esta acción </b></span><br><br>
-            <button class="button is-primary" onclick="window.location.reload();">Confirmar</button>
+            <button class="button is-primary" onclick="window.location.href = '/';">Confirmar</button>
             <button class="button is-warning" onclick="closeModalCancel()">Volver</button>
         </div>
         <button class="modal-close is-large" aria-label="close" onclick="closeModalCancel()"></button>

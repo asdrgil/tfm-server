@@ -786,8 +786,11 @@ def getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient):
 
 
 
-def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
-    result = []
+def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outputFormat="arr"):
+    if outputFormat == "arr":
+        result = []
+    else:
+        result = ""
     
     skip = (pageNumber-1)*rowsPerPage
 
@@ -812,10 +815,21 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
         dateFirst = datetime.fromtimestamp(firstDateTimestamp)
         dateLast = datetime.fromtimestamp(lastDateTimestamp)
 
-        result.append({"firstDate": dateFirst.strftime("%d/%m/%Y, %H:%M:%S"), \
-            "lastDate":dateLast.strftime("%d/%m/%Y, %H:%M:%S"), "timestampFrom":timestampFrom, \
-            "timestampTo":timestampTo, "alerts1": totalAlerts[0], "alerts2": totalAlerts[1], \
-            "alerts3": totalAlerts[2]})
+        if outputFormat == "arr":
+            result.append({"firstDate": dateFirst.strftime("%d/%m/%Y, %H:%M:%S"), \
+                "lastDate":dateLast.strftime("%d/%m/%Y, %H:%M:%S"), "timestampFrom":timestampFrom, \
+                "timestampTo":timestampTo, "alerts1": totalAlerts[0], "alerts2": totalAlerts[1], \
+                "alerts3": totalAlerts[2]})
+        else:
+            result += "{}, {},{},{},{},{},{},{};".format(dateFirst.strftime("%d/%m/%Y"), \
+                dateFirst.strftime("%H:%M:%S"), \
+                dateLast.strftime("%H:%M:%S"), timestampFrom, timestampTo, \
+                totalAlerts[0], totalAlerts[1], totalAlerts[2])
+
+    if outputFormat == "str" and len(result) > 0:
+        result = result[:-1]
+
+    print(result)
 
     return result
 
@@ -852,6 +866,41 @@ def getOneEpisode(timestampFrom, timestampTo, idPatient):
     rows.insert(len(rows), valueLastRow)
     
     return rows
+
+
+def viewEpisodes(idPatient, date1, time1, date2, time2):
+
+    #DEBUG
+    pageNumber = 1
+
+    #FROM
+    if len(date1) == 0:
+        date1 = "2000-01-01"
+        time1 = "00:00"
+
+    elif len(time1) == 0:
+        time1 = "00:00"
+
+    #TO
+    if len(date2) == 0:
+        date2 = "2050-01-01"
+        time2 = "23:59"
+
+    elif len(time2) == 0:
+        time2 = "23:59"
+
+    timestampTo = 0
+
+    timestampFrom = int(datetime.strptime('{} {}'.format(date1, time1), '%Y-%m-%d %H:%M')\
+        .strftime("%s"))
+    timestampTo = int(datetime.strptime('{} {}'.format(date2, time2), '%Y-%m-%d %H:%M')\
+        .strftime("%s"))
+
+    rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, "str")
+    numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
+
+    return rowEpisodes, numberTotalRows, numberPages
 
 def generateUniqueRandom(collection, field):
     token = ''.join(random.choice('0123456789ABCDEF') for i in range(6))
@@ -941,3 +990,11 @@ def updateGroup(form, therapistId, idGroup):
     #4. Update group info
     mongoClient["groups"].update_one({"id" : idGroup}, {"$set" : {"name": form.name.data, \
         "description": form.description.data, "patients": newPatients, "patterns": newPatterns }})
+
+def getWindowId(tableName):
+    windowId = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
+
+    while mongoClient[tableName].count_documents({"windowId":windowId}):
+        windowId = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
+
+    return windowId

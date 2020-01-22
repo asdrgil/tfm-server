@@ -28,7 +28,7 @@ from .socketIOMethods import editPatternSocket, changedSelectGroup, changedSelec
 from .mongoMethods import searchPatterns, searchPatients, searchGroups, getMultipleEpisodes, getOneEpisode, \
     insertPatient, generateUniqueRandom, updatePattern, searchGroupsPattern, searchPatientsPattern, \
     searchPatientsGroup, searchPatternsGroup, updateGroup, searchGroupsPatient, searchPatternsPatient, \
-    getCountMultipleEpisodes
+    getCountMultipleEpisodes, getWindowId
 from .constants import mongoClient, rowsPerPage
 
 @app.before_request
@@ -137,6 +137,87 @@ def registerPattern():
         therapistLiteral=therapistLiteral)
 
 
+@app.route('/registrarPauta/<int:idPatient>', methods=['GET', 'POST'])
+@login_required
+def registerPatternPatient(idPatient):
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+
+    if request.args.get('windowId') is None:
+        flash("Faltan parámetros en la URL introducida", "error")
+        return redirect(url_for("Index"))
+
+    pageNumber = 1 if request.args.get('pageNumber') is None else request.args.get('pageNumber')
+
+    windowId = request.args.get('windowId')
+
+    form = RegisterPatternForm(current_user.get_id())
+
+    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
+
+    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
+        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+
+    if form.validate_on_submit():
+
+        form.name.data = form.name.data.strip()
+
+        #The patternName must be univoque
+        if mongoClient["patterns"].count_documents({"therapist": current_user.get_id(), "name":form.name.data}) == 0:
+
+            cursor = mongoClient["patterns"].find({}).sort("id",-1).limit(1)
+            
+            #idPattern is incremental and univoque
+            idPattern = 1
+            for cur in cursor:
+                idPattern = cur["id"] + 1
+
+            #mongoClient["patients"].update_one({"id" : idPatient}, {"$push": {"patterns":idPattern}})
+
+            #Add intensities
+            intensities = []
+
+            if form.intensity1.data:
+                intensities.append(1)
+
+            if form.intensity2.data:
+                intensities.append(2)
+
+            if form.intensity3.data:
+                intensities.append(3)                
+
+            mongoClient["patterns"].insert_one({"therapist":current_user.get_id(), "id":idPattern, \
+                'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities, \
+                "windowId":windowId})
+
+            mongoClient["patientsTmp"].update_one({"windowId" : windowId}, {"$push": {"patterns":idPattern}})
+
+            #Get all patterns for the given windowId
+            patterns = ""
+            patientsTmp = mongoClient["patientsTmp"].find_one({"windowId" : windowId})
+            cursor = mongoClient["patterns"].find({"patterns" : {"$in":patientsTmp["patterns"]}})
+
+            for cur in cursor:
+                patterns += cur["id"] + "," + cur["name"] + "," + cur["intensity1"] + "," + \
+                    cur["intensity2"] + "," + cur["intensity3"] + ";"
+
+            if len(patterns) > 0:
+                patterns = patterns[:-1]
+
+
+            socketio.emit('patterns', patterns, namespace='/viewPatient')
+
+            flash("Pauta creada correctamente.", "success")
+            return redirect(url_for('viewPatient', idPatient=idPatient))
+        else:
+            flash("El nombre de la pauta debe ser unívoco", "error")
+
+
+
+    return render_template('registerPatternPatient.html', title='Registrar una pauta', form=form, \
+        therapistLiteral=therapistLiteral, patientInfo=patientInfo)
+
+
 @app.route('/editarPauta/<int:idPattern>', methods=['GET', 'POST'])
 @login_required
 def editPattern(idPattern):
@@ -209,6 +290,35 @@ def viewPatterns():
         
     form.submitDone.data = 0
     return render_template('viewPatterns.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
+
+
+@app.route('/enlazarPautas/<int:idPatient>', methods=['GET', 'POST'])
+@login_required
+def linkPatientPatterns(idPatient):
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+    form = SearchPatternsForm(current_user.get_id())
+    form2 = PaginationForm(1)
+
+    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
+
+    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
+        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+
+    if form.validate_on_submit():
+        form.submitDone.data = 1
+
+        queryResult = searchPatterns(form, int(form.pageNumber.data))
+        form2 = PaginationForm(queryResult["numberPages"])
+        form2.pagination.data = form.pageNumber.data
+
+        return render_template('linkPatientPatterns.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
+            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+            numberPages=queryResult["numberPages"], patientInfo=patientInfo)
+        
+    form.submitDone.data = 0
+    return render_template('linkPatientPatterns.html', form=form, form2=form2, \
+        therapistLiteral=therapistLiteral, patientInfo=patientInfo)
 
 
 @app.route('/verGrupos', methods=['GET', 'POST'])
@@ -320,10 +430,13 @@ def viewPatient(idPatient):
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
 
+    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
+        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+
     form = EditPatientForm(current_user.get_id())
     form2 = GenericEditForm()
     form3 = PaginationForm(1)
-    form4 = PaginationForm2(1)
+    form4 = FilterByDateForm(current_user.get_id(), 1)
 
     if form.validate_on_submit():
         patternsSelected = list(map(int, form.patterns.data))
@@ -343,51 +456,48 @@ def viewPatient(idPatient):
 
         flash("Paciente modificado correctamente", "success")
         return redirect(url_for('index'))
-    
-    else:
-        form.patientId.data = idPatient
+
+    form.patientId.data = idPatient
+
+    cursor = mongoClient["patients"].find_one({"id":idPatient})
+    cursor2 = mongoClient["groups"].find({"therapist": current_user.get_id(), "patients" : idPatient})
+
+    selectedGroups = []
+
+    for cur in cursor2:
+        if "id" in cur:
+            selectedGroups.append(str(cur["id"]))
 
 
-        cursor = mongoClient["patients"].find_one({"id":idPatient})
-        cursor2 = mongoClient["groups"].find({"therapist": current_user.get_id(), "patients" : idPatient})
-
-        selectedGroups = []
-
-        for cur in cursor2:
-            if "id" in cur:
-                selectedGroups.append(str(cur["id"]))
-
-
-        form.name.data = cursor["name"]
-        form.surname1.data = cursor["surname1"]
-        form.surname2.data = cursor["surname2"]
-        form.age.data = cursor["age"]
-        form.gender.data = cursor["gender"]
-        form.patterns.data = list(map(str, cursor["patterns"]))
-        form.groups.data = selectedGroups
-
+    form.name.data = cursor["name"]
+    form.surname1.data = cursor["surname1"]
+    form.surname2.data = cursor["surname2"]
+    form.age.data = cursor["age"]
+    form.gender.data = cursor["gender"]
+    form.patterns.data = list(map(str, cursor["patterns"]))
+    form.groups.data = selectedGroups
 
 
     cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
-
-    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
-        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
-
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
-        current_user.get_surname2())
-
-
-
     
     queryResultPatterns = searchPatternsPatient(idPatient, 1)
-    queryResultGroups = searchGroupsPatient(idPatient, 1)
-    
 
-    return render_template('viewPatient.html', therapistLiteral=therapistLiteral, patientInfo=patientInfo, \
-        rowsPatterns=queryResultPatterns["rows"], rowsGroups=queryResultGroups["rows"], form=form, form2=form2, \
+    if form.windowId.data == None:
+        form.windowId.data =  getWindowId("patientsTmp")
+
+    #Ids
+    patternsDisplay = queryResultPatterns["rows"]
+    
+    #Whole info
+    patternsAll = cursorPatient["patterns"]
+
+    mongoClient["patientsTmp"].insert_one({"windowId":form.windowId.data, "patient":idPatient, \
+        "patternsDisplay":patternsDisplay, "patternsAll":patternsAll})
+
+    return render_template('viewPatient.html', therapistLiteral=therapistLiteral, \
+        rowsPatterns=queryResultPatterns["rows"], form=form, form2=form2, \
         form3=form3, form4=form4, idPatient=idPatient, pagesPatterns=queryResultPatterns["numberPages"], \
-        pagesGroups=queryResultGroups["numberPages"], numberRowsPattern=queryResultPatterns["numberTotalRows"], \
-        numberRowsGroup=queryResultGroups["numberTotalRows"])
+        numberRowsPattern=queryResultPatterns["numberTotalRows"])
 
 
 @app.route('/registrarGrupo', methods=['GET', 'POST'])
@@ -555,7 +665,7 @@ def viewEpisodesGeneric():
             form.date1.data = "2000-01-01"
             form.time1.data = "00:00"
 
-        if len(form.time1.data) == 0:
+        elif len(form.time1.data) == 0:
             form.time1.data = "00:00"
 
         #TO
@@ -563,7 +673,7 @@ def viewEpisodesGeneric():
             form.date2.data = "2050-01-01"
             form.time2.data = "23:59"
 
-        if len(form.time2.data) == 0:
+        elif len(form.time2.data) == 0:
             form.time2.data = "23:59"
 
         timestampTo = 0

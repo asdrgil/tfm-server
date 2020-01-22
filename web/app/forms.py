@@ -193,6 +193,12 @@ class EditPatientForm(FlaskForm):
         choices=[], render_kw={'multiple':'multiple', 'id':'patternsSelect', 'onchange':'changedSelectPattern();'})
 
     patientId = HiddenField("patientId")
+    windowId = HiddenField("windowId")
+
+    newPatternBtn = SubmitField('Registrar una nueva pauta', render_kw={"class":"button is-link", 'type':'button', \
+        "onclick": "newPattern()"})
+    linkPatternBtn = SubmitField('Enlazar una pauta ya creada', render_kw={"class":"button is-info", 'type':'button', \
+        "onclick": "linkPattern()"})
 
     def __init__(self, therapistId: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -220,7 +226,7 @@ class RegistrationGroupForm(FlaskForm):
 
 
 class GenericEditForm(FlaskForm):
-    saveBtn = SubmitField('Guardar cambios', render_kw={"class":"button is-primary", "onclick": "displayModalSave()", \
+    saveBtn = SubmitField('Guardar cambios', render_kw={"class":"button is-primary", "onclick": "saveData()", \
         'type':'button'})
     cancelBtn = SubmitField('Cancelar', \
         render_kw={"class":"button is-warning", 'onclick': 'displayModalCancel();','type':'button'})
@@ -345,6 +351,7 @@ class FilterByDateForm(FlaskForm):
         render_kw={'id':'paginationSelect', 'onchange':'paginationFunc();'})
 
     searchBtn = SubmitField('Buscar', render_kw={"class":"button is-primary"})
+    searchBtn2 = SubmitField('Buscar', render_kw={"class":"button is-primary", "onclick":"episodesFunc()", "type":"button"})
 
     submitDone = HiddenField("submitDone")
 

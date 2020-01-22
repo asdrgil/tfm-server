@@ -72,13 +72,9 @@ function closeModalDelete(){
     modalDiv.style.display = "none";
 }
 
-function confirmSave(){
-      document.getElementById("generalForm").submit();
-  }
-
-function cancelChanges(){
-   window.location.href = window.location.href;
-}
+function saveData(){
+    document.getElementById("generalForm").submit();
+}     
 
 
 //Extracted from an answer of @momomo in StackOverflow

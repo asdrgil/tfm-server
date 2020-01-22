@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+<!-- Import macros -->
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import patternsTableMacro with context %}
+{% from 'macros.html' import pagination with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+	
+	<script type="text/javascript" charset="utf-8">
+		$(document).ready(function() {
+			$(function () {
+			  $('#patientsSelect').multipleSelect();
+			  $('#groupsSelect').multipleSelect();
+			  $('#intensitiesSelect').multipleSelect();
+			  $('#paginationSelect').multipleSelect();
+			})
+		});
+
+		function submitFunc(){
+			//Store pagination
+			if(document.getElementById("paginationSelect") == null){
+				document.getElementById("pageNumber").value = 1;
+			} else {
+				document.getElementById("pageNumber").value = parseInt(document.getElementById("paginationSelect").value);
+			}
+			
+			document.getElementById("generalForm").submit();
+		}
+
+		//This is done just to allow code reuse of forms
+		function paginationFunc(){
+			submitFunc();
+		}
+	</script>
+
+{% endblock %}
+
+{% block content %}	
+
+<!-- Title -->
+<section id="contact" class="section section-light-grey">
+    {{ titleMacro("Ver todas las pautas almacenadas") }}
+</section>
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+
+	<div class="column is-8 box" align="center">
+
+        <div class="box">
+            <h4 class="title is-4">Datos del paciente</h4>
+
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Nombre</b>:&nbsp;&nbsp; {{ patientInfo.name }}
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Primer apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname1 }}
+            <br>
+            <b> Segundo apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname2 }}
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Edad </b>:&nbsp;&nbsp; {{ patientInfo.age }}
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
+            {% if patientInfo.gender == "M" %}
+                <td>Masculino</td>
+            {% else %}
+                <td>Femenino</td>
+            {% endif %}
+
+        </div>
+
+        <br>
+
+		<h4 class="title is-4">Filtrar resultados</h4>
+	    <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
+	        {{ form.hidden_tag() }}
+	        {{ form.csrf_token }}
+	        {{ form2.pageNumber }}
+	        {{ form2.submitDone }}
+
+	        <div class="columns is-vcentered is-centered">
+	        	<div class="column is-5">
+	        		<div class="columns is-vcentered is-centered">
+		        		<div class="column is-2">
+			        		{{ form.name.label }}
+		        		</div>
+			        	<div class="column is-8">
+			        		{{ form.name(size=5, maxlength=15) }}
+			        		{% for error in form.name.errors %}
+			        			<span style="color: red;">[{{ error }}]</span>
+			        		{% endfor %}
+		        		</div>
+	        		</div>
+        		</div>
+
+    			<div class="column is-5">
+    				<div class="columns is-vcentered is-centered">
+		        		<div class="column is-2">
+			        		{{ form.description.label }}
+		        		</div>
+			        	<div class="column is-8">
+			        		{{ form.description(size=5, maxlength=15) }}
+			        		{% for error in form.description.errors %}
+			        			<span style="color: red;">[{{ error }}]</span>
+			        		{% endfor %}
+		        		</div>
+	        		</div>
+        		</div>
+    		</div>
+
+
+	        <div class="columns is-vcentered is-centered">
+	        	<div class="column is-4">
+	        		<div class="columns is-vcentered is-centered">
+		        		<div class="column is-2">
+			        		{{ form.patients.label }}
+		        		</div>
+			        	<div class="column is-8">
+			        		{{ form.patients(size=5, maxlength=15) }}
+			        		{% for error in form.patients.errors %}
+			        			<span style="color: red;">[{{ error }}]</span>
+			        		{% endfor %}
+		        		</div>
+	        		</div>
+        		</div>
+
+	        	<div class="column is-4">
+	        		<div class="columns is-vcentered is-centered">
+		        		<div class="column is-2">
+			        		{{ form.groups.label }}
+		        		</div>
+			        	<div class="column is-8">
+			        		{{ form.groups(size=5, maxlength=15) }}
+			        		{% for error in form.groups.errors %}
+			        			<span style="color: red;">[{{ error }}]</span>
+			        		{% endfor %}
+		        		</div>
+	        		</div>
+        		</div>
+
+	        	<div class="column is-4">
+	        		<div class="columns is-vcentered is-centered">
+		        		<div class="column is-2">
+			        		{{ form.intensities.label }}
+		        		</div>
+			        	<div class="column is-8">
+			        		{{ form.intensities(size=5, maxlength=15) }}
+			        		{% for error in form.intensities.errors %}
+			        			<span style="color: red;">[{{ error }}]</span>
+			        		{% endfor %}
+		        		</div>
+	        		</div>
+        		</div>	        		
+    		</div>        		
+
+    		{{ form.searchBtn }}
+
+	    </form>
+
+	    {% if form.submitDone.data > 0 %}
+	    	<br>
+	    	<div id="tablearea" align="center" class="box">
+		    	{% if rowPatterns|length > 0 %}
+			    	{{ patternsTableMacro(rowPatterns, 1) }}
+		    	{% endif %}
+		    	
+		    	Número de registros totales: <b>{{ numberTotalRows }}</b>
+		    	
+		    	{% if numberPages > 1 %}
+		    		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+		    	{% endif %}
+
+		    	<br><br>
+
+		    	<input class="button is-success" id="linkBtn" name="linkBtn" onclick="linkPatterns()" value="Enlazar pautas">
+	    	</div>
+
+    	{% endif %}
+    </div>
+</div>
+
+{% endblock %}
