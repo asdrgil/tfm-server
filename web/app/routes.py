@@ -199,7 +199,7 @@ def registerPatternPatient(idPatient):
 
             for cur in cursor:
                 patterns += cur["id"] + "," + cur["name"] + "," + cur["intensity1"] + "," + \
-                    cur["intensity2"] + "," + cur["intensity3"] + ";"
+                    cur["intensity2"] + "," + cur["intensity3"] + ";" 
 
             if len(patterns) > 0:
                 patterns = patterns[:-1]
