@@ -148,7 +148,19 @@ def registerPatternPatient(idPatient):
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
 
+    namePati = request.args.get("name").replace("+"," ")
+    surname1Pati = request.args.get("surname1").replace("+"," ")
+    surname2Pati = request.args.get("surname2").replace("+"," ")
+    agePati = request.args.get("age")
+    genderPati = "Masculino" if request.args.get("gender") == "M" else "Femenino"
+
     form = RegisterPatternForm(current_user.get_id())
+
+    paramsVerPaciente = "?name={}&surname1={}&surname2={}&age={}&gender={}".format(request.args.get("name"), \
+        request.args.get("surname1"), request.args.get("surname2"), request.args.get("age"), request.args.get("gender"))
+
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPacientes", "name":"Ver pacientes"}, \
+        {"href": "/verPaciente/" + str(idPatient) + paramsVerPaciente, "name": namePati + " " + surname1Pati}]
 
     if form.validate_on_submit():
 
@@ -181,13 +193,6 @@ def registerPatternPatient(idPatient):
             mongoClient["patterns"].insert_one({"therapist":current_user.get_id(), "id":idPattern, \
                 'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities})
 
-
-            namePati = request.args.get("name")
-            surname1Pati = request.args.get("surname1")
-            surname2Pati = request.args.get("surname2")
-            agePati = request.args.get("age")
-            genderPati = request.args.get("gender")
-
             flash("Pauta creada correctamente.", "success")
             return redirect(url_for('viewPatient', idPatient=idPatient, name=namePati, surname1=surname1Pati, \
                 surname2=surname2Pati, age=agePati, gender=genderPati))
@@ -196,19 +201,11 @@ def registerPatternPatient(idPatient):
 
     form = RegisterPatternForm(current_user.get_id())
 
-    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
-
-    namePati = request.args.get("name").replace("+"," ")
-    surname1Pati = request.args.get("surname1").replace("+"," ")
-    surname2Pati = request.args.get("surname2").replace("+"," ")
-    agePati = request.args.get("age")
-    genderPati = "Masculino" if request.args.get("gender") == "M" else "Femenino"
-
     patientInfo  = {"id": idPatient, "name":namePati, "surname1":surname1Pati, \
         "surname2":surname2Pati, "age":agePati, "gender":genderPati}
 
     return render_template('registerPatternPatient.html', title='Registrar una pauta', form=form, \
-        therapistLiteral=therapistLiteral, patientInfo=patientInfo)
+        therapistLiteral=therapistLiteral, patientInfo=patientInfo, rowsBreadCrumb=rowsBreadCrumb)
 
 
 @app.route('/editarPauta/<int:idPattern>', methods=['GET', 'POST'])
@@ -295,8 +292,21 @@ def linkPatientPatterns(idPatient):
 
     cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
 
-    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
-        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+    namePati = request.args.get("name").replace("+"," ")
+    surname1Pati = request.args.get("surname1").replace("+"," ")
+    surname2Pati = request.args.get("surname2").replace("+"," ")
+    agePati = request.args.get("age")
+    genderPati = "Masculino" if request.args.get("gender") == "M" else "Femenino"
+
+    patientInfo  = {"id": idPatient, "name":namePati, "surname1":surname1Pati, \
+        "surname2":surname2Pati, "age":agePati, "gender":genderPati}
+
+    paramsVerPaciente = "?name={}&surname1={}&surname2={}&age={}&gender={}".format(request.args.get("name"), \
+        request.args.get("surname1"), request.args.get("surname2"), request.args.get("age"), request.args.get("gender"))
+
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPacientes", "name":"Ver pacientes"}, \
+        {"href": "/verPaciente/" + str(idPatient) + paramsVerPaciente, "name": namePati + " " + surname1Pati}]
+
 
     if form.validate_on_submit():
         form.submitDone.data = 1
@@ -307,11 +317,11 @@ def linkPatientPatterns(idPatient):
 
         return render_template('linkPatientPatterns.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
             therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
-            numberPages=queryResult["numberPages"], patientInfo=patientInfo)
+            numberPages=queryResult["numberPages"], patientInfo=patientInfo, rowsBreadCrumb=rowsBreadCrumb)
         
     form.submitDone.data = 0
     return render_template('linkPatientPatterns.html', form=form, form2=form2, \
-        therapistLiteral=therapistLiteral, patientInfo=patientInfo)
+        therapistLiteral=therapistLiteral, patientInfo=patientInfo, rowsBreadCrumb=rowsBreadCrumb)
 
 
 @app.route('/verGrupos', methods=['GET', 'POST'])
@@ -344,6 +354,8 @@ def viewPatients():
     form = SearchPatientsForm(current_user.get_id())
     form2 = PaginationForm(1)
 
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}]
+
     if form.validate_on_submit():
         form.submitDone.data = 1
 
@@ -356,7 +368,8 @@ def viewPatients():
             numberPages=queryResult["numberPages"])        
 
     form.submitDone.data = 0
-    return render_template('viewPatients.html', form=form, form2=form2, therapistLiteral=therapistLiteral)
+    return render_template('viewPatients.html', form=form, form2=form2, therapistLiteral=therapistLiteral, \
+        rowsBreadCrumb=rowsBreadCrumb)
 
 
 @app.route('/registrarPaciente', methods=['GET', 'POST'])
@@ -407,8 +420,10 @@ def registerPatient():
         if form.age.data is None:
             form.age.data = ""
 
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}]
+
     return render_template('registerPatient.html', title='RegisterPatient', form=form, \
-        therapistLiteral=therapistLiteral)
+        therapistLiteral=therapistLiteral, rowsBreadCrumb=rowsBreadCrumb)
 
 
 @app.route('/verPaciente/<int:idPatient>', methods=['GET', 'POST'])
@@ -431,6 +446,8 @@ def viewPatient(idPatient, name=None, surname1=None, surname2=None, age=None, ge
     form2 = GenericEditForm()
     form3 = PaginationForm(1)
     form4 = FilterByDateForm(current_user.get_id(), 1)
+
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPacientes", "name":"Ver pacientes"}]
 
     #Unlink pattern
     if request.args.get("unlinkPatt") is not None:
@@ -474,7 +491,7 @@ def viewPatient(idPatient, name=None, surname1=None, surname2=None, age=None, ge
     return render_template('viewPatient.html', therapistLiteral=therapistLiteral, \
         rowsPatterns=queryResultPatterns["rows"], form=form, form2=form2, \
         form3=form3, form4=form4, idPatient=idPatient, pagesPatterns=queryResultPatterns["numberPages"], \
-        numberRowsPattern=queryResultPatterns["numberTotalRows"])
+        numberRowsPattern=queryResultPatterns["numberTotalRows"], rowsBreadCrumb=rowsBreadCrumb)
 
 
 @app.route('/registrarGrupo', methods=['GET', 'POST'])
@@ -746,12 +763,18 @@ def viewOneEpisode():
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
 
+    cursorPatient = mongoClient["patients"].find_one({"id":idPatient, "therapist": current_user.get_id()})
+
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPacientes", "name":"Ver pacientes"}, \
+        {"href": "/verPaciente/" + str(idPatient), "name": cursorPatient["name"] + " " + cursorPatient["surname1"]}]    
+
     timestampFrom = int(request.args.get('timestampFrom'))
     timestampTo = int(request.args.get('timestampTo'))
 
     rowEpisodes = getOneEpisode(timestampFrom, timestampTo, idPatient)
 
-    return render_template('viewOneEpisode.html', rowEpisodes=rowEpisodes, therapistLiteral=therapistLiteral)
+    return render_template('viewOneEpisode.html', rowEpisodes=rowEpisodes, therapistLiteral=therapistLiteral, \
+        rowsBreadCrumb=rowsBreadCrumb)
 
 ########################################################################################################################
 

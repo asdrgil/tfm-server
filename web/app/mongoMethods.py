@@ -130,6 +130,10 @@ def searchPatients(form, pageNum=1):
     if len(form.age.data.strip()) > 0:
         query.update({"age": int(form.age.data)})
 
+    #GENDER
+    if len(form.genders.data) > 0:
+        query.update({"gender": { "$in": form.genders.data}})
+
     #PATTERNS
     if len(form.patterns.data) > 0:
         query.update({"patterns": { "$in": list(map(int, form.patterns.data))}})
@@ -163,7 +167,7 @@ def searchPatients(form, pageNum=1):
 
     for cur in cursor:
         rows.append({"id": cur["id"], "name": cur["name"] , "surname1": cur["surname1"], \
-            "surname2": cur["surname2"], "age": cur["age"]})
+            "surname2": cur["surname2"], "age": cur["age"], "gender": cur["gender"]})
 
     return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
 

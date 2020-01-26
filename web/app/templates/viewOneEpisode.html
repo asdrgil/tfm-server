@@ -5,6 +5,7 @@
 
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import oneEpisodeTableMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
 
 {% block head %}
 
@@ -62,9 +63,17 @@
         });
     </script>
 
+    <script type="text/javascript" charset="utf-8">
+        function returnPage(){
+            location.href = location.protocol + '//' + location.host + "/verPaciente/" + location.search.replace("?idPatient=", "").split("&")[0];
+        }
+    </script>
+
 {% endblock %}
 
 {% block content %}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Ver un episodio del paciente") }}
 
 <section id="contact" class="section section-light-grey">
     {{ titleMacro("Ver un episodio concreto") }}
@@ -81,9 +90,14 @@
             <div id="report" style="font: 0.8em sans-serif"></div>
 
             {{ oneEpisodeTableMacro(rowEpisodes) }}
-        </div>
 
+            <br>
+            
+            <input class="button is-light" id="returnBtn" name="returnBtn" onclick="returnPage()" type="button" value="Volver">
+        </div>
 </div>
+
+
 
 <br>
 

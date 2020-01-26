@@ -160,7 +160,7 @@
         <div class="box" style='max-width:1000px'>
             <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
             {% if rowsPatients|length > 0 %}
-            	{{ patientsTableMacro(rowsPatients, 0) }}
+            	{{ patientsTableMacro(rowsPatients) }}
             {% endif %}
 
             Número de registros totales: <b>{{ numberRowsPatient }}</b>

@@ -3,6 +3,8 @@
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
 
+{% from 'macros.html' import breadCrumbMacro with context %}
+
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
@@ -21,9 +23,17 @@
 		});
 	</script>
 
+	<script type="text/javascript" charset="utf-8">
+		function returnPage(){
+			location.href = location.protocol + '//' + location.host + "/verPaciente/" + location.pathname.split("/")[2] + location.search;
+		}
+	</script>
+
 {% endblock %}
 
 {% block content %}	
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Crear una pauta para un paciente concreto") }}
 
 <!-- Titulo -->
 
@@ -109,6 +119,7 @@
 		        <br><br>
 		        
 		        {{ form.submit() }}
+		        {{ form.returnBtn }}
 
 		    </form>
 

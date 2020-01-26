@@ -6,6 +6,7 @@
 <!-- Import macros -->
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patientsTableMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
 
 {% block head %}
 
@@ -46,7 +47,9 @@
 
 {% endblock %}
 
-{% block content %} 
+{% block content %}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Ver pacientes") }}
 
 <!-- Title -->
 <section id="contact" class="section section-light-grey">
@@ -184,7 +187,7 @@
                 <br>
                 <div id="tablearea" align="center" class="box">
                     {% if rowPatients|length > 0 %}
-                        {{ patientsTableMacro(rowPatients, 1) }}
+                        {{ patientsTableMacro(rowPatients) }}
                     {% endif %}
                     
                     Número de registros totales: <b>{{ numberTotalRows }}</b>

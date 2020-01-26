@@ -9,6 +9,7 @@
 
 {% from 'macros.html' import modalCancelMacro with context %}
 
+{% from 'macros.html' import breadCrumbMacro with context %}
 {% from 'macros.html' import groupsTableMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 
@@ -144,6 +145,7 @@
 <!-- Modal[Cancelar] -->
 {{ modalCancelMacro() }}
 
+{{ breadCrumbMacro(rowsBreadCrumb, form.name.data + ' ' + form.surname1.data) }}
 
 {{ titleMacro("Ver paciente") }}
 

@@ -7,6 +7,7 @@
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 {% from 'macros.html' import pagination with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
 
 {% block head %}
 
@@ -40,7 +41,7 @@
 		}
 
 		function returnPage(){
-			location.href = "/verPaciente/"+{{patientInfo.id}};
+			location.href = location.protocol + '//' + location.host + "/verPaciente/" + location.pathname.split("/")[2] + location.search;
 		}
 
 		function linkPatterns(){
@@ -80,9 +81,11 @@
 
 {% block content %}	
 
+{{ breadCrumbMacro(rowsBreadCrumb, "Enlazar pauta ya creada") }}
+
 <!-- Title -->
 <section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver todas las pautas almacenadas") }}
+    {{ titleMacro("Enlazar pauta ya creada") }}
 </section>
 
 <!-- Input data -->

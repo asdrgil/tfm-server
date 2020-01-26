@@ -101,6 +101,8 @@ class RegisterPatternForm(FlaskForm):
         render_kw={'multiple':'multiple', 'id':'groupsSelect'})
 
     submit = SubmitField('Registrar pauta', render_kw={"class":"button is-primary"})
+    returnBtn = SubmitField('Volver',    render_kw={"class":"button is-light", "onclick": "returnPage()", \
+        'type':'button'})
 
 
     def __init__(self, therapistId: int, *args, **kwargs):
