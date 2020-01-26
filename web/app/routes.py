@@ -31,6 +31,7 @@ from .mongoMethods import searchPatterns, searchPatients, searchGroups, getMulti
     getCountMultipleEpisodes, getWindowId
 from .constants import mongoClient, rowsPerPage
 
+
 @app.before_request
 def before_request():
     if current_user.is_authenticated:
@@ -143,20 +144,7 @@ def registerPatternPatient(idPatient):
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
 
-    if request.args.get('windowId') is None:
-        flash("Faltan parámetros en la URL introducida", "error")
-        return redirect(url_for("Index"))
-
-    pageNumber = 1 if request.args.get('pageNumber') is None else request.args.get('pageNumber')
-
-    windowId = request.args.get('windowId')
-
     form = RegisterPatternForm(current_user.get_id())
-
-    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
-
-    patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
-        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
 
     if form.validate_on_submit():
 
@@ -172,7 +160,7 @@ def registerPatternPatient(idPatient):
             for cur in cursor:
                 idPattern = cur["id"] + 1
 
-            #mongoClient["patients"].update_one({"id" : idPatient}, {"$push": {"patterns":idPattern}})
+            mongoClient["patients"].update_one({"id" : idPatient}, {"$push": {"patterns":idPattern}})
 
             #Add intensities
             intensities = []
@@ -187,32 +175,27 @@ def registerPatternPatient(idPatient):
                 intensities.append(3)                
 
             mongoClient["patterns"].insert_one({"therapist":current_user.get_id(), "id":idPattern, \
-                'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities, \
-                "windowId":windowId})
-
-            mongoClient["patientsTmp"].update_one({"windowId" : windowId}, {"$push": {"patterns":idPattern}})
-
-            #Get all patterns for the given windowId
-            patterns = ""
-            patientsTmp = mongoClient["patientsTmp"].find_one({"windowId" : windowId})
-            cursor = mongoClient["patterns"].find({"patterns" : {"$in":patientsTmp["patterns"]}})
-
-            for cur in cursor:
-                patterns += cur["id"] + "," + cur["name"] + "," + cur["intensity1"] + "," + \
-                    cur["intensity2"] + "," + cur["intensity3"] + ";" 
-
-            if len(patterns) > 0:
-                patterns = patterns[:-1]
-
-
-            socketio.emit('patterns', patterns, namespace='/viewPatient')
+                'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities})
 
             flash("Pauta creada correctamente.", "success")
             return redirect(url_for('viewPatient', idPatient=idPatient))
         else:
             flash("El nombre de la pauta debe ser unívoco", "error")
 
+    #As the session variable cannot be accessed from socketIO methods, it is temporaly stored on Mongo 
+    # and then persisted.
+    cursorSession = mongoClient["session"].find_one({"id": "viewPatientInfo-" + str(idPatient)})
+    session["viewPatientInfo-" + str(idPatient)] = cursorSession["data"]
+    mongoClient["session"].delete_one({"id": "viewPatientInfo-" + str(idPatient)})
+    namePati, surname1Pati, surname2Pati, agePati, genderPati = \
+        session.get("viewPatientInfo-" + str(idPatient)).split(",")
 
+    form = RegisterPatternForm(current_user.get_id())
+
+    cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
+
+    patientInfo  = {"id": idPatient, "name":namePati, "surname1":surname1Pati, \
+        "surname2":surname2Pati, "age":agePati, "gender":genderPati}
 
     return render_template('registerPatternPatient.html', title='Registrar una pauta', form=form, \
         therapistLiteral=therapistLiteral, patientInfo=patientInfo)
@@ -418,7 +401,7 @@ def registerPatient():
         therapistLiteral=therapistLiteral)
 
 
-@app.route('/verPaciente/<int:idPatient>', methods=['GET', 'POST'])
+@app.route('/verPaciente/<int:idPatient>/', methods=['GET', 'POST'])
 @login_required
 def viewPatient(idPatient):
     if mongoClient["patients"].count_documents({"id":idPatient, "therapist":current_user.get_id()}) == 0:
@@ -439,60 +422,42 @@ def viewPatient(idPatient):
     form4 = FilterByDateForm(current_user.get_id(), 1)
 
     if form.validate_on_submit():
-        patternsSelected = list(map(int, form.patterns.data))
-        groupsSelected = list(map(int, form.groups.data))
-        newPatterns = patternsSelected
-        
-        cursorGroups = mongoClient["groups"].find({"id": {"$in": groupsSelected}})
-
-        for cur in cursorGroups:
-            newPatterns += cur["patterns"]
-
+        #TODO: obtain patterns from session and update them removing all temporal registers
 
         mongoClient["patients"].update_one({"id":idPatient}, {"name": form.name.data, "surname1": form.surname1.data, \
-            "surname2": form.surname2.data, "age": form.age.data, "gender": form.gender.data, "patterns": newPatterns})
-        
-        mongoClient["groups"].update_many({"id":{"$in": groupsSelected}}, {"$push": {"patients": idPatient}})
+            "surname2": form.surname2.data, "age": form.age.data, "gender": form.gender.data})
 
         flash("Paciente modificado correctamente", "success")
         return redirect(url_for('index'))
 
     form.patientId.data = idPatient
 
-    cursor = mongoClient["patients"].find_one({"id":idPatient})
-    cursor2 = mongoClient["groups"].find({"therapist": current_user.get_id(), "patients" : idPatient})
+    if "viewPatientInfo-{}".format(idPatient) not in session:
+        cursor = mongoClient["patients"].find_one({"id":idPatient})
+        
+        form.name.data = cursor["name"]
+        form.surname1.data = cursor["surname1"]
+        form.surname2.data = cursor["surname2"]
+        form.age.data = cursor["age"]
+        form.gender.data = cursor["gender"]
 
-    selectedGroups = []
+    else:
+        cookieInfo = session.get("viewPatientInfo-{}".format(idPatient)).split(",")
 
-    for cur in cursor2:
-        if "id" in cur:
-            selectedGroups.append(str(cur["id"]))
-
-
-    form.name.data = cursor["name"]
-    form.surname1.data = cursor["surname1"]
-    form.surname2.data = cursor["surname2"]
-    form.age.data = cursor["age"]
-    form.gender.data = cursor["gender"]
-    form.patterns.data = list(map(str, cursor["patterns"]))
-    form.groups.data = selectedGroups
-
+        form.name.data = cookieInfo[0]
+        form.surname1.data = cookieInfo[1]
+        form.surname2.data = cookieInfo[2]
+        form.age.data = int(cookieInfo[3])
+        form.gender.data = cookieInfo[4]
 
     cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
     
-    queryResultPatterns = searchPatternsPatient(idPatient, 1)
+    #TODO: pass cookie
+    if mongoClient["session"].count_documents({"id": "viewPatientPatterns-" + str(idPatient)}) > 0:
+        cursorCookiePatterns = mongoClient["session"].find_one({"id": "viewPatientPatterns-" + str(idPatient)})
+        session["viewPatientPatterns-{}".format(idPatient)] = cursorCookiePatterns["data"]
 
-    if form.windowId.data == None:
-        form.windowId.data =  getWindowId("patientsTmp")
-
-    #Ids
-    patternsDisplay = queryResultPatterns["rows"]
-    
-    #Whole info
-    patternsAll = cursorPatient["patterns"]
-
-    mongoClient["patientsTmp"].insert_one({"windowId":form.windowId.data, "patient":idPatient, \
-        "patternsDisplay":patternsDisplay, "patternsAll":patternsAll})
+    queryResultPatterns = searchPatternsPatient(idPatient, 1, "arr")
 
     return render_template('viewPatient.html', therapistLiteral=therapistLiteral, \
         rowsPatterns=queryResultPatterns["rows"], form=form, form2=form2, \

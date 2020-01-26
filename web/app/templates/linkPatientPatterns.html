@@ -39,6 +39,35 @@
 			document.getElementById("generalForm").submit();
 		}
 
+		function returnPage(){
+			location.href = "/verPaciente/"+{{patientInfo.id}};
+		}
+
+		function linkPatterns(){
+			var checkboxes = document.getElementsByName("checkboxPattPat");
+			var pattIds = "";
+
+			for (var i=0; i<checkboxes.length; i++) {
+			  if (checkboxes[i].checked) {
+			    pattIds += checkboxes[i].id.replace("checkbox_", "") + ",";
+			  }
+			}
+
+			if(pattIds.length > 0){
+				pattIds = pattIds.substring(0, pattIds.length-1);
+
+				namespace = '/linkPatientPatterns';
+        		var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        		socket.emit("linkPatientPatterns", {"idPatient": {{patientInfo.id}}, "patterns": pattIds });
+
+        		generateNotification("success", "Pautas vinculadas al paciente correctamente");
+			
+			} else {
+				generateNotification("alert", "No se ha seleccionado ninguna pauta");
+			}
+		}
+
 		//This is done just to allow code reuse of forms
 		function paginationFunc(){
 			submitFunc();
@@ -165,6 +194,7 @@
     		</div>        		
 
     		{{ form.searchBtn }}
+    		{{ form.returnBtn }}
 
 	    </form>
 
@@ -183,7 +213,7 @@
 
 		    	<br><br>
 
-		    	<input class="button is-success" id="linkBtn" name="linkBtn" onclick="linkPatterns()" value="Enlazar pautas">
+		    	<input class="button is-link" id="linkBtn" name="linkBtn" onclick="linkPatterns()" value="Enlazar pautas">
 	    	</div>
 
     	{% endif %}

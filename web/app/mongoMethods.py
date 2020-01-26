@@ -1,6 +1,7 @@
 from flask_login import current_user
 from pymongo import MongoClient, errors
 from flask_login import current_user
+from flask import session
 import random
 import string
 from datetime import datetime
@@ -234,9 +235,6 @@ def searchGroupsPattern(idPattern, pageNum=1, outputFormat="arr"):
 def searchPatternsPatient(idPatient, pageNum=1, outputFormat="arr"):
     cursorPatient = mongoClient["patients"].find_one({"id":idPatient})
 
-    numberTotalRows = len(cursorPatient["patterns"])
-    numberPages = math.ceil(numberTotalRows/rowsPerPage)
-
     if outputFormat == "arr":
         rows = []
     else:
@@ -245,16 +243,36 @@ def searchPatternsPatient(idPatient, pageNum=1, outputFormat="arr"):
     cursorPatterns = mongoClient["patterns"].find({"therapist":current_user.get_id(), \
         "id" :{"$in": cursorPatient["patterns"]}}).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
 
+    cookiePatternsExists = "viewPatientPatterns-{}".format(idPatient) in session and \
+        len(session["viewPatientPatterns-{}".format(idPatient)]) > 0
+
+    unlinkPatternsCookie = False
+
+    unlinkPatterns = []
+
+    if cookiePatternsExists:
+        pattCookies = session.get("viewPatientPatterns-{}".format(idPatient)).split("|")
+        if len(pattCookies[2]) > 0:
+            unlinkPatterns = list(map(int, pattCookies[2].split(",")))
+            unlinkPatternsCookie = True
+
     for cur in cursorPatterns:
+
         intensity1 = "Sí" if 1 in cur["intensities"] else "No"
         intensity2 = "Sí" if 2 in cur["intensities"] else "No"
         intensity3 = "Sí" if 3 in cur["intensities"] else "No"
 
         if outputFormat == "arr":
-            rows.append({"id":cur["id"], "name":cur["name"], "description":cur["description"], \
-                "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3})
+            if (unlinkPatternsCookie is True and cur["id"] not in unlinkPatterns) or unlinkPatternsCookie is not True:
+                rows.append({"id":cur["id"], "name":cur["name"], "description":cur["description"], \
+                    "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3})
         else:
-            rows += "{},{},{},{},{};".format(cur["id"], cur["name"], intensity1, intensity2, intensity3)
+            if (cookiePatternsExists is True and cur["id"] not in unlinkPatterns) or cookiePatternsExists is not True:
+                rows += "{},{},{},{},{};".format(cur["id"], cur["name"], intensity1, intensity2, intensity3)
+
+
+    numberTotalRows = len(rows)
+    numberPages = math.ceil(numberTotalRows/rowsPerPage)
 
     if outputFormat == "arr":
         return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
@@ -991,10 +1009,10 @@ def updateGroup(form, therapistId, idGroup):
     mongoClient["groups"].update_one({"id" : idGroup}, {"$set" : {"name": form.name.data, \
         "description": form.description.data, "patients": newPatients, "patterns": newPatterns }})
 
-def getWindowId(tableName):
+def getWindowId():
     windowId = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
 
-    while mongoClient[tableName].count_documents({"windowId":windowId}):
+    while mongoClient["tmp"].count_documents({"windowId":windowId}) > 0:
         windowId = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
 
     return windowId

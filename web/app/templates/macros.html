@@ -86,7 +86,7 @@
             {% for row in rows %}
                 <tr>
                     {% if edit == 1 %}
-                        <td> <input type="checkbox" id="checkbox_"{{loop.index}}> </td>
+                        <td> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
                     {% endif %}
 
                     <td>{{ row.name }}</td>
@@ -110,7 +110,7 @@
                     {% endif %}
                     <td><a href=/verPauta/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
                     {% if unlink == 1 %}
-                        <td><i class='fas fa-trash'></i> &nbsp; Desvincular pauta </a> </td>
+                        <td><a onclick="unlinkPattern({{ row.id }});"><i class='fas fa-trash'></i> &nbsp; Desvincular pauta </a> </td>
                     {% endif %}
                 </tr>
             {% endfor %}                                    

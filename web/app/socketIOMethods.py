@@ -5,9 +5,8 @@ from .mongoMethods import deletePattern, insertPatternTmp, getTmpPatterns, getPa
     getPatternsSelectGroup, insertPatient, getUnlinkPattern, searchGroupsPattern, searchPatientsPattern, \
     searchPatientsGroup, searchPatternsGroup, searchPatternsPatient, searchGroupsPatient, viewEpisodes
 from datetime import datetime
+from .constants import mongoClient, counterSleepTmp
 
-#Constants
-mongoClient = MongoClient('localhost:27017').tfm
 
 ################  editPattern ##################
 
@@ -128,5 +127,75 @@ def episodesViewPatient(message):
     
     emit("episodes", {'rowEpisodes': rowEpisodes, "numberTotalRows": numberTotalRows, "numberPages":numberPages})
 
+
+@socketio.on('linkPatientPatterns', namespace='/linkPatientPatterns')
+def linkPatientPatterns(message):
+
+    patternIds = message["patterns"].split(",")
+
+    for patt in patternIds:
+        mongoClient["patients"].update_one({"id":message["idPatient"]}, { "$addToSet": {"patterns": int(patt)}})
+
+
+@socketio.on('unlinkPattern', namespace='/viewPatient')
+def unlinkPatternPatient(message):
+    #mongoClient["patients"].update_one({"id":message["idPatient"]}, { "$pull": {"patterns": message["pattern"]}})
+    #DEBUG: todo: update the cookie viewPatientPatterns-idPatient in order to set the given pattern as unlinked.
+    #Then, refresh the page to view the changes
+
+    data = ""
+
+    if mongoClient["session"].count_documents({"id": "viewPatientPatterns-" + str(message["idPatient"])}) == 0:
+        data = "||" + str(message["pattern"])
+    else:
+        cursorSession = mongoClient["session"].find_one({"id": "viewPatientPatterns-" + str(message["idPatient"])})
+        dataArr = cursorSession["data"].replace(str(message["pattern"]), "").replace(",,",",").split("|")
+        
+        if len(dataArr[2]) == 0:
+            dataArr[2] = str(message["pattern"])
+        else:
+            dataArr[2] += "," + str(message["pattern"])
+
+        data = dataArr[0] + "|" + dataArr[1] + "|" + dataArr[2]
+
+        mongoClient["session"].delete_one({"id": "viewPatientPatterns-" + str(message["idPatient"])})
+
+    mongoClient["session"].insert_one({"id": "viewPatientPatterns-" + str(message["idPatient"]), "data":data})
+
+@socketio.on('cookiePatientInfo', namespace='/viewPatient')
+def cookiePatientInfo(message):
+    data = "{},{},{},{},{}".format\
+        (message["name"], message["surname1"], message["surname2"], message["age"], message["gender"])
+
+    mongoClient["session"].delete_one({"id": "viewPatientInfo-" + str(message["idPatient"])})
+    mongoClient["session"].insert_one({"id": "viewPatientInfo-" + str(message["idPatient"]), "data": data})
+    
+
+def removeTmpViewPatient(idPatient):
+
+    while mongoClient["tmpPatientToken"].count_documents({'id': registrationToken, 'synced': False}) == 1:
+        socketio.sleep(1)
+
+    #If a token has been marked as synced, redirect to index. If not, the user has pressed cancel
+    if mongoClient["tmpPatientToken"].count_documents({'id': registrationToken, 'synced': True}) == 1:
+        cursorRegistrationToken = mongoClient["tmpPatientToken"].find_one({'id': registrationToken})
+        insertPatient(windowToken, cursorRegistrationToken["name"], cursorRegistrationToken["surname1"], \
+            cursorRegistrationToken["surname2"], cursorRegistrationToken["age"], cursorRegistrationToken["gender"], \
+            cursorRegistrationToken["groups"], True)
+        mongoClient["tmpPatientToken"].delete_one({'id': registrationToken})
+
+        socketio.emit('redirect',
+          namespace='/registerPatient')
+
+# Function to know if the screen was opened in the last 4 minutes. If not, discard all temporal changes
+# from the given patient
+@socketio.on('ping', namespace='/viewPatient')
+def pingViewPatient(message):
+    t1 = threading.Thread(target=pingPatientBackground, args=(counterSleepTmp))
+    t1.start()
+    t1.join()
+
+    mongoClient["session"].delete_one({"id": "viewPatientInfo-" + str(message["idPatient"])})
+    mongoClient["session"].insert_one({"id": "viewPatientInfo-" + str(message["idPatient"]), "data": data})
 
 ################################

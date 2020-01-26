@@ -34,17 +34,41 @@
 
                 document.getElementById("gender-0").disabled = true;
                 document.getElementById("gender-1").disabled = true;
+
+                setTimeout(function () {
+                    namespace = '/viewPatient';
+                    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+                    socket.emit("ping", {"idPatient":{{idPatient}}});
+                }, 3*60*1000);
             })
         });
 
+        function cookiePatientInfo(){
+            var name = document.getElementById("name").value;
+            var surname1 = document.getElementById("surname1").value;
+            var surname2 = document.getElementById("surname2").value;
+            var age = document.getElementById("age").value;
+            var gender = document.getElementById("gender-0").checked ? "M" : "F";
+
+            namespace = '/viewPatient';
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+            socket.emit("cookiePatientInfo", {"idPatient":{{idPatient}}, "name": name, "surname1": surname1, "surname2": surname2, "age": age, "gender": gender});
+        }
+
         function newPattern(){
-            var win = window.open("/registrarPauta/"+{{idPatient}}+"?windowId="+document.getElementById("windowId").value, '_blank');
-            win.focus();
+            cookiePatientInfo();
+            location.href = "/registrarPauta/{{idPatient}}";
         }
 
         function linkPattern(){
-            var win = window.open("/enlazarPautas/"+{{idPatient}}, '_blank');
-            win.focus();
+            cookiePatientInfo();
+            location.href = "/enlazarPautas/"+{{idPatient}};
+        }
+
+        function unlinkPattern(pattId){
+            socket.emit("unlinkPattern", {"idPatient": {{idPatient}}, "pattern": pattId });
+             location.reload(); 
         }
 
     </script> 
@@ -57,11 +81,6 @@
         function episodesFunc(){
             socket.emit('episodes', {"idPatient": {{idPatient}}, "date1": document.getElementById("date1").value, "time1": document.getElementById("time1").value, "date2": document.getElementById("date2").value, "time2": document.getElementById("time2").value});
         }
-
-        socket.on('patterns', function(message) {
-            console.log("[DEBUG] INN.");
-            console.log(message);
-        });
 
         socket.on('episodes', function(message) {
 
@@ -129,10 +148,9 @@
     <div class="column is-8" align="center">
         <article class="card is-rounded">
             <div class="card-content">
-                <form action="" method="post" id="generalForm" novalidate>
+                <form class="box" action="" method="post" id="generalForm" novalidate>
                     {{ form.hidden_tag() }}
                     {{ form.csrf_token }}
-                    {{ form.windowId }}
 
                     <div class="columns is-centered is-vcentered">
                         <div class="column is-9">
@@ -272,7 +290,7 @@
                     </div>
                 </form>
 
-                <br><div style='max-width:400px'><hr></div><br>
+                <div style='max-width:400px'><hr></div><br>
 
 
                 <div class="box" style='max-width:1000px' align="center">

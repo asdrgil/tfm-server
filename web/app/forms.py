@@ -256,6 +256,8 @@ class SearchPatternsForm(FlaskForm):
         choices=[("1", "Amarilla"), ("2", "Naranja"), ("3", "Roja")], \
         render_kw={'multiple':'multiple', 'id':'intensitiesSelect'})
     searchBtn = SubmitField('Buscar',    render_kw={"class":"button is-primary", "onclick": "saveChanges()"})
+    returnBtn = SubmitField('Volver',    render_kw={"class":"button is-light", "onclick": "returnPage()", \
+        'type':'button'})
 
     #Auxiliary variables
     pageNumber = HiddenField("pageNumber")
