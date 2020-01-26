@@ -125,6 +125,7 @@ cached*.*
 
 # Sublime workspace
 *.sublime-workspace
+*.sublime-project
 
 # Tryouts
 tryout.*

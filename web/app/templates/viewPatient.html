@@ -34,41 +34,44 @@
 
                 document.getElementById("gender-0").disabled = true;
                 document.getElementById("gender-1").disabled = true;
-
-                setTimeout(function () {
-                    namespace = '/viewPatient';
-                    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
-                    socket.emit("ping", {"idPatient":{{idPatient}}});
-                }, 3*60*1000);
             })
         });
 
-        function cookiePatientInfo(){
-            var name = document.getElementById("name").value;
-            var surname1 = document.getElementById("surname1").value;
-            var surname2 = document.getElementById("surname2").value;
+        function patientInfoParams(paramUrl, pattId){
+            var name = document.getElementById("name").value.replace(/ /g,"+");
+            var surname1 = document.getElementById("surname1").value.replace(/ /g,"+");
+            var surname2 = document.getElementById("surname2").value.replace(/ /g,"+");
             var age = document.getElementById("age").value;
             var gender = document.getElementById("gender-0").checked ? "M" : "F";
 
-            namespace = '/viewPatient';
-            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+            var url = new URL(paramUrl);
+            var search_params = new URLSearchParams(url.search); 
+            
+            search_params.set('name', name);
+            search_params.set('surname1', surname1);
+            search_params.set('surname2', surname2);
+            search_params.set('age', age);
+            search_params.set('gender', gender);
 
-            socket.emit("cookiePatientInfo", {"idPatient":{{idPatient}}, "name": name, "surname1": surname1, "surname2": surname2, "age": age, "gender": gender});
+            if(pattId > 0){
+                search_params.set('unlinkPatt', pattId);
+            }
+
+            url.search = search_params.toString();
+
+            location.href = url.toString();
         }
 
         function newPattern(){
-            cookiePatientInfo();
-            location.href = "/registrarPauta/{{idPatient}}";
+            patientInfoParams(location.protocol + '//' + location.host + "/registrarPauta/"+{{idPatient}}, 0);
         }
 
         function linkPattern(){
-            cookiePatientInfo();
-            location.href = "/enlazarPautas/"+{{idPatient}};
+            patientInfoParams(location.protocol + '//' + location.host + "/enlazarPautas/"+{{idPatient}}, 0);
         }
 
         function unlinkPattern(pattId){
-            socket.emit("unlinkPattern", {"idPatient": {{idPatient}}, "pattern": pattId });
-             location.reload(); 
+            patientInfoParams(location.protocol + '//' + location.host + location.pathname, pattId);
         }
 
     </script> 
@@ -262,6 +265,12 @@
                         </div>
                     </div>
 
+                    <br>
+
+                    <div id="divBtns" align="center">
+                        {{ form2.saveBtn }}
+                    </div>
+
                     <br><div style='max-width:400px'><hr></div><br>
 
                     <div class="box" style='max-width:1000px' align="center">
@@ -280,13 +289,6 @@
 
                         {{ form.newPatternBtn }} {{ form.linkPatternBtn }}
 
-                    </div>
-
-                    <br>
-
-                    <div id="divBtns" align="center">
-                        {{ form2.saveBtn }}
-                        {{ form2.cancelBtn }}
                     </div>
                 </form>
 
@@ -363,7 +365,7 @@
                             </div>
 
                             <br>
-                            {{ form4.patientId }}
+                            {{ form.unlinkPatternId }}
                             {{ form4.searchBtn2 }}
                         
                         </form>

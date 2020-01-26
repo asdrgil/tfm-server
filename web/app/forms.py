@@ -193,7 +193,8 @@ class EditPatientForm(FlaskForm):
         choices=[], render_kw={'multiple':'multiple', 'id':'patternsSelect', 'onchange':'changedSelectPattern();'})
 
     patientId = HiddenField("patientId")
-    windowId = HiddenField("windowId")
+    unlinkPatternId = HiddenField("unlinkPatternId")
+
 
     newPatternBtn = SubmitField('Registrar una nueva pauta', render_kw={"class":"button is-link", 'type':'button', \
         "onclick": "newPattern()"})

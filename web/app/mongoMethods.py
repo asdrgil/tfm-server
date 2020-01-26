@@ -263,13 +263,10 @@ def searchPatternsPatient(idPatient, pageNum=1, outputFormat="arr"):
         intensity3 = "Sí" if 3 in cur["intensities"] else "No"
 
         if outputFormat == "arr":
-            if (unlinkPatternsCookie is True and cur["id"] not in unlinkPatterns) or unlinkPatternsCookie is not True:
-                rows.append({"id":cur["id"], "name":cur["name"], "description":cur["description"], \
-                    "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3})
+            rows.append({"id":cur["id"], "name":cur["name"], "description":cur["description"], \
+                "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3})
         else:
-            if (cookiePatternsExists is True and cur["id"] not in unlinkPatterns) or cookiePatternsExists is not True:
-                rows += "{},{},{},{},{};".format(cur["id"], cur["name"], intensity1, intensity2, intensity3)
-
+            rows += "{},{},{},{},{};".format(cur["id"], cur["name"], intensity1, intensity2, intensity3)
 
     numberTotalRows = len(rows)
     numberPages = math.ceil(numberTotalRows/rowsPerPage)
