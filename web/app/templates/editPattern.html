@@ -4,6 +4,7 @@
 {% set therapistName = therapistLiteral %}
 
 {% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
 
 {% block head %}
 
@@ -38,11 +39,17 @@
         socket.on('deleted', function() {
             window.location.href = '/index?flash=editPattern';
         });
+
+        function returnPage(){
+            location.href = location.protocol + '//' + location.host + "/verPauta/" + location.pathname.split("/")[2] + location.search;
+        }        
     </script>
 
 {% endblock %}
 
-{% block content %}	
+{% block content %}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Editar pauta") }}
 
 <!-- Modal[Persist changes] -->
 <div class="modal" id="page-modal-save">
@@ -144,9 +151,7 @@
 		        
 				<div id="divBtns" align="center">
 			        {{ form2.saveBtn }}
-			        {{ form2.cancelBtn }}
-                    <a href=/verPauta/{{ form.patternId.data }} target="_blank">{{ form2.viewPatternBtn }}</a>
-			        {{ form2.deleteBtn }}
+			        {{ form2.returnBtn }}
 		        </div>
 
 		    </form>

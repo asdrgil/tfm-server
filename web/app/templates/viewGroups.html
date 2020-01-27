@@ -6,6 +6,8 @@
 <!-- Import macros -->
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import groupsTableMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import modalDeleteMacro with context %}
 
 {% block head %}
 
@@ -40,16 +42,37 @@
         //This is done just to allow code reuse of forms
         function paginationFunc(){
             submitFunc();
-        }        
+        }
+
+        function confirmDeleteMacro(){
+            var deleteElem = document.getElementById("deleteId").value;
+            var url = new URL(location.protocol + '//' + location.host + location.pathname);
+            var search_params = new URLSearchParams(url.search); 
+            search_params.set('deleteElem', deleteElem);
+            url.search = search_params.toString();
+
+            location.href = url.toString();
+        }
+
+        function displayModalDelete(id, name){
+            var modalDiv = document.getElementById("page-modal-delete");
+            document.getElementById("textDeleteMacro").innerHTML = "<ul style='list-style-type:disc;'><li>" + name + "</ul></li>";
+            document.getElementById("deleteId").value = id;
+            modalDiv.style.display = "block";
+        }
     </script>
 
 {% endblock %}
 
-{% block content %} 
+{% block content %}
+
+{{ modalDeleteMacro("de este grupo") }}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Ver grupos de pautas") }}
 
 <!-- Title -->
 <section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver todos los grupos de pautas") }}
+    {{ titleMacro("Ver grupos de pautas") }}
 </section>
 
 <!-- Input data -->
@@ -65,6 +88,7 @@
             <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
                 {{ form.hidden_tag() }}
                 {{ form.csrf_token }}
+                {{ form. deleteId }}
 
                 <div class="columns is-vcentered is-centered">
                     <div class="column is-5">

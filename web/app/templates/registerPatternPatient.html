@@ -4,6 +4,7 @@
 {% set therapistName = therapistLiteral %}
 
 {% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import patientInfoMacro with context %}
 
 {% block head %}
 
@@ -55,26 +56,9 @@
 <div class="columns is-vcentered is-centered" style="margin-top:50px">
 
 	<div class="column is-8 box" align="center">
-
-        <div class="box">
-            <h4 class="title is-4">Datos del paciente</h4>
-
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Nombre</b>:&nbsp;&nbsp; {{ patientInfo.name }}
-            <br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Primer apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname1 }}
-            <br>
-            <b> Segundo apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname2 }}
-            <br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Edad </b>:&nbsp;&nbsp; {{ patientInfo.age }}
-            <br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
-            {% if patientInfo.gender == "M" %}
-                <td>Masculino</td>
-            {% else %}
-                <td>Femenino</td>
-            {% endif %}
-
-        </div>
+		<div class="box">
+        	{{ patientInfoMacro(patientInfo) }}
+    	</div>
 
         <br>
 

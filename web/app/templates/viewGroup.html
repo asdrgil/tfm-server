@@ -8,6 +8,7 @@
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 {% from 'macros.html' import patientsTableMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
 
 {% block head %}
 
@@ -117,10 +118,12 @@
 
 {% endblock %}
 
-{% block content %} 
+{% block content %}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Ver un grupo de pautas") }}
 
 <!-- Title -->
-{{ titleMacro("Crear un grupo de pautas") }}
+{{ titleMacro("Ver un grupo de pautas") }}
 
 <!-- Input data -->
 
@@ -132,21 +135,6 @@
         <br><br>
         <b> Descripción </b>:&nbsp;&nbsp; {{ groupInfo.description }}
 
-        <br><div style='max-width:400px'><hr></div><br>
-
-        <div class="box" style='max-width:1000px'>
-            <h4 class="title is-4 is-spaced">Pacientes que incluyen este grupo de pautas</h4>
-            {% if rowsPatients|length > 0 %}
-                {{ patientsTableMacro(rowsPatients) }}
-            {% endif %}
-
-            Número de registros totales: <b>{{ numberRowsPatient }}</b>
-            {% if pagesPatients > 1 %}
-                <br>
-                {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
-            {% endif %}
-        </div>
-
         <div style='max-width:400px'><hr></div>
 
         <div class="box" style='max-width:1000px'>
@@ -155,7 +143,7 @@
             {% endif %}
 
             Número de registros totales: <b>{{ numberRowsPattern }}</b>
-            {% if pagesPatients > 1 %}
+            {% if pagesPatterns > 1 %}
                 <br>
                 {{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
             {% endif %}

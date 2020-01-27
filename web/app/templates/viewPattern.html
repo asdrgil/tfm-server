@@ -6,6 +6,7 @@
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import groupsTableMacro with context %}
 {% from 'macros.html' import patientsTableMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
 
 {% block head %}
 
@@ -39,6 +40,10 @@
         	socket.emit('paginationPatient', {"idPattern": {{ idPattern }}, "patientPage": document.getElementById("paginationSelect2").value});
         }
 
+        function unlinkPatient(pattId){
+            location.href = location.protocol + '//' + location.host + "/verPauta/"+{{idPatient}} + "?unlinkPatt=" + pattId;
+        }
+
         socket.on('paginationGroup', function(message) {
 
             var bodyContent = "";
@@ -57,7 +62,7 @@
                     //Name
                     bodyContent += "<td>"+cols[1]+"</td>"
                     //View pattern
-                    bodyContent += "<td><a href=/verGrupo/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
+                    bodyContent += "<td><a href=/verGrupo/"+ cols[0] +"}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
                     
                     bodyContent += "</tr>"
                 }
@@ -92,7 +97,7 @@
                     //Age
                     bodyContent += "<td>"+cols[5]+"</td>"
                     //View pattern
-                    bodyContent += "<td><a href=/verPaciente/"+ cols[0] +"} target=\"_blank\"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
+                    bodyContent += "<td><a href=/verPaciente/"+ cols[0] +"}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>"
                     
                     bodyContent += "</tr>"
                 }
@@ -106,7 +111,7 @@
 
 {% block content %}	
 
-<br>
+{{ breadCrumbMacro(rowsBreadCrumb, patternInfo.name) }}
 
 {{ titleMacro("Ver una pauta") }}
 
@@ -147,11 +152,15 @@
             
 			<b>Intensidad roja</b>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
-			{% if patternInfo.intensity2=="No" %}
+			{% if patternInfo.intensity3=="No" %}
                 No&nbsp;&nbsp;<span style='color:red;'><i class='fas fa-times'></i></span>
             {% else %}
                 Sí&nbsp;&nbsp;<span style='color:green;'><i class='fas fa-check'></i></span>
-            {% endif %}            
+            {% endif %}
+
+            <div id="divBtns" align="center">
+                <a href=/editarPauta/{{ patternInfo.id }}><input class="button is-warning" type="button" value="Editar pauta" ></a>
+            </div>           
 
 		</div>
 
@@ -160,7 +169,7 @@
         <div class="box" style='max-width:1000px'>
             <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
             {% if rowsPatients|length > 0 %}
-            	{{ patientsTableMacro(rowsPatients) }}
+            	{{ patientsTableMacro(rowsPatients, 2) }}
             {% endif %}
 
             Número de registros totales: <b>{{ numberRowsPatient }}</b>
@@ -180,7 +189,7 @@
 
         	<div id="tablearea" align="center" class="box">
         	{% if rowsGroups|length > 0 %}
-    	    	{{ groupsTableMacro(rowsGroups, 0) }}
+    	    	{{ groupsTableMacro(rowsGroups, 2) }}
         	{% endif %}
         	
         	Número de registros totales: <b>{{ numberRowsGroup }}</b>
@@ -189,12 +198,6 @@
                 <br>
         		{{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
         	{% endif %}
-        </div>
-
-        <div style='max-width:400px'><hr></div>
-
-        <div id="divBtns" align="center">
-            <a href=/editarPauta/{{ patternInfo.id }} target="_blank"><input class="button is-warning" type="button" value="Editar pauta" ></a>
         </div>
     </div>
 </div>

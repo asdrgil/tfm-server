@@ -101,7 +101,7 @@ class RegisterPatternForm(FlaskForm):
         render_kw={'multiple':'multiple', 'id':'groupsSelect'})
 
     submit = SubmitField('Registrar pauta', render_kw={"class":"button is-primary"})
-    returnBtn = SubmitField('Volver',    render_kw={"class":"button is-light", "onclick": "returnPage()", \
+    returnBtn = SubmitField('Volver', render_kw={"class":"button is-light", "onclick": "returnPage()", \
         'type':'button'})
 
 
@@ -151,6 +151,10 @@ class RegisterPatientForm(FlaskForm):
         render_kw={"class":"button is-warning", "onclick": "cancelRegister()", "style":"display:none",'type':'button'})
     submitBtn = SubmitField('Registrar paciente', \
         render_kw={"class":"button is-primary", "onclick":"submitFunc();", 'type':'button'})
+    modifyBtn = SubmitField('Modificar datos', \
+        render_kw={"class":"button is-primary", "onclick":"submitFunc();", 'type':'button'})
+    returnBtn = SubmitField('Volver', \
+        render_kw={"class":"button is-light", "onclick": "returnPage()", 'type':'button'})
 
     gender = RadioField('Género', choices = [('M','Masculino'),('F','Femenino')], validators=[DataRequired()])
 
@@ -215,16 +219,13 @@ class RegistrationGroupForm(FlaskForm):
     description = TextAreaField('Descripción', validators=[Optional()], render_kw={"class":"input is-medium", \
         "placeholder":"Descripción del grupo (opcional)", "style":"text-align:center;width:617px;height:85px"})
 
-    patients = SelectMultipleField('Pacientes asociados al grupo', validators=[Optional()], choices=[], \
-        render_kw={'multiple':'multiple', 'id':'patientsSelect'})
-    patterns = SelectMultipleField('Pautas ya creadas asociadas al grupo', validators=[Optional()], \
+    patterns = SelectMultipleField('Pautas asociadas al grupo (opcional)', validators=[Optional()], \
         choices=[], render_kw={'multiple':'multiple', 'id':'patternsSelect'})
 
     submit = SubmitField('Registrar grupo', render_kw={"class":"button is-primary"})
 
     def __init__(self, therapistId: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.patients.choices = patientOpts(therapistId)
         self.patterns.choices = patternOpts(therapistId)
 
 
@@ -244,6 +245,9 @@ class GenericEditForm(FlaskForm):
 
     viewPatientBtn = SubmitField('Ver paciente', \
         render_kw={"class":"button is-info", 'type':'button'})
+
+    returnBtn = SubmitField('Volver', \
+        render_kw={"class":"button is-light", "onclick": "returnPage()", 'type':'button'})
 
 
 class SearchPatternsForm(FlaskForm):
@@ -265,6 +269,7 @@ class SearchPatternsForm(FlaskForm):
     #Auxiliary variables
     pageNumber = HiddenField("pageNumber")
     submitDone = HiddenField("submitDone")
+    deleteId = HiddenField("deleteId")
 
     def __init__(self, therapistId: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -290,10 +295,14 @@ class SearchPatientsForm(FlaskForm):
         render_kw={'multiple':'multiple', 'id':'patternsSelect'})
     groups = SelectMultipleField('Grupos', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'groupsSelect'})
-    searchBtn = SubmitField('Buscar',    render_kw={"class":"button is-primary"})
+    searchBtn = SubmitField('Buscar', render_kw={"class":"button is-primary"})
 
     pageNumber = HiddenField("pageNumber")
     submitDone = HiddenField("submitDone")
+
+    deleteId = HiddenField("deleteId")
+    deleted = HiddenField("deleted")
+
 
     def __init__(self, therapistId: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -337,6 +346,7 @@ class SearchGroupsForm(FlaskForm):
 
     pageNumber = HiddenField("pageNumber")
     submitDone = HiddenField("submitDone")
+    deleteId = HiddenField("deleteId")
 
 
 class FilterByDateForm(FlaskForm):

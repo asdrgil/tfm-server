@@ -2,6 +2,7 @@
 
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
+{% from 'macros.html' import breadCrumbMacro with context %}
 
 {% block head %}
 
@@ -24,6 +25,8 @@
 {% endblock %}
 
 {% block content %}	
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Crear una pauta") }}
 
 <!-- Titulo -->
 
@@ -75,7 +78,7 @@
 	            <b>{{ form.description.label }}</b> <br>
 	            {{ form.description(maxlength=50) }} 
 
-		        <br>
+		        <br><br>
 
 	            <b>{{ form.intensity1.label }}</b> &nbsp;&nbsp; {{ form.intensity1 }}
 
@@ -88,19 +91,6 @@
 	            <b>{{ form.intensity3.label }}</b> &nbsp;&nbsp; {{ form.intensity3 }}
 
 		        <br>
-
-		        <!-- Link to patients -->
-				<div class="columns is-vcentered is-centered" style="margin-top:50px">
-					<div class="column is-1">
-					</div>
-
-	              	  <div align="center">
-              	  		{{ form.patients.label }} {{ form.patients }}
-			        </div>
-					<div class="column is-1">
-					</div>
-				</div>
-				<br>
 
 				<!-- Link to groups -->
 				<div class="columns is-vcentered is-centered" style="margin-top:50px">

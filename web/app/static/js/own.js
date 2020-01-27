@@ -62,10 +62,10 @@ function closeModalCancel(){
     modalDiv.style.display = "none";
 }
 
-function displayModalDelete(){
+/*function displayModalDelete(){
     var modalDiv = document.getElementById("page-modal-delete");
     modalDiv.style.display = "block";
-}
+}*/
 
 function closeModalDelete(){
     var modalDiv = document.getElementById("page-modal-delete");

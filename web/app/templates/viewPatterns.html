@@ -7,6 +7,8 @@
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 {% from 'macros.html' import pagination with context %}
+{% from 'macros.html' import modalDeleteMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
 
 {% block head %}
 
@@ -35,6 +37,9 @@
 			} else {
 				document.getElementById("pageNumber").value = parseInt(document.getElementById("paginationSelect").value);
 			}
+
+			//Remove parameters from url before submitting
+            window.history.pushState({}, document.title, "/verPautas");
 			
 			document.getElementById("generalForm").submit();
 		}
@@ -43,15 +48,40 @@
 		function paginationFunc(){
 			submitFunc();
 		}
+
+        function confirmDeleteMacro(){
+
+            var deleteElem = document.getElementById("deleteId").value;
+
+            var url = new URL(location.protocol + '//' + location.host + location.pathname);
+            var search_params = new URLSearchParams(url.search); 
+            
+            search_params.set('deleteElem', deleteElem);
+
+            url.search = search_params.toString();
+
+            location.href = url.toString();
+        }
+
+        function displayModalDelete(id, name){
+            var modalDiv = document.getElementById("page-modal-delete");
+            document.getElementById("textDeleteMacro").innerHTML = "<ul style='list-style-type:disc;'><li>" + name + "</ul></li>";
+            document.getElementById("deleteId").value = id;
+            modalDiv.style.display = "block";
+        }
 	</script>
 
 {% endblock %}
 
 {% block content %}	
 
+{{ modalDeleteMacro("de esta pauta") }}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Ver pautas") }}
+
 <!-- Title -->
 <section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver todas las pautas almacenadas") }}
+    {{ titleMacro("Ver pautas") }}
 </section>
 
 <!-- Input data -->
@@ -65,6 +95,7 @@
 		    <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
 		        {{ form.hidden_tag() }}
 		        {{ form.csrf_token }}
+		        {{ form.deleteId }}
 		        {{ form2.pageNumber }}
 		        {{ form2.submitDone }}
 
@@ -151,12 +182,13 @@
 		    	<br>
 		    	<div id="tablearea" align="center" class="box">
 			    	{% if rowPatterns|length > 0 %}
-				    	{{ patternsTableMacro(rowPatterns, 1) }}
+				    	{{ patternsTableMacro(rowPatterns, 0, 2) }}
 			    	{% endif %}
 			    	
 			    	Número de registros totales: <b>{{ numberTotalRows }}</b>
 			    	
 			    	{% if numberPages > 1 %}
+			    		<br>
 			    		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
 			    	{% endif %}
 		    	</div>

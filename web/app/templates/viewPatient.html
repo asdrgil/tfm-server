@@ -12,6 +12,7 @@
 {% from 'macros.html' import breadCrumbMacro with context %}
 {% from 'macros.html' import groupsTableMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
+{% from 'macros.html' import patientInfoMacro with context %}
 
 {% block head %}
 
@@ -38,41 +39,20 @@
             })
         });
 
-        function patientInfoParams(paramUrl, pattId){
-            var name = document.getElementById("name").value.replace(/ /g,"+");
-            var surname1 = document.getElementById("surname1").value.replace(/ /g,"+");
-            var surname2 = document.getElementById("surname2").value.replace(/ /g,"+");
-            var age = document.getElementById("age").value;
-            var gender = document.getElementById("gender-0").checked ? "M" : "F";
-
-            var url = new URL(paramUrl);
-            var search_params = new URLSearchParams(url.search); 
-            
-            search_params.set('name', name);
-            search_params.set('surname1', surname1);
-            search_params.set('surname2', surname2);
-            search_params.set('age', age);
-            search_params.set('gender', gender);
-
-            if(pattId > 0){
-                search_params.set('unlinkPatt', pattId);
-            }
-
-            url.search = search_params.toString();
-
-            location.href = url.toString();
+        function modifyPatientInfo(){
+            location.href = location.protocol + '//' + location.host + "/modificarPaciente/"+{{idPatient}};
         }
 
         function newPattern(){
-            patientInfoParams(location.protocol + '//' + location.host + "/registrarPauta/"+{{idPatient}}, 0);
+            location.href = location.protocol + '//' + location.host + "/registrarPauta/"+{{idPatient}};
         }
 
         function linkPattern(){
-            patientInfoParams(location.protocol + '//' + location.host + "/enlazarPautas/"+{{idPatient}}, 0);
+            location.href = location.protocol + '//' + location.host + "/enlazarPautas/"+{{idPatient}};
         }
 
         function unlinkPattern(pattId){
-            patientInfoParams(location.protocol + '//' + location.host + location.pathname, pattId);
+            location.href = location.protocol + '//' + location.host + "/modificarPaciente/"+{{idPatient}} + "?unlinkPatt=" + pattId;
         }
 
     </script> 
@@ -153,146 +133,33 @@
     <div class="column is-8" align="center">
         <article class="card is-rounded">
             <div class="card-content">
-                <form class="box" action="" method="post" id="generalForm" novalidate>
-                    {{ form.hidden_tag() }}
-                    {{ form.csrf_token }}
+                {{ patientInfoMacro(patientInfo) }}
 
-                    <div class="columns is-centered is-vcentered">
-                        <div class="column is-9">
-                            <div class="field">
+                <br>
 
-                                <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.name.label }} </b></div>
+                <div id="divBtns" align="center">
+                    <input class="button is-primary" id="saveBtn" name="saveBtn" onclick="modifyPatientInfo()" type="button" value="Modificar">
+                </div>
 
-                                <div class="control has-icons-left">
-                                    <input type="text" id="name" name="name" class="input is-medium" placeholder="Nombre" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.name.data }} readonly>
+                <div style='max-width:400px'><hr></div>
 
-                                    {% for error in form.name.errors %}
-                                        <span style="color: red;">[{{ error }}]</span>
-                                    {% endfor %}
+                <div class="box" style='max-width:1000px' align="center">
+                    <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
+                    {% if rowsPatterns|length > 0 %}
+                        {{ patternsTableMacro(rowsPatterns, 0, 1) }}
+                    {% endif %}
 
-                                    <span class="icon is-small is-left" id="nameIconInput"><i class="fas fa-lock fa-xs"></i></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="column is-1" id="nameIconBtn" onclick="isEditable('nameIconInput','nameIconBtn','name');">
-                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
-                        </div>
-                    </div>
+                    Número de registros totales: <b>{{ numberRowsPattern }}</b>
+                    {% if pagesPatterns > 1 %}
+                        <br>
+                        {{ form3.pagination.label }} &nbsp;&nbsp; {{ form3.pagination }}
+                    {% endif %}
 
-                    <div class="columns is-centered is-vcentered">
-                        <div class="column is-9">
-                            <div class="field">
-                                
-                                <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.surname1.label }} </b></div>
+                    <br><br>
 
-                                <div class="control has-icons-left">
-                                    <input type="text" id="surname1" name="surname1" class="input is-medium" placeholder="Primer apellido" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.surname1.data }} readonly>
+                    {{ form.newPatternBtn }} {{ form.linkPatternBtn }}
 
-                                    {% for error in form.surname1.errors %}
-                                        <span style="color: red;">[{{ error }}]</span>
-                                    {% endfor %}
-
-                                    <span class="icon is-small is-left" id="surname1IconInput"><i class="fas fa-lock fa-xs"></i></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="column is-1" id="surname1IconBtn" onclick="isEditable('surname1IconInput','surname1IconBtn','surname1');">
-                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
-                        </div>
-                    </div>
-
-
-                    <div class="columns is-centered is-vcentered">
-                        <div class="column is-9">
-                            <div class="field">
-
-                                <div align="center">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.surname2.label }} </b></div>
-
-                                <div class="control has-icons-left">
-                                    <input type="text" id="surname2" name="surname2" class="input is-medium" placeholder="Segundo apellido" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.surname2.data }} readonly>
-
-                                    {% for error in form.surname2.errors %}
-                                        <span style="color: red;">[{{ error }}]</span>
-                                    {% endfor %}
-
-                                    <span class="icon is-small is-left" id="surname2IconInput"><i class="fas fa-lock fa-xs"></i></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="column is-1" id="surname2IconBtn" onclick="isEditable('surname2IconInput','surname2IconBtn','surname2');">
-                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
-                        </div>
-                    </div>
-
-                    <div class="columns is-centered is-vcentered">
-                        <div class="column is-9">
-                            <div class="field">
-
-                                <div align="center"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b> {{ form.age.label }} </b></div>
-
-                                <div class="control has-icons-left">
-                                    <input type="text" id="age" name="age" class="input is-medium" placeholder="Edad" style="text-align:center;background-color:#f1f1f1" size="32" value={{ form.age.data }} readonly>
-
-                                    {% for error in form.age.errors %}
-                                        <span style="color: red;">[{{ error }}]</span>
-                                    {% endfor %}
-
-                                    <span class="icon is-small is-left" id="ageIconInput"><i class="fas fa-lock fa-xs"></i></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="column is-1" id="ageIconBtn" onclick="isEditable('ageIconInput','ageIconBtn','age');">
-                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
-                        </div>
-                    </div>
-
-                    <br>
-
-                    <div class="columns is-centered is-vcentered">
-                        <div class="column is-9">
-                            <div class="field" align="center">
-                                <div class="columns is-centered"">
-                                        <b>{{ form.gender.label }}</b> &nbsp;&nbsp;&nbsp;&nbsp;
-
-                                        {% for subfield in form.gender %}
-                                            {{ subfield }} &nbsp;&nbsp;
-                                            {{ subfield.label }}
-                                            &nbsp;&nbsp;
-                                        {% endfor %} 
-                                </div>
-                            </div>
-                        </div>
-                        <div class="column is-1" id="genderIconBtn" onclick="isEditableGender('genderIconBtn','gender');">
-                            <a><span class="icon is-small"><i class="fas fa-pencil-alt fa-xs"></i></span></a>
-                        </div>
-                    </div>
-
-                    <br>
-
-                    <div id="divBtns" align="center">
-                        {{ form2.saveBtn }}
-                    </div>
-
-                    <br><div style='max-width:400px'><hr></div><br>
-
-                    <div class="box" style='max-width:1000px' align="center">
-                        <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
-                        {% if rowsPatterns|length > 0 %}
-                            {{ patternsTableMacro(rowsPatterns, 0, 1) }}
-                        {% endif %}
-
-                        Número de registros totales: <b>{{ numberRowsPattern }}</b>
-                        {% if pagesPatterns > 1 %}
-                            <br>
-                            {{ form3.pagination.label }} &nbsp;&nbsp; {{ form3.pagination }}
-                        {% endif %}
-
-                        <br><br>
-
-                        {{ form.newPatternBtn }} {{ form.linkPatternBtn }}
-
-                    </div>
-                </form>
+                </div>                
 
                 <div style='max-width:400px'><hr></div><br>
 

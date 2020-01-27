@@ -10,7 +10,27 @@
       </ul>
     </nav>
 
-{% endmacro %}    
+{% endmacro %}
+
+{% macro patientInfoMacro(patientInfo) %}
+        <h4 class="title is-4">Datos del paciente</h4>
+
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Nombre</b>:&nbsp;&nbsp; {{ patientInfo.name }}
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Primer apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname1 }}
+        <br>
+        <b> Segundo apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname2 }}
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Edad </b>:&nbsp;&nbsp; {{ patientInfo.age }}
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
+        {% if patientInfo.gender == "M" %}
+            <td>Masculino</td>
+        {% else %}
+            <td>Femenino</td>
+        {% endif %}
+
+{% endmacro %}
 
 {% macro insertPatternMacro(form) %}
     <section class="accordions" id="newPatt">
@@ -94,7 +114,10 @@
             <th> <span> Ver pauta </span></th>
             {% if unlink == 1 %}
                 <th> <span> Desvincular del paciente </span></th>
+            {% elif unlink == 2 %}
+                <th> <span> Eliminar pauta </span></th>
             {% endif %}
+
         </thead>
         <tbody>
             {% for row in rows %}
@@ -122,9 +145,11 @@
                     {% else %}
                         <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
                     {% endif %}
-                    <td><a href=/verPauta/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                    <td><a href=/verPauta/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
                     {% if unlink == 1 %}
-                        <td><a onclick="unlinkPattern({{ row.id }});"><i class='fas fa-trash'></i> &nbsp; Desvincular pauta </a> </td>
+                        <td><a onclick="unlinkPattern({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                    {% elif unlink == 2 %}
+                        <td><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
                     {% endif %}
                 </tr>
             {% endfor %}                                    
@@ -132,7 +157,7 @@
     </table>
 {% endmacro %}
 
-{% macro patientsTableMacro(rows) %}
+{% macro patientsTableMacro(rows, deleteEnabled) %}
     <div id="tablearea">
     <!--<h4 class="title is-4 is-spaced">Pacientes asociados</h4>-->
         <table class="table" id="tablePatients">
@@ -143,6 +168,11 @@
                 <th> <span> Género </span></th>
                 <th> <span> Edad </span></th>
                 <th> <span> Ver paciente </span></th>
+                {% if deleteEnabled == 1 %}
+                    <th> <span> Eliminar paciente </span></th>
+                {% elif deleteEnabled == 2 %}
+                    <th> <span> Desvincular paciente </span></th>
+                {% endif %}
             </thead>
             
             <tbody>
@@ -157,7 +187,12 @@
                         <td><i class='fas fa-venus'></i> &nbsp; Femenino</td>
                     {% endif %}
                     <td>{{ row.age }}</td>
-                    <td><a href=/verPaciente/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                    <td><a href=/verPaciente/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                    {% if deleteEnabled == 1 %}
+                        <td><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}', '{{ row.surname1 }}', '{{ row.surname2 }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
+                    {% elif deleteEnabled == 2 %}
+                        <td><a onclick="unlinkPatient({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                    {% endif %}
                 </tr>
             {% endfor %}
             </tbody>                 
@@ -174,17 +209,21 @@
                 <th> <span> Nombre </span></th>
                 <th> <span> Ver grupo </span></th>
                 {% if edit == 1 %}
-                    <th> <span> Editar grupo </span></th>
-                {% endif %}
+                    <th> <span> Eliminar grupo </span></th>
+                {% elif edit == 2 %}
+                    <th> <span> Desvincular grupo </span></th>
+                {% endif %}                
             </thead>
             <tbody>
                 {% for row in rows %}
                     <tr>
                         <td>{{ row.name }}</td>
-                        <td><a href=/verGrupo/{{ row.id }} target="_blank"><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                        <td><a href=/verGrupo/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
                         {% if edit == 1 %}
-                             <td><a href=/editarGrupo/{{ row.id }} target="_blank"><i class='fas fa-pencil-alt'></i> &nbsp; Editar </a> </td>
-                        {% endif %}
+                             <td><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
+                        {% elif edit == 2 %}
+                            <td><a onclick="unlinkGroup({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                        {% endif %}                        
                     </tr>
                 {% endfor %}
             </tbody>                 
@@ -213,7 +252,7 @@
                         <td>{{ row.alerts1 }}</td>
                         <td>{{ row.alerts2 }}</td>
                         <td>{{ row.alerts3 }}</td>
-                        <td><a href=/verUnEpisodio?idPatient={{ patientId }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }} target="_blank"><i class='fas fa-eye'></i>Ver</a> </td>
+                        <td><a href=/verUnEpisodio?idPatient={{ patientId }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }}><i class='fas fa-eye'></i>Ver</a> </td>
                     </tr>
                 {% endfor %}
             <tbody>                 
@@ -293,15 +332,16 @@
     </div>
 {% endmacro %}
 
-<!-- Modal[Cancel] -->
+<!-- Modal[Delete] -->
 {% macro modalDeleteMacro(objType) %}
     <div class="modal" id="page-modal-delete">
         <div class="modal-background" onclick="closeModalDelete()"></div>
-        <div class="modal-content box" style="background-color:#A9A9A9;width:800px;height:150px;top:30%;border-style:solid" align="center">
+        <div class="modal-content box" style="background-color:#A9A9A9;width:800px;height:200px;top:30%;border-style:solid" align="center">
             <br>
-            <span> <b>Esta acción borrará todos los datos {{ objType }}. Por favor, confirma si quieres realizar esta acción </b></span><br><br>
-            <button class="button is-primary" onclick="deletePatient();">Confirmar</button>
-            <button class="button is-warning" onclick="closeModalDelete()">Volver</button>
+            <font size="5"> <b>¿Estás seguro que quieres borrar todos los datos {{ objType }}? </b></font><br>
+            <span id ="textDeleteMacro"></span><br>
+            <button class="button is-primary" onclick="confirmDeleteMacro();">Confirmar</button>
+            <button class="button is-warning" onclick="closeModalDelete()">Cancelar</button>
         </div>
         <button class="modal-close is-large" aria-label="close" onclick="closeModalDelete()"></button>
     </div>
