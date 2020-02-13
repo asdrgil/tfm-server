@@ -9,6 +9,16 @@
 
 {% block head %}
 
+    <style>
+        .dot {
+          height: 25px;
+          width: 25px;
+          background-color: #bbb;
+          border-radius: 50%;
+          display: inline-block;
+        }
+    </style>
+
     {% assets "highchartsJs" %}
         <script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}

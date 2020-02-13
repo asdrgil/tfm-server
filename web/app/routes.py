@@ -140,7 +140,7 @@ def registerPattern():
         therapistLiteral=therapistLiteral, rowsBreadCrumb=rowsBreadCrumb)
 
 
-@app.route('/registrarPauta/<int:idPatient>', methods=['GET', 'POST'])
+@app.route('/registrarPautaPaciente/<int:idPatient>', methods=['GET', 'POST'])
 @login_required
 def registerPatternPatient(idPatient):
     if mongoClient["patients"].count_documents({"id":idPatient, "therapist":current_user.get_id()}) == 0:
@@ -202,6 +202,67 @@ def registerPatternPatient(idPatient):
         therapistLiteral=therapistLiteral, patientInfo=patientInfo, rowsBreadCrumb=rowsBreadCrumb)
 
 
+@app.route('/registrarPautaGrupo/<int:idGroup>', methods=['GET', 'POST'])
+@login_required
+def registerPatternGroup(idGroup):
+    if mongoClient["groups"].count_documents({"id":idGroup, "therapist":current_user.get_id()}) == 0:
+        flash("No existe el grupo especificado", "error")
+        return redirect(url_for('index'))
+
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+
+    form = RegisterPatternForm(current_user.get_id())
+
+    cursorGroup = mongoClient["groups"].find_one({"id": idGroup})
+
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verGrupos", "name":"Ver grupos"}, \
+        {"href": "/verGrupo/" + str(idGroup) , "name": cursorGroup["name"]}]
+
+    if form.validate_on_submit():
+
+        form.name.data = form.name.data.strip()
+
+        #The patternName must be univoque
+        if mongoClient["patterns"].count_documents({"therapist": current_user.get_id(), "name":form.name.data}) == 0:
+
+            cursor = mongoClient["patterns"].find({}).sort("id",-1).limit(1)
+            
+            #idPattern is incremental and univoque
+            idPattern = 1
+            for cur in cursor:
+                idPattern = cur["id"] + 1
+
+            mongoClient["groups"].update_one({"id" : idGroup}, {"$push": {"patterns":idPattern}})
+
+            #Add intensities
+            intensities = []
+
+            if form.intensity1.data:
+                intensities.append(1)
+
+            if form.intensity2.data:
+                intensities.append(2)
+
+            if form.intensity3.data:
+                intensities.append(3)                
+
+            mongoClient["patterns"].insert_one({"therapist":current_user.get_id(), "id":idPattern, \
+                'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities})
+
+            flash("Pauta creada correctamente.", "success")
+            return redirect(url_for('viewPatient', idPatient=idPatient))
+        else:
+            flash("El nombre de la pauta debe ser unívoco", "error")
+
+    form = RegisterPatternForm(current_user.get_id())
+
+    groupInfo  = {"id": idGroup, "name":cursorGroup["name"], "description":cursorGroup["description"]}
+
+    return render_template('registerPatternGroup.html', title='Registrar una pauta', form=form, \
+        therapistLiteral=therapistLiteral, groupInfo=groupInfo, rowsBreadCrumb=rowsBreadCrumb)
+
+
 @app.route('/editarPauta/<int:idPattern>', methods=['GET', 'POST'])
 @login_required
 def editPattern(idPattern):
@@ -231,8 +292,6 @@ def editPattern(idPattern):
         form.patternId.data = idPattern
 
         patternData = mongoClient["patterns"].find_one({"id":int(idPattern), "therapist":current_user.get_id()})
-        cursorPatients = mongoClient["patients"].find({"patterns" :int(idPattern), "therapist":current_user.get_id()})
-        cursorGroups = mongoClient["groups"].find({"patterns" :int(idPattern), "therapist":current_user.get_id()})
 
         form.name.data = patternData["name"]
         form.description.data = patternData["description"]
@@ -241,19 +300,6 @@ def editPattern(idPattern):
             form.intensity1.data = 1 in patternData["intensities"]
             form.intensity2.data = 2 in patternData["intensities"]
             form.intensity3.data = 3 in patternData["intensities"]
-
-        selectedPatients = []
-
-        for cur in cursorPatients:
-            selectedPatients.append(str(cur["id"]))
-
-        selectedGroups = []
-
-        for cur in cursorGroups:
-            selectedGroups.append(str(cur["id"]))
-
-        form.patients.data = selectedPatients
-        form.groups.data = selectedGroups
 
         return render_template('editPattern.html', form=form, form2=form2, therapistLiteral=therapistLiteral, \
             rowsBreadCrumb=rowsBreadCrumb)
@@ -274,25 +320,26 @@ def viewPatterns():
         mongoClient["patterns"].delete_one({"id": int(request.args.get('deleteElem'))})
         flash("Pauta eliminada correctamente", "info")
 
-    if form.validate_on_submit():
-        form.submitDone.data = 1
-
-        queryResult = searchPatterns(form, int(form.pageNumber.data))
-        form2 = PaginationForm(queryResult["numberPages"])
-        form2.pagination.data = form.pageNumber.data
-
-        return render_template('viewPatterns.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
-            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
-            numberPages=queryResult["numberPages"], rowsBreadCrumb=rowsBreadCrumb)
-        
-    form.submitDone.data = 0
-    return render_template('viewPatterns.html', form=form, form2=form2, therapistLiteral=therapistLiteral, \
-        rowsBreadCrumb=rowsBreadCrumb)
+    if form.validate_on_submit() is not True:
+        form.name.data = ""
+        form.patients.data = ""
+        form.intensities.data = ""
+        form.groups.data = ""
+        form.pageNumber.data = "1"
 
 
-@app.route('/enlazarPautas/<int:idPatient>', methods=['GET', 'POST'])
+    queryResult = searchPatterns(form, int(form.pageNumber.data))
+    form2 = PaginationForm(queryResult["numberPages"])
+    form2.pagination.data = form.pageNumber.data
+
+    return render_template('viewPatterns.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
+        therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+        numberPages=queryResult["numberPages"], rowsBreadCrumb=rowsBreadCrumb)
+
+
+@app.route('/enlazarPautasPaciente/<int:idPatient>', methods=['GET', 'POST'])
 @login_required
-def linkPatientPatterns(idPatient):
+def linkPatternsPatient(idPatient):
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
     form = SearchPatternsForm(current_user.get_id())
@@ -307,20 +354,52 @@ def linkPatientPatterns(idPatient):
         {"href": "/verPaciente/" + str(idPatient), "name": cursorPatient["name"] + " " + cursorPatient["surname1"]}]
 
 
-    if form.validate_on_submit():
-        form.submitDone.data = 1
+    if form.validate_on_submit() is False:
+        form.name.data = ""
+        form.patients.data = []
+        form.groups.data = []
+        form.intensities.data = []
+        form.pageNumber.data = "1"
 
-        queryResult = searchPatterns(form, int(form.pageNumber.data))
-        form2 = PaginationForm(queryResult["numberPages"])
-        form2.pagination.data = form.pageNumber.data
+    queryResult = searchPatterns(form, int(form.pageNumber.data))
+    form2 = PaginationForm(queryResult["numberPages"])
+    form2.pagination.data = form.pageNumber.data
 
-        return render_template('linkPatientPatterns.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
-            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
-            numberPages=queryResult["numberPages"], patientInfo=patientInfo, rowsBreadCrumb=rowsBreadCrumb)
+    return render_template('linkPatternsPatient.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
+        therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+        numberPages=queryResult["numberPages"], patientInfo=patientInfo, rowsBreadCrumb=rowsBreadCrumb)
         
-    form.submitDone.data = 0
-    return render_template('linkPatientPatterns.html', form=form, form2=form2, \
-        therapistLiteral=therapistLiteral, patientInfo=patientInfo, rowsBreadCrumb=rowsBreadCrumb)
+
+@app.route('/enlazarPautasGrupo/<int:idGroup>', methods=['GET', 'POST'])
+@login_required
+def linkPatternsGroup(idGroup):
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+    form = SearchPatternsForm(current_user.get_id())
+    form2 = PaginationForm(1)
+
+    cursorGroup = mongoClient["groups"].find_one({"therapist":current_user.get_id(), "id": idGroup})
+
+    groupInfo  = {"id": idGroup, "name":cursorGroup["name"]}
+
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verGrupos", "name":"Ver grupos"}, \
+        {"href": "/verGrupo/" + str(idGroup), "name": cursorGroup["name"]}]
+
+
+    if form.validate_on_submit() is False:
+        form.name.data = ""
+        form.patients.data = []
+        form.groups.data = []
+        form.intensities.data = []
+        form.pageNumber.data = "1"
+
+    queryResult = searchPatterns(form, int(form.pageNumber.data))
+    form2 = PaginationForm(queryResult["numberPages"])
+    form2.pagination.data = form.pageNumber.data
+
+    return render_template('linkPatternsGroup.html', form=form, form2=form2, rowPatterns=queryResult["rows"], \
+        therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+        numberPages=queryResult["numberPages"], groupInfo=groupInfo, rowsBreadCrumb=rowsBreadCrumb)
 
 
 @app.route('/verGrupos', methods=['GET', 'POST'])
@@ -338,18 +417,57 @@ def viewGroups():
         mongoClient["groups"].delete_one({"id": int(request.args.get('deleteElem'))})
         flash("Grupo de pautas eliminado correctamente", "info")    
 
-    if form.validate_on_submit():
-        form.submitDone.data = 1
+    if form.validate_on_submit() is not True:
+        form.name.data = ""
+        form.patterns.data = ""
+        form.pageNumber.data = "1"
 
-        queryResult = searchGroups(form, int(form.pageNumber.data))
 
-        return render_template('viewGroups.html', form=form, form2=form2, rowGroups=queryResult["rows"], \
-            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
-            numberPages=queryResult["numberPages"], rowsBreadCrumb=rowsBreadCrumb)
+    queryResult = searchGroups(form, int(form.pageNumber.data))
 
-    form.submitDone.data = 0
-    return render_template('viewGroups.html', form=form, form2=form2, therapistLiteral = therapistLiteral, \
-        rowsBreadCrumb=rowsBreadCrumb)
+    return render_template('viewGroups.html', form=form, form2=form2, rowGroups=queryResult["rows"], \
+        therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+        numberPages=queryResult["numberPages"], rowsBreadCrumb=rowsBreadCrumb)
+
+
+@app.route('/enlazarGruposPauta/<int:idPattern>', methods=['GET', 'POST'])
+@login_required
+def linkGroupsPattern(idPattern):
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+
+    form = SearchGroupsForm()
+    form2 = PaginationForm(1)
+
+    cursorPattern = mongoClient["patterns"].find_one({"id":idPattern})
+
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPautas", "name":"Ver pautas"}, \
+        {"href": "/verPauta/" + str(idPattern), "name": cursorPattern["name"]}]
+
+    cursorPattern = mongoClient["patterns"].find_one({"therapist":current_user.get_id(), "id": idPattern})
+
+    intensity1 = "Sí" if 1 in cursorPattern["intensities"] else "No"
+    intensity2 = "Sí" if 2 in cursorPattern["intensities"] else "No"
+    intensity3 = "Sí" if 3 in cursorPattern["intensities"] else "No"
+
+    patternInfo  = {"id": idPattern, "name":cursorPattern["name"], "description":cursorPattern["description"], 
+        "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3}        
+
+    if request.args.get('deleteElem') is not None:
+        mongoClient["groups"].delete_one({"id": int(request.args.get('deleteElem'))})
+        flash("Grupo de pautas eliminado correctamente", "info")    
+
+    if form.validate_on_submit() is not True:
+        form.name.data = ""
+        form.patients.data = ""
+        form.patterns.data = ""
+        form.pageNumber.data = "1"
+
+    queryResult = searchGroups(form, int(form.pageNumber.data))
+
+    return render_template('linkGroupsPattern.html', form=form, form2=form2, rowGroups=queryResult["rows"], \
+        therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+        numberPages=queryResult["numberPages"], rowsBreadCrumb=rowsBreadCrumb, patternInfo=patternInfo)
 
 
 @app.route('/verPacientes', methods=['GET', 'POST'])
@@ -366,23 +484,67 @@ def viewPatients():
         mongoClient["patients"].delete_one({"id": int(request.args.get('deleteElem'))})
         flash("Paciente eliminado correctamente", "info")
 
-    if form.validate_on_submit():
-        form.submitDone.data = 1
+    if form.validate_on_submit() is not True:
+        form.name.data = ""
+        form.surname1.data = ""
+        form.surname2.data = ""
+        form.age.data = ""
+        form.pageNumber.data = 1
+        form.patterns.data = ""
+        form.genders.data = ""
 
-        queryResult = searchPatients(form, int(form.pageNumber.data))
-        form2 = PaginationForm(queryResult["numberPages"])
-        form2.pagination.data = form.pageNumber.data
+    queryResult = searchPatients(form, int(form.pageNumber.data))
+    form2 = PaginationForm(queryResult["numberPages"])
+    form2.pagination.data = form.pageNumber.data
 
-        return render_template('viewPatients.html', form=form, form2=form2, rowPatients=queryResult["rows"], \
-            therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
-            numberPages=queryResult["numberPages"], rowsBreadCrumb=rowsBreadCrumb)
+    return render_template('viewPatients.html', form=form, form2=form2, rowPatients=queryResult["rows"], \
+        therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+        numberPages=queryResult["numberPages"], rowsBreadCrumb=rowsBreadCrumb)
 
-    form.submitDone.data = 0
-    form.deleteId.data = 0
-    form.deleted.data = 0
 
-    return render_template('viewPatients.html', form=form, form2=form2, therapistLiteral=therapistLiteral, \
-        rowsBreadCrumb=rowsBreadCrumb)
+#TODO
+@app.route('/enlazarPacientesPauta/<int:idPattern>', methods=['GET', 'POST'])
+@login_required
+def linkPatientsPattern(idPattern):
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+    form = SearchPatientsForm(current_user.get_id())
+    form2 = PaginationForm(1)
+
+    cursorPattern = mongoClient["patterns"].find_one({"therapist":current_user.get_id(), "id": idPattern})
+
+    intensity1 = "Sí" if 1 in cursorPattern["intensities"] else "No"
+    intensity2 = "Sí" if 2 in cursorPattern["intensities"] else "No"
+    intensity3 = "Sí" if 3 in cursorPattern["intensities"] else "No"
+
+    patternInfo  = {"id": idPattern, "name":cursorPattern["name"], "description":cursorPattern["description"], 
+        "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3}
+
+    rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPautas", "name":"Ver pautas"}, \
+        {"href": "/verPauta/" + str(idPattern), "name": cursorPattern["name"]}]
+
+    if request.args.get('linkPatt') is not None:
+        mongoClient["patients"].update_one({"id": int(request.args.get('linkPatt'))}, {"$push": \
+            {"patterns": idPattern}})
+        flash("Pauta vinculada correctamente al paciente", "info")
+
+    if form.validate_on_submit() is not True:
+        form.name.data = ""
+        form.surname1.data = ""
+        form.surname2.data = ""
+        form.age.data = ""
+        form.genders.data = ""
+        form.patterns.data = ""
+        form.pageNumber.data = "1"
+
+
+    queryResult = searchPatients(form, int(form.pageNumber.data))
+    form2 = PaginationForm(queryResult["numberPages"])
+    form2.pagination.data = form.pageNumber.data
+
+    return render_template('linkPatientsPattern.html', form=form, form2=form2, rowPatients=queryResult["rows"], \
+        therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \
+        numberPages=queryResult["numberPages"], rowsBreadCrumb=rowsBreadCrumb, patternInfo=patternInfo)
 
 
 @app.route('/registrarPaciente', methods=['GET', 'POST'])
@@ -584,6 +746,16 @@ def viewPattern(idPattern):
         flash("No existe la pauta especificada", "error")
         return redirect(url_for('index'))
 
+    #Unlink pattern
+    if request.args.get("unlinkPati") is not None:
+        mongoClient["patients"].update_one({"id":int(request.args.get("unlinkPati"))}, {"$pull": \
+            {"patterns": idPattern}})
+
+    #Unlink group
+    if request.args.get("unlinkGroup") is not None:
+        mongoClient["groups"].update_one({"id":int(request.args.get("unlinkGroup"))}, {"$pull": \
+            {"patterns": idPattern}})    
+
     cursorPattern = mongoClient["patterns"].find_one({"therapist":current_user.get_id(), "id": idPattern})
 
     intensity1 = "Sí" if 1 in cursorPattern["intensities"] else "No"
@@ -640,7 +812,6 @@ def editGroup(idGroup):
 
     form.name.data = cursorGroup["name"]
     form.description.data = cursorGroup["description"]
-    form.patients.data = list(map (str, cursorGroup["patients"]))
     form.patterns.data = list(map (str, cursorGroup["patterns"]))
 
     return render_template('editGroup.html', therapistLiteral=therapistLiteral, idGroup=idGroup, \
@@ -680,10 +851,10 @@ def viewGroup(idGroup):
     return render_template('viewGroup.html', rowPatterns=rowPatterns, therapistLiteral=therapistLiteral)
 
 
-@app.route('/verEpisodios', methods=['GET', 'POST'])
-@app.route('/verEpisodios/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
 @login_required
-def viewEpisodesGeneric():
+def index():
 
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
@@ -733,6 +904,28 @@ def viewEpisodesGeneric():
 
     return render_template('viewEpisodesGeneric.html', form=form, therapistLiteral=therapistLiteral, \
         patientInfo=patientInfo)
+
+
+@app.route('/index2', methods=['GET', 'POST'])
+@login_required
+def index2():
+
+    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
+        current_user.get_surname2())
+
+    form = SearchPatientsForm(current_user.get_id())
+
+    rowPatients = []
+    cursorPatients = mongoClient["patients"].find({"therapist":current_user.get_id()})
+    numberTotalRows = mongoClient["patients"].count_documents({"therapist":current_user.get_id()})
+
+    for cur in cursorPatients:
+        rowPatients.append({"id": cur["id"], "name": cur["name"] , "surname1": cur["surname1"], \
+            "surname2": cur["surname2"], "age": cur["age"], "gender": cur["gender"]})
+
+
+    return render_template('index2.html', therapistLiteral=therapistLiteral, \
+        rowPatients=rowPatients, numberTotalRows=numberTotalRows, form=form)
 
 
 @app.route('/verEpisodios/<int:idPatient>', methods=['GET', 'POST'])
@@ -824,16 +1017,6 @@ def viewOneEpisode():
         rowsBreadCrumb=rowsBreadCrumb)
 
 ########################################################################################################################
-
-#TODO
-
-@app.route('/', methods=['GET', 'POST'])
-@app.route('/index', methods=['GET', 'POST'])
-@login_required
-def index():
-    therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
-        current_user.get_surname2())
-    return render_template('index.html', therapistLiteral=therapistLiteral)
 
 @app.route('/logout')
 def logout():

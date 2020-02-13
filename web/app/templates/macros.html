@@ -25,9 +25,9 @@
         <br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
         {% if patientInfo.gender == "M" %}
-            <td>Masculino</td>
+            <td align="center">Masculino</td>
         {% else %}
-            <td>Femenino</td>
+            <td align="center">Femenino</td>
         {% endif %}
 
 {% endmacro %}
@@ -105,17 +105,15 @@
     <table class="table" id="tablePatterns">
         <thead>
             {% if edit == 1 %}
-                <th> <span> Seleccionar </span></th>
+                <th align="center"> <span> Seleccionar </span></th>
             {% endif %}
-            <th> <span> Nombre </span></th>
-            <th> <span> Intensidad amarilla </span></th>
-            <th> <span> Intensidad naranja </span></th>
-            <th> <span> Intensidad roja </span></th>
-            <th> <span> Ver pauta </span></th>
-            {% if unlink == 1 %}
-                <th> <span> Desvincular del paciente </span></th>
-            {% elif unlink == 2 %}
-                <th> <span> Eliminar pauta </span></th>
+            <th align="center"> <span> Nombre </span></th>
+            <th align="center"> <span> Intensidad amarilla </span></th>
+            <th align="center"> <span> Intensidad naranja </span></th>
+            <th align="center"> <span> Intensidad roja </span></th>
+            <th align="center"> <span>  </span></th>
+            {% if unlink > 0 %}
+                <th align="center"> <span>  </span></th>
             {% endif %}
 
         </thead>
@@ -123,33 +121,33 @@
             {% for row in rows %}
                 <tr>
                     {% if edit == 1 %}
-                        <td> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
+                        <td align="center"> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
                     {% endif %}
 
-                    <td>{{ row.name }}</td>
+                    <td align="center">{{ row.name }}</td>
 
                     {% if row.intensity1=="No" %}
-                        <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
+                        <td align="center"><span style='color:red;'><i class='fas fa-times'></i></span></td>
                     {% else %}
-                        <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
+                        <td align="center"><span style='color:green;'><i class='fas fa-check'></i></span></td>
                     {% endif %}
 
                     {% if row.intensity2=="No" %}
-                        <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
+                        <td align="center"><span style='color:red;'><i class='fas fa-times'></i></span></td>
                     {% else %}
-                        <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
+                        <td align="center"><span style='color:green;'><i class='fas fa-check'></i></span></td>
                     {% endif %}
 
                     {% if row.intensity3=="No" %}
-                        <td><span style='color:red;'><i class='fas fa-times'></i></span></td>
+                        <td align="center"><span style='color:red;'><i class='fas fa-times'></i></span></td>
                     {% else %}
-                        <td><span style='color:green;'><i class='fas fa-check'></i></span></td>
+                        <td align="center"><span style='color:green;'><i class='fas fa-check'></i></span></td>
                     {% endif %}
-                    <td><a href=/verPauta/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                    <td align="center"><a href=/verPauta/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
                     {% if unlink == 1 %}
-                        <td><a onclick="unlinkPattern({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                        <td align="center"><a onclick="unlinkPattern({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
                     {% elif unlink == 2 %}
-                        <td><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
+                        <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
                     {% endif %}
                 </tr>
             {% endfor %}                                    
@@ -157,41 +155,45 @@
     </table>
 {% endmacro %}
 
-{% macro patientsTableMacro(rows, deleteEnabled) %}
+{% macro patientsTableMacro(rows, edit) %}
     <div id="tablearea">
     <!--<h4 class="title is-4 is-spaced">Pacientes asociados</h4>-->
         <table class="table" id="tablePatients">
             <thead>
-                <th> <span> Nombre </span></th>
-                <th> <span> Primer apellido </span></th>
-                <th> <span> Segundo apellido </span></th>
-                <th> <span> Género </span></th>
-                <th> <span> Edad </span></th>
-                <th> <span> Ver paciente </span></th>
-                {% if deleteEnabled == 1 %}
-                    <th> <span> Eliminar paciente </span></th>
-                {% elif deleteEnabled == 2 %}
-                    <th> <span> Desvincular paciente </span></th>
+                {% if edit == 3 %}
+                    <th align="center"> <span> Seleccionar </span></th>
+                {% endif %}
+                <th align="center"> <span> Nombre </span></th>
+                <th align="center"> <span> Primer apellido </span></th>
+                <th align="center"> <span> Segundo apellido </span></th>
+                <th align="center"> <span> Género </span></th>
+                <th align="center"> <span> Edad </span></th>
+                <th align="center"> <span>  </span></th>
+                {% if edit > 0 %}
+                    <th align="center"> <span>  </span></th>
                 {% endif %}
             </thead>
             
             <tbody>
             {% for row in rows %}
                 <tr>
-                    <td>{{ row.name }}</td>
-                    <td>{{ row.surname1 }}</td>
-                    <td>{{ row.surname2 }}</td>
-                    {% if row.gender=="M" %}
-                        <td><i class='fas fa-mars'></i> &nbsp; Masculino</td>
-                    {% else %}
-                        <td><i class='fas fa-venus'></i> &nbsp; Femenino</td>
+                    {% if edit == 3 %}
+                        <td align="center"> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
                     {% endif %}
-                    <td>{{ row.age }}</td>
-                    <td><a href=/verPaciente/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
-                    {% if deleteEnabled == 1 %}
-                        <td><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}', '{{ row.surname1 }}', '{{ row.surname2 }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
-                    {% elif deleteEnabled == 2 %}
-                        <td><a onclick="unlinkPatient({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                    <td align="center">{{ row.name }}</td>
+                    <td align="center">{{ row.surname1 }}</td>
+                    <td align="center">{{ row.surname2 }}</td>
+                    {% if row.gender=="M" %}
+                        <td align="center"><i class='fas fa-mars'></i> &nbsp; Masculino</td>
+                    {% else %}
+                        <td align="center"><i class='fas fa-venus'></i> &nbsp; Femenino</td>
+                    {% endif %}
+                    <td align="center">{{ row.age }}</td>
+                    <td align="center"><a href=/verPaciente/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                    {% if edit == 1 %}
+                        <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}', '{{ row.surname1 }}', '{{ row.surname2 }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
+                    {% elif edit == 2 %}
+                        <td align="center"><a onclick="unlinkPatient({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
                     {% endif %}
                 </tr>
             {% endfor %}
@@ -206,23 +208,27 @@
 
         <table class="table" id="tableGroups">
             <thead>
-                <th> <span> Nombre </span></th>
-                <th> <span> Ver grupo </span></th>
-                {% if edit == 1 %}
-                    <th> <span> Eliminar grupo </span></th>
-                {% elif edit == 2 %}
-                    <th> <span> Desvincular grupo </span></th>
+                {% if edit == 3 %}
+                    <th align="center"> <span> Seleccionar </span></th>
+                {% endif %}            
+                <th align="center"> <span> Nombre </span></th>
+                <th align="center"> <span>  </span></th>
+                {% if edit > 0 %}
+                    <th align="center"> <span>  </span></th>
                 {% endif %}                
             </thead>
             <tbody>
                 {% for row in rows %}
                     <tr>
-                        <td>{{ row.name }}</td>
-                        <td><a href=/verGrupo/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                        {% if edit == 3 %}
+                            <td align="center"> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
+                        {% endif %}                    
+                        <td align="center">{{ row.name }}</td>
+                        <td align="center"><a href=/verGrupo/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
                         {% if edit == 1 %}
-                             <td><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
+                             <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
                         {% elif edit == 2 %}
-                            <td><a onclick="unlinkGroup({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                            <td align="center"><a onclick="unlinkGroup({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
                         {% endif %}                        
                     </tr>
                 {% endfor %}
@@ -237,22 +243,22 @@
 
         <table class="table">
             <thead>
-                <th> <span> Fecha de inicio </span></th>
-                <th> <span> Fecha de fin </span></th>
-                <th> <span> Alertas amarillas </span></th>
-                <th> <span> Alertas naranjas </span></th>
-                <th> <span> Alertas rojas </span></th>
-                <th> <span> Ver episodio </span></th>
+                <th align="center"> <span> Fecha de inicio </span></th>
+                <th align="center"> <span> Hora de inicio </span></th>
+                <th align="center"> <span> Hora de fin </span></th>
+                <th align="center"> <span> Duración </span></th>
+                <th align="center"> <span> Causa </span></th>
+                <th align="center"> <span>  </span></th>
             </thead>
             <tbody>
                 {% for row in rows %}
                     <tr>
-                        <td>{{ row.firstDate }}</td>
-                        <td>{{ row.lastDate }}</td>
-                        <td>{{ row.alerts1 }}</td>
-                        <td>{{ row.alerts2 }}</td>
-                        <td>{{ row.alerts3 }}</td>
-                        <td><a href=/verUnEpisodio?idPatient={{ patientId }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }}><i class='fas fa-eye'></i>Ver</a> </td>
+                        <td align="center">{{ row.firstDate }}</td>
+                        <td align="center">{{ row.firstTime }}</td>
+                        <td align="center">{{ row.lastTime }}</td>
+                        <td align="center">{{ row.duration }}</td>
+                        <td align="center">{{ row.cause }}</td>
+                        <td align="center"><a href=/verUnEpisodio?idPatient={{ patientId }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }}><i class='fas fa-eye'></i>Ver</a> </td>
                     </tr>
                 {% endfor %}
             <tbody>                 
@@ -265,23 +271,29 @@
 
         <table class="table">
             <thead>
-                <th> <span> Fecha </span></th>
-                <th> <span> Hora </span></th>
-                <th> <span> Nivel de alerta </span></th>
-                <th> <span> Pauta sugerida </span></th>
-                <th> <span> Descartada </span></th>
-                <th> <span> Comentarios </span></th>
+                <th align="center"> <span> Fecha </span></th>
+                <th align="center"> <span> Hora </span></th>
+                <th align="center"> <span> Nivel de alerta </span></th>
+                <th align="center"> <span> Pauta sugerida </span></th>
+                <th align="center"> <span> Descartada </span></th>
+                <th align="center"> <span> Comentarios </span></th>
             </thead>
             <tbody>
                 {% for row in rows %}
                     {% if row.alertLevel > 0 %}
                         <tr>
-                            <td>{{ row.date }}</td>
-                            <td>{{ row.time }}</td>
-                            <td>{{ row.alertLevel }}</td>
-                            <td>Nombre de la pauta</td>
-                            <td>Sí</td>
-                            <td>Esta pauta no me sirvió</td>
+                            <td align="center">{{ row.date }}</td>
+                            <td align="center">{{ row.time }}</td>
+                            {% if row.alertLevel == 1 %}
+                                <td align="center">Amarillo</td>
+                            {% elif row.alertLevel == 2 %}
+                                <td align="center">Naranja</td>
+                            {% elif row.alertLevel == 3 %}
+                                <td align="center">Rojo</td>
+                            {% endif %}
+                            <td align="center">Nombre de la pauta</td>
+                            <td align="center">Sí</td>
+                            <td align="center">Esta pauta no me sirvió</td>
                         </tr>
                     {% endif %}
                 {% endfor %}
@@ -362,10 +374,21 @@
         <br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
         {% if patientInfo.gender == "M" %}
-            <td>Masculino</td>
+            <td align="center">Masculino</td>
         {% else %}
-            <td>Femenino</td>
+            <td align="center">Femenino</td>
         {% endif %}
+
+    </div>
+{% endmacro %}
+
+{% macro groupInfoMacro(groupInfo) %}
+    <div align="center">
+        <h4 class="title is-4">Datos del grupo</h4>
+
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Nombre</b>:&nbsp;&nbsp; {{ groupInfo.name }}
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Descripción</b>:&nbsp;&nbsp; {{ groupInfo.description }}
 
     </div>
 {% endmacro %}

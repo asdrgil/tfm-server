@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+<!-- Import macros --> 
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import patternsTableMacro with context %}
+{% from 'macros.html' import pagination with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import patientInfoMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+	
+	<script type="text/javascript" charset="utf-8">
+		$(document).ready(function() {
+			$(function () {
+			  $('#patientsSelect').multipleSelect();
+			  $('#groupsSelect').multipleSelect();
+			  $('#intensitiesSelect').multipleSelect();
+			  $('#paginationSelect').multipleSelect();
+			})
+		});
+
+		function submitFunc(){
+			//Store pagination
+			if(document.getElementById("paginationSelect") == null){
+				document.getElementById("pageNumber").value = 1;
+			} else {
+				document.getElementById("pageNumber").value = parseInt(document.getElementById("paginationSelect").value);
+			}
+			
+			document.getElementById("generalForm").submit();
+		}
+
+		function returnPage(){
+			location.href = location.protocol + '//' + location.host + "/verPaciente/" + location.pathname.split("/")[2] + location.search;
+		}
+
+		function linkPatterns(){
+			var checkboxes = document.getElementsByName("checkboxPattPat");
+			var pattIds = "";
+
+			for (var i=0; i<checkboxes.length; i++) {
+			  if (checkboxes[i].checked) {
+			    pattIds += checkboxes[i].id.replace("checkbox_", "") + ",";
+			    checkboxes[i].checked = false;
+			  }
+			}
+
+			if(pattIds.length > 0){
+				pattIds = pattIds.substring(0, pattIds.length-1);
+
+				namespace = '/linkPatternsPatient';
+        		var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        		socket.emit("linkPatternsPatient", {"idPatient": {{patientInfo.id}}, "patterns": pattIds });
+
+        		generateNotification("success", "Pautas vinculadas al paciente correctamente");
+			
+			} else {
+				generateNotification("alert", "No se ha seleccionado ninguna pauta");
+			}
+		}
+
+		//This is done just to allow code reuse of forms
+		function paginationFunc(){
+			submitFunc();
+		}
+	</script>
+
+{% endblock %}
+
+{% block content %}	
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Enlazar pauta ya creada") }}
+
+<!-- Title -->
+<section id="contact" class="section section-light-grey">
+    {{ titleMacro("Enlazar pauta ya creada") }}
+</section>
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+
+	<div class="column is-9 box" align="center">
+		<div class="box">
+	        {{ patientInfoMacro(patientInfo) }}
+	    </div>
+
+        <br>
+        <br>
+
+        <div class="columns is-vcentered is-centered">
+            <div class="column is-5" align="center">
+                <h3 class="title is-3">Pautas que se pueden enlazar al paciente</h3>
+            </div>
+        </div>
+
+        <br>
+
+        <div class="columns is-centered">
+
+            <div class="column is-3" align="center">
+            	<div style="border-right: 0.5px solid grey;">
+                	<h5 class="title is-5">Filtrar pautas</h5>
+				    <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
+				        {{ form.hidden_tag() }}
+				        {{ form.csrf_token }}
+				        {{ form2.pageNumber }}
+				        {{ form2.submitDone }}
+
+
+		        		{{ form.name.label }}
+
+		        		<br>
+
+		        		{{ form.name(size=5, maxlength=15) }}
+		        		{% for error in form.name.errors %}
+		        			<span style="color: red;">[{{ error }}]</span>
+		        		{% endfor %}
+
+		        		<br>
+
+		        		{{ form.patients.label }}
+
+		        		<br>
+
+		        		{{ form.patients(size=5, maxlength=15) }}
+		        		{% for error in form.patients.errors %}
+		        			<span style="color: red;">[{{ error }}]</span>
+		        		{% endfor %}
+
+		        		<br>
+
+		        		{{ form.groups.label }}
+
+		        		<br>
+
+		        		{{ form.groups(size=5, maxlength=15) }}
+		        		{% for error in form.groups.errors %}
+		        			<span style="color: red;">[{{ error }}]</span>
+		        		{% endfor %}
+
+		        		<br>
+
+		        		{{ form.intensities.label }}
+
+		        		<br>
+
+		        		{{ form.intensities(size=5, maxlength=15) }}
+		        		{% for error in form.intensities.errors %}
+		        			<span style="color: red;">[{{ error }}]</span>
+		        		{% endfor %}
+
+		        		<br><br>
+
+			    		{{ form.searchBtn }}
+				    </form>
+			    </div>
+            </div>
+
+            <div class="column is-7" align="center">
+
+		    	{% if rowPatterns|length > 0 %}
+			    	{{ patternsTableMacro(rowPatterns, 1, 0) }}
+		    	{% endif %}
+		    	
+		    	Número de registros totales: <b>{{ numberTotalRows }}</b>
+		    	
+		    	{% if numberPages > 1 %}
+		    		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+		    	{% endif %}
+
+		    	<br><br>
+
+		    	<input class="button is-link" id="linkBtn" name="linkBtn" onclick="linkPatterns()" value="Enlazar pautas">
+		    	{{ form.returnBtn }}
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

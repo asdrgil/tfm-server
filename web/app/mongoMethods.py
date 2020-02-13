@@ -25,8 +25,10 @@ def searchPatterns(form, pageNum=1):
         query.update({"name": re.compile('.*' + form.name.data.strip() + '.*', re.IGNORECASE)})
 
     #DESCRIPTION
+    '''
     if len(form.description.data.strip()) > 0:
         query.update({"description": re.compile('.*' + form.description.data.strip() + '.*', re.IGNORECASE)})
+    '''
 
 
     #IDs of the patterns to be retrieved (auxiliary variable)
@@ -141,6 +143,7 @@ def searchPatients(form, pageNum=1):
 
     #GROUPS
     #Make an OR query of the selected groups
+    '''
     if len(form.groups.data) > 0:
         patientIds = set([])
         queryGroups = []
@@ -156,7 +159,7 @@ def searchPatients(form, pageNum=1):
                         patientIds.add(int(pati))
 
         query.update({"$or": queryGroups})
-
+    '''
     
     ###################
 
@@ -182,12 +185,16 @@ def searchGroups(form, pageNum=1):
         query.update({"name": re.compile('.*' + form.name.data.strip() + '.*', re.IGNORECASE)})
 
     #DESCRIPTION
+    '''
     if len(form.description.data.strip()) > 0:
         query.update({"description": re.compile('.*' + form.description.data.strip() + '.*', re.IGNORECASE)})
+    '''
 
     #PATIENTS
+    '''
     if len(form.patients.data) > 0:
         query.update({"patients": { "$in": list(map(int, form.patients.data))}})
+    '''
 
     #PATTERNS
     if len(form.patterns.data) > 0:
@@ -835,15 +842,23 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outpu
         dateLast = datetime.fromtimestamp(lastDateTimestamp)
 
         if outputFormat == "arr":
-            result.append({"firstDate": dateFirst.strftime("%d/%m/%Y, %H:%M:%S"), \
-                "lastDate":dateLast.strftime("%d/%m/%Y, %H:%M:%S"), "timestampFrom":timestampFrom, \
-                "timestampTo":timestampTo, "alerts1": totalAlerts[0], "alerts2": totalAlerts[1], \
-                "alerts3": totalAlerts[2]})
+            result.append(\
+                {"firstDate": dateFirst.strftime("%d/%m/%Y"), \
+                "firstTime": dateFirst.strftime("%H:%M:%S"), \
+                "lastTime": dateLast.strftime("%H:%M:%S"), \
+                "duration": str(dateLast - dateFirst),
+                "cause": "Causa",
+                "timestampFrom":timestampFrom,
+                "timestampTo":timestampTo})
         else:
-            result += "{}, {},{},{},{},{},{},{};".format(dateFirst.strftime("%d/%m/%Y"), \
+            result += "{},{},{},{},{},{},{};".format(\
+                dateFirst.strftime("%d/%m/%Y"), \
                 dateFirst.strftime("%H:%M:%S"), \
-                dateLast.strftime("%H:%M:%S"), timestampFrom, timestampTo, \
-                totalAlerts[0], totalAlerts[1], totalAlerts[2])
+                dateLast.strftime("%H:%M:%S"), \
+                str(dateLast - dateFirst), \
+                "causa", \
+                timestampFrom,
+                timestampTo)
 
     if outputFormat == "str" and len(result) > 0:
         result = result[:-1]

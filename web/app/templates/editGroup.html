@@ -27,10 +27,13 @@
         $(document).ready(function() {
             //Multiselect 
             $(function () {
-                $('#patientsSelect').multipleSelect();
                 $('#patternsSelect').multipleSelect();
             })
         });
+
+        function returnPage(){
+            location.href = location.protocol + '//' + location.host + "/verGrupo/" + location.pathname.split("/")[2] + location.search;
+        }        
     </script>
 
 {% endblock %}
@@ -91,19 +94,6 @@
 
                 <br>
                 <br>
-                
-
-                <!-- Vincular a pacientes concretos -->
-                <div class="columns is-vcentered is-centered">
-                    <div class="column is-1">
-                    </div>
-
-                    <div align="center">
-                        {{ form.patients.label }} {{ form.patients }}
-                    </div>
-                    <div class="column is-1">
-                    </div>
-                </div>
 
                 <!-- Vincular pautas preexistentes a este grupo -->
                 <div class="columns is-vcentered is-centered" style="margin-top:50px">
@@ -123,9 +113,7 @@
 
                 <div id="divBtns" align="center">
                     {{ form2.saveBtn }}
-                    {{ form2.cancelBtn }}
-                    <a href=/verGrupo/{{ idGroup }} target="_blank">{{ form2.viewGroupBtn }}</a>
-                    {{ form2.deleteBtn }}
+                    {{ form2.returnBtn }}
                 </div>
 
             </form>

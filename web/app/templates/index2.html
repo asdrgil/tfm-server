@@ -4,7 +4,7 @@
 {% set therapistName = therapistLiteral %}
 
 {% from 'macros.html' import titleMacro with context %}
-{% from 'macros.html' import episodesTableMacro with context %}
+{% from 'macros.html' import patientsTableMacro with context %}
 
 {% block head %}
 
@@ -19,8 +19,11 @@
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             $(function () {
-              $('#patientsSelect').multipleSelect();
+              $('#patternsSelect').multipleSelect();
+              $('#groupsSelect').multipleSelect();
+              $('#gendersSelect').multipleSelect();
               $('#paginationSelect').multipleSelect();
+              $('#patientsSelect').multipleSelect();
             })
 
             updatePatientValue();
@@ -79,7 +82,7 @@
 
         <div class="columns is-vcentered is-centered">
             <div class="column is-5" align="center">
-                <h3 class="title is-3">Episodios de un paciente</h3>
+                <h3 class="title is-3">Listado de pacientes</h3>
             </div>
         </div>
 
@@ -87,96 +90,112 @@
 
         <div class="columns is-centered">
 
-            <div class="column is-3" align="center">
-                <div style="border-right: 0.5px solid #e4e4e4;">
-                    <h5 class="title is-5">Filtrar episodios</h5>
-                    <form action="" id="generalForm" method="post" novalidate>
+           <div class="column is-3" align="center">
+
+                <br>
+                <div>
+                    <h5 class="title is-5">Buscar pacientes</h5>
+                    <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
                         {{ form.hidden_tag() }}
                         {{ form.csrf_token }}
+                        {{ form. deleteId }}
+
+                        {{ form.name.label }}
 
                         <br>
 
-
-                        {{ form.patients.label }}
-
-                        <br>
-
-                        {{ form.patients }}
-                        {% for error in form.patients.errors %}
-                            <span style="color: red;">[{{ error }}]</span>
-                        {% endfor %}
-
-                        <br><br>
-
-                        <!-- FROM -->
-
-                        {{ form.date1.label }}
-
-                        <br>
-
-                        {{ form.date1 }}
-                        {% for error in form.date1.errors %}
-                            <span style="color: red;">[{{ error }}]</span>
-                        {% endfor %}
-
-
-
-                        {{ form.time1.label }}
-
-                        <br>
-
-                        {{ form.time1 }}
-                        {% for error in form.time1.errors %}
-                            <span style="color: red;">[{{ error }}]</span>
-                        {% endfor %}
-
-                        <!-- TO -->
-
-                        {{ form.date2.label }}
-
-                        <br>
-
-                        {{ form.date2 }}
-                        {% for error in form.date2.errors %}
-                            <span style="color: red;">[{{ error }}]</span>
-                        {% endfor %}
-
-
-                        {{ form.time2.label }}
-
-                        <br>
-
-                        {{ form.time2 }}
-                        {% for error in form.time2.errors %}
+                        {{ form.name(maxlength=15) }}
+                        {% for error in form.name.errors %}
                             <span style="color: red;">[{{ error }}]</span>
                         {% endfor %}
 
                         <br>
 
-                        {{ form.patientId }}
-                        {{ form.searchBtn }}
+                        {{ form.surname1.label }}
+
+                        <br>
+
+                        {{ form.surname1(size=5, maxlength=15) }}
+                        {% for error in form.surname1.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+
+                        <br>
+
+                        {{ form.surname2.label }}
+
+                        <br>
+
+                        {{ form.surname2(size=5, maxlength=15) }}
+                        {% for error in form.surname2.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+
+                        <br>
+
+                        {{ form.age.label }}
+
+                        <br>
+
+                        {{ form.age(size=5, maxlength=15) }}
+                        {% for error in form.age.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+
+                        <br>
+
+                        {{ form.genders.label }}
+
+                        <br>
+
+                        {{ form.genders(size=5, maxlength=15) }}
+                        {% for error in form.genders.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+
+                        <br>
+
+                        {{ form.patterns.label }}
+
+                        <br>
+
+                        {{ form.patterns(size=5, maxlength=15) }}
+                        {% for error in form.patterns.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+
+                        <br>
+
+                        {{ form.groups.label }}
+
+                        <br>
+                        
+                        {{ form.groups(size=5, maxlength=15) }}
+                        {% for error in form.groups.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                        {% endfor %}
+
+                        <br><br>            
+
+                        {{ form.searchBtn() }}
                     </form>
                 </div>
             </div>
 
             <div class="column is-7" align="center">
-
-                {% if rowEpisodes|length > 0 %}
-                    {{ episodesTableMacro(rowEpisodes, patientInfo.id) }}
-                {% endif %}
-
-                {% if form.submitDone.data == 1 %}
+                <div class="box">
+                {% if rowPatients|length > 0 %}
+                    {{ patientsTableMacro(rowPatients, 0) }}
+                    
                     Número de registros totales: <b>{{ numberTotalRows }}</b>
-
-                    {% if numberPages > 1 %}
-                        <br>
-                        Página &nbsp;&nbsp;{{ form.pagination }}
-                    {% endif %}
                 {% endif %}
-
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<br>
+
 
 {% endblock %}

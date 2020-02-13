@@ -84,101 +84,72 @@
     {{ titleMacro("Ver pautas") }}
 </section>
 
-<!-- Input data -->
-
 <div class="columns is-vcentered is-centered">
+    <div class="column is-9 box" align="center">
 
-	<div class="column is-8 box">
+        <br>
 
-		<div align="center">
-			<h4 class="title is-4">Filtrar resultados</h4>
-		    <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
-		        {{ form.hidden_tag() }}
-		        {{ form.csrf_token }}
-		        {{ form.deleteId }}
-		        {{ form2.pageNumber }}
-		        {{ form2.submitDone }}
+        <div class="columns is-centered">
 
-		        <div class="columns is-vcentered is-centered">
-		        	<div class="column is-5">
-		        		<div class="columns is-vcentered is-centered">
-			        		<div class="column is-2">
-				        		{{ form.name.label }}
-			        		</div>
-				        	<div class="column is-8">
-				        		{{ form.name(size=5, maxlength=15) }}
-				        		{% for error in form.name.errors %}
-				        			<span style="color: red;">[{{ error }}]</span>
-				        		{% endfor %}
-			        		</div>
-		        		</div>
-	        		</div>
+            <div class="column is-3" align="center">
+            	<br><br>
+                <h5 class="title is-5">Filtrar pautas</h5>
+			    <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
+			        {{ form.hidden_tag() }}
+			        {{ form.csrf_token }}
+			        {{ form.deleteId }}
+			        {{ form2.pageNumber }}
+			        {{ form2.submitDone }}
 
-        			<div class="column is-5">
-        				<div class="columns is-vcentered is-centered">
-			        		<div class="column is-2">
-				        		{{ form.description.label }}
-			        		</div>
-				        	<div class="column is-8">
-				        		{{ form.description(size=5, maxlength=15) }}
-				        		{% for error in form.description.errors %}
-				        			<span style="color: red;">[{{ error }}]</span>
-				        		{% endfor %}
-			        		</div>
-		        		</div>
-	        		</div>
-        		</div>
+	        		{{ form.name.label }}
 
+	        		<br>
 
-		        <div class="columns is-vcentered is-centered">
-		        	<div class="column is-4">
-		        		<div class="columns is-vcentered is-centered">
-			        		<div class="column is-2">
-				        		{{ form.patients.label }}
-			        		</div>
-				        	<div class="column is-8">
-				        		{{ form.patients(size=5, maxlength=15) }}
-				        		{% for error in form.patients.errors %}
-				        			<span style="color: red;">[{{ error }}]</span>
-				        		{% endfor %}
-			        		</div>
-		        		</div>
-	        		</div>
+	        		{{ form.name(size=5, maxlength=15) }}
+	        		{% for error in form.name.errors %}
+	        			<span style="color: red;">[{{ error }}]</span>
+	        		{% endfor %}
 
-		        	<div class="column is-4">
-		        		<div class="columns is-vcentered is-centered">
-			        		<div class="column is-2">
-				        		{{ form.groups.label }}
-			        		</div>
-				        	<div class="column is-8">
-				        		{{ form.groups(size=5, maxlength=15) }}
-				        		{% for error in form.groups.errors %}
-				        			<span style="color: red;">[{{ error }}]</span>
-				        		{% endfor %}
-			        		</div>
-		        		</div>
-	        		</div>
+	        		<br>
 
-		        	<div class="column is-4">
-		        		<div class="columns is-vcentered is-centered">
-			        		<div class="column is-2">
-				        		{{ form.intensities.label }}
-			        		</div>
-				        	<div class="column is-8">
-				        		{{ form.intensities(size=5, maxlength=15) }}
-				        		{% for error in form.intensities.errors %}
-				        			<span style="color: red;">[{{ error }}]</span>
-				        		{% endfor %}
-			        		</div>
-		        		</div>
-	        		</div>	        		
-        		</div>        		
+	        		{{ form.patients.label }}
 
-        		{{ form.searchBtn }}
+	        		<br>
 
-		    </form>
+	        		{{ form.patients(size=5, maxlength=15) }}
+	        		{% for error in form.patients.errors %}
+	        			<span style="color: red;">[{{ error }}]</span>
+	        		{% endfor %}
 
-		    {% if form.submitDone.data > 0 %}
+	        		<br>
+
+	        		{{ form.groups.label }}
+
+	        		<br>
+
+	        		{{ form.groups(size=5, maxlength=15) }}
+	        		{% for error in form.groups.errors %}
+	        			<span style="color: red;">[{{ error }}]</span>
+	        		{% endfor %}
+
+	        		<br>
+
+	        		{{ form.intensities.label }}
+
+	        		<br>
+
+	        		{{ form.intensities(size=5, maxlength=15) }}
+	        		{% for error in form.intensities.errors %}
+	        			<span style="color: red;">[{{ error }}]</span>
+	        		{% endfor %}
+
+	        		<br><br>
+
+	        		{{ form.searchBtn }}
+			    </form>
+            </div>
+
+            <div class="column is-7" align="center">
 		    	<br>
 		    	<div id="tablearea" align="center" class="box">
 			    	{% if rowPatterns|length > 0 %}
@@ -192,12 +163,9 @@
 			    		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
 			    	{% endif %}
 		    	</div>
-	    	{% endif %}
-	    	
-
-		
-		</div>
-
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

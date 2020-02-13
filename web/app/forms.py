@@ -252,9 +252,7 @@ class GenericEditForm(FlaskForm):
 
 class SearchPatternsForm(FlaskForm):
     name = StringField('Nombre', validators=[Optional()], \
-        render_kw={"class":"input is-medium", "placeholder":"Nombre", "style":"text-align:center;"})
-    description = StringField('Descripción', validators=[Optional()], \
-        render_kw={"class":"input is-medium", "placeholder":"Descripción", "style":"text-align:center"})
+        render_kw={"class":"input is-small", "placeholder":"Nombre", "style":"text-align:center;width:250px"})
     patients = SelectMultipleField('Pacientes', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'patientsSelect'})
     groups = SelectMultipleField('Grupos', validators=[Optional()], choices=[], \
@@ -281,14 +279,14 @@ class SearchPatternsForm(FlaskForm):
 class SearchPatientsForm(FlaskForm):
 
     name = StringField('Nombre', validators=[Optional()], \
-        render_kw={"class":"input is-medium", "placeholder":"Nombre", "style":"text-align:center;"})
+        render_kw={"class":"input is-small", "placeholder":"Nombre", "style":"text-align:center;width:250px;"})
     surname1 = StringField('Primer apellido', validators=[Optional()], \
-        render_kw={"class":"input is-medium", "placeholder":"Primer apellido", "style":"text-align:center;"})
+        render_kw={"class":"input is-small", "placeholder":"Primer apellido", "style":"text-align:center;width:250px;"})
     surname2 = StringField('Segundo apellido', validators=[Optional()], \
-        render_kw={"class":"input is-medium", "placeholder":"Segundo apellido", "style":"text-align:center;"})
+        render_kw={"class":"input is-small", "placeholder":"Segundo apellido", "style":"text-align:center;width:250px;"})
     age = StringField('Edad', validators=[Optional()], \
-        render_kw={"class":"input is-medium", "placeholder":"Edad", 'type':'number', 'min':5, 'max':100, \
-        "style":"text-align:center;"}) 
+        render_kw={"class":"input is-small", "placeholder":"Edad", 'type':'number', 'min':5, 'max':100, \
+        "style":"text-align:center;width:250px;"}) 
     genders = SelectMultipleField('Género', validators=[Optional()], choices=[('M','Masculino'),('F','Femenino')], \
         render_kw={'multiple':'multiple', 'id':'gendersSelect'})
     patterns = SelectMultipleField('Pautas', validators=[Optional()], choices=[], \
@@ -296,6 +294,8 @@ class SearchPatientsForm(FlaskForm):
     groups = SelectMultipleField('Grupos', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'groupsSelect'})
     searchBtn = SubmitField('Buscar', render_kw={"class":"button is-primary"})
+    returnBtn = SubmitField('Volver', render_kw={"class":"button is-light", "onclick": "returnPage()", \
+        'type':'button'})
 
     pageNumber = HiddenField("pageNumber")
     submitDone = HiddenField("submitDone")
@@ -335,9 +335,7 @@ class SearchGroupsForm(FlaskForm):
         patternOpts.append(row)    
 
     name = StringField('Nombre', validators=[Optional()], \
-        render_kw={"class":"input is-medium", "placeholder":"Nombre", "style":"text-align:center;"})
-    description = StringField('Descripción', validators=[Optional()], \
-        render_kw={"class":"input is-medium", "placeholder":"Descripción", "style":"text-align:center;"})
+        render_kw={"class":"input is-small", "placeholder":"Nombre", "style":"text-align:center;"})
     patients = SelectMultipleField('Pacientes asociados al grupo', validators=[Optional()], choices=patientOpts, \
         render_kw={'multiple':'multiple', 'id':'patientsSelect'})
     patterns = SelectMultipleField('Pautas asociadas al grupo', validators=[Optional()], choices=patternOpts, \
@@ -353,14 +351,14 @@ class FilterByDateForm(FlaskForm):
     patients = SelectField('Paciente', validators=[Optional()], choices=[], \
         render_kw={'id':'patientsSelect'})
 
-    date1 = StringField('Desde (fecha)', validators=[Optional()], render_kw={"class":"input is-medium", \
-        "type": "date", "data-display-mode": "inline", "data-is-range":"true", "data-close-on-select":"false"})
-    time1 = StringField('Desde (hora)', validators=[Optional()], render_kw={"class":"input is-medium", "type": "time", \
-        "data-display-mode": "inline"})
-    date2 = StringField('Hasta (fecha)', validators=[Optional()], render_kw={"class":"input is-medium", "type":"date", \
-        "data-display-mode": "inline", "data-is-range":"true", "data-close-on-select":"false"})
-    time2 = StringField('Hasta (hora)', validators=[Optional()], render_kw={"class":"input is-medium", "type": "time", \
-        "data-display-mode": "inline", "data-is-range":"true"})
+    date1 = StringField('Desde (fecha)', validators=[Optional()], render_kw={"class":"input is-small", \
+        "type": "date", "data-display-mode": "inline", "data-is-range":"true", "data-close-on-select":"false", "style":"text-align:center"})
+    time1 = StringField('Desde (hora)', validators=[Optional()], render_kw={"class":"input is-small", "type": "time", \
+        "data-display-mode": "inline", "style":"text-align:center"})
+    date2 = StringField('Hasta (fecha)', validators=[Optional()], render_kw={"class":"input is-small", "type":"date", \
+        "data-display-mode": "inline", "data-is-range":"true", "data-close-on-select":"false", "style":"text-align:center"})
+    time2 = StringField('Hasta (hora)', validators=[Optional()], render_kw={"class":"input is-small", "type": "time", \
+        "data-display-mode": "inline", "data-is-range":"true", "style":"text-align:center"})
 
     pagination = SelectField('Página', validators=[Optional()], choices=[], \
         render_kw={'id':'paginationSelect', 'onchange':'paginationFunc();'})

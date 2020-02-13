@@ -40,8 +40,20 @@
         	socket.emit('paginationPatient', {"idPattern": {{ idPattern }}, "patientPage": document.getElementById("paginationSelect2").value});
         }
 
-        function unlinkPatient(pattId){
-            location.href = location.protocol + '//' + location.host + "/verPauta/"+{{idPatient}} + "?unlinkPatt=" + pattId;
+        function linkPatient(){
+            location.href = location.protocol + '//' + location.host + "/enlazarPacientesPauta/"+{{idPattern}};
+        }
+
+        function unlinkPatient(patiId){
+            location.href = location.protocol + '//' + location.host + "/verPauta/"+{{idPattern}} + "?unlinkPati=" + patiId;
+        }
+
+        function linkGroup(){
+            location.href = location.protocol + '//' + location.host + "/enlazarGruposPauta/"+{{idPattern}};
+        }
+
+        function unlinkGroup(groupId){
+            location.href = location.protocol + '//' + location.host + "/verPauta/"+{{idPattern}} + "?unlinkGroup=" + groupId;
         }
 
         socket.on('paginationGroup', function(message) {
@@ -158,9 +170,9 @@
                 Sí&nbsp;&nbsp;<span style='color:green;'><i class='fas fa-check'></i></span>
             {% endif %}
 
-            <div id="divBtns" align="center">
-                <a href=/editarPauta/{{ patternInfo.id }}><input class="button is-warning" type="button" value="Editar pauta" ></a>
-            </div>           
+            <br><br>
+
+            <a href=/editarPauta/{{ patternInfo.id }}><input class="button is-primary" type="button" value="Modificar" ></a>
 
 		</div>
 
@@ -177,7 +189,12 @@
         	{% if pagesPatients > 1 %}
                 <br>
         		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+                <br>
     		{% endif %}
+
+            <br><br>
+
+            <input class="button is-info" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:linkPatient()" type="button" value="Enlazar a un nuevo paciente">
         </div>
         
         <div style='max-width:400px'><hr></div>
@@ -198,6 +215,10 @@
                 <br>
         		{{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
         	{% endif %}
+
+            <br><br>
+
+            <input class="button is-info" id="linkGroupBtn" name="linkGroupBtn" onclick="javascript:linkGroup()" type="button" value="Enlazar a un nuevo grupo">
         </div>
     </div>
 </div>

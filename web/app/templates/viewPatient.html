@@ -44,11 +44,11 @@
         }
 
         function newPattern(){
-            location.href = location.protocol + '//' + location.host + "/registrarPauta/"+{{idPatient}};
+            location.href = location.protocol + '//' + location.host + "/registrarPautaPaciente/"+{{idPatient}};
         }
 
         function linkPattern(){
-            location.href = location.protocol + '//' + location.host + "/enlazarPautas/"+{{idPatient}};
+            location.href = location.protocol + '//' + location.host + "/enlazarPautasPaciente/"+{{idPatient}};
         }
 
         function unlinkPattern(pattId){
@@ -81,20 +81,18 @@
 
                     bodyContent += "<tr>"
                     
-                    //Date
+                    //FirstDate
                     bodyContent += "<td>"+cols[0]+"</td>";
-                    //First date
+                    //FirstTime
                     bodyContent += "<td>"+cols[1]+"</td>";
-                    //Last date
+                    //LastDate
                     bodyContent += "<td>"+cols[2]+"</td>";
-                    //Yellow alerts
-                    bodyContent += "<td>"+cols[5]+"</td>";
-                    //Orange alerts
-                    bodyContent += "<td>"+cols[6]+"</td>";
-                    //Red alerts
-                    bodyContent += "<td>"+cols[7]+"</td>";
+                    //Duration
+                    bodyContent += "<td>"+cols[3]+"</td>";
+                    //Cause
+                    bodyContent += "<td>"+cols[4]+"</td>";
                     //View episode
-                    bodyContent += "<td><a href=/verUnEpisodio?idPatient="+{{idPatient}}+"&timestampFrom="+cols[3]+"&timestampTo="+cols[4]+" style='color:#3273dc'><i class='fas fa-eye'></i>Ver</a></td>";
+                    bodyContent += "<td><a href=/verUnEpisodio?idPatient="+{{idPatient}}+"&timestampFrom="+cols[5]+"&timestampTo="+cols[6]+" style='color:#3273dc'><i class='fas fa-eye'></i>Ver</a></td>";
                     
                     bodyContent += "</tr>"
                 }
@@ -164,94 +162,97 @@
                 <div style='max-width:400px'><hr></div><br>
 
 
-                <div class="box" style='max-width:1000px' align="center">
-                    <h4> Ver episodios del paciente </h4>                        
-                        <h4 class="title is-4">Filtrar resultados</h4>
-                        <form action="" id="episodesForm" method="post" novalidate>
-                            {{ form4.hidden_tag() }}
-                            {{ form4.csrf_token }}
+                <div class="columns is-vcentered is-centered">
+                    <div class="column is-8 box" align="center">
+                        <br>
 
-                            <br>
+                        <div class="columns is-vcentered is-centered">
+                            <div class="column is-5" align="center">
+                                <h3 class="title is-3">Episodios de un paciente</h3>
+                            </div>
+                        </div>
 
-                            <!-- FROM -->
-                            <div class="columns is-vcentered is-centered">
-                                <div class="column is-5">
-                                    <div class="columns is-vcentered is-centered">
-                                        <div class="column is-3">
-                                            {{ form4.date1.label }}
-                                        </div>
-                                        <div class="column is-7">
-                                            {{ form4.date1 }}
-                                            {% for error in form4.date1.errors %}
-                                                <span style="color: red;">[{{ error }}]</span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="column is-5">
-                                    <div class="columns is-vcentered is-centered">
-                                        <div class="column is-3">
-                                            {{ form4.time1.label }}
-                                        </div>
-                                        <div class="column is-7">
-                                            {{ form4.time1 }}
-                                            {% for error in form4.time1.errors %}
-                                                <span style="color: red;">[{{ error }}]</span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>                    
+                        <br>
+
+                        <div class="columns is-centered">
+
+                            <div class="column is-3" align="center" style="border-right: 0.5px solid #e4e4e4;">
+                                <h5 class="title is-5">Filtrar episodios</h5>
+                                    <form action="" id="episodesForm" method="post" novalidate>
+                                        {{ form4.hidden_tag() }}
+                                        {{ form4.csrf_token }}
+
+                                        <!-- FROM -->
+
+                                        {{ form4.date1.label }}
+
+                                        <br>
+
+                                        {{ form4.date1 }}
+                                        {% for error in form4.date1.errors %}
+                                            <span style="color: red;">[{{ error }}]</span>
+                                        {% endfor %}
+
+                                        <br>
+
+                                        {{ form4.time1.label }}
+
+                                        <br>
+
+                                        {{ form4.time1 }}
+                                        {% for error in form4.time1.errors %}
+                                            <span style="color: red;">[{{ error }}]</span>
+                                        {% endfor %}
+
+                                        <br>
+
+                                        <!-- TO -->
+                                        {{ form4.date2.label }}
+
+                                        <br>
+
+                                        {{ form4.date2 }}
+                                        {% for error in form4.date2.errors %}
+                                            <span style="color: red;">[{{ error }}]</span>
+                                        {% endfor %}
+
+                                        <br>
+
+                                        {{ form4.time2.label }}
+
+                                        <br>
+
+                                        {{ form4.time2 }}
+                                        {% for error in form4.time2.errors %}
+                                            <span style="color: red;">[{{ error }}]</span>
+                                        {% endfor %}
+
+                                        <br><br>
+                                        
+                                        {{ form.unlinkPatternId }}
+                                        {{ form4.searchBtn2 }}
+                                    
+                                    </form>
                             </div>
 
-                            <!-- TO -->
-                            <div class="columns is-vcentered is-centered">
-                                <div class="column is-5">
-                                    <div class="columns is-vcentered is-centered">
-                                        <div class="column is-3">
-                                            {{ form4.date2.label }}
-                                        </div>
-                                        <div class="column is-7">
-                                            {{ form4.date2 }}
-                                            {% for error in form4.date2.errors %}
-                                                <span style="color: red;">[{{ error }}]</span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="column is-5">
-                                    <div class="columns is-vcentered is-centered">
-                                        <div class="column is-3">
-                                            {{ form4.time2.label }}
-                                        </div>
-                                        <div class="column is-7">
-                                            {{ form4.time2 }}
-                                            {% for error in form4.time2.errors %}
-                                                <span style="color: red;">[{{ error }}]</span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>                    
+                            <div class="column is-7 verticalLine" align="center">
+
+                                <table id="episodesTable" class="table">
+                                    <thead>
+                                        <th> <span> Fecha de inicio </span></th>
+                                        <th> <span> Hora de inicio </span></th>
+                                        <th> <span> Hora de fin </span></th>
+                                        <th> <span> Duración </span></th>
+                                        <th> <span> Causa </span></th>
+                                        <th> <span>  </span></th>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+
                             </div>
-
-                            <br>
-                            {{ form.unlinkPatternId }}
-                            {{ form4.searchBtn2 }}
-                        
-                        </form>
-
-                        <table id="episodesTable" class="table">
-                            <thead>
-                                <th> <span> Fecha </span></th>
-                                <th> <span> Hora de inicio </span></th>
-                                <th> <span> Fecha de fin </span></th>
-                                <th> <span> Alertas amarillas </span></th>
-                                <th> <span> Alertas naranjas </span></th>
-                                <th> <span> Alertas rojas </span></th>
-                                <th> <span> Ver episodio </span></th>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </article>

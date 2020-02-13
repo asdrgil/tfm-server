@@ -122,19 +122,30 @@ def paginationPatternViewPatient(message):
 
 @socketio.on('episodes', namespace='/viewPatient')
 def episodesViewPatient(message):
+    print("[DEBUG] INN.")
+
     rowEpisodes, numberTotalRows, numberPages = viewEpisodes(int(message["idPatient"]), message["date1"], message["time1"], \
         message["date2"], message["time2"])
     
     emit("episodes", {'rowEpisodes': rowEpisodes, "numberTotalRows": numberTotalRows, "numberPages":numberPages})
 
 
-@socketio.on('linkPatientPatterns', namespace='/linkPatientPatterns')
-def linkPatientPatterns(message):
+@socketio.on('linkPatternsPatient', namespace='/linkPatternsPatient')
+def linkPatternsPatient(message):
 
     patternIds = message["patterns"].split(",")
 
     for patt in patternIds:
         mongoClient["patients"].update_one({"id":message["idPatient"]}, { "$addToSet": {"patterns": int(patt)}})
+
+
+@socketio.on('linkPatientsPattern', namespace='/linkPatientsPattern')
+def linkPatientsPattern(message):
+
+    patientIds = message["patients"].split(",")
+
+    for pati in patientIds:
+        mongoClient["patients"].update_one({"id":int(pati)}, { "$push": {"patterns": int(idPattern)}})        
 
 
 @socketio.on('unlinkPattern', namespace='/viewPatient')

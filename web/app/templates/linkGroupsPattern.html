@@ -7,7 +7,6 @@
 {% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import groupsTableMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
-{% from 'macros.html' import modalDeleteMacro with context %}
 
 {% block head %}
 
@@ -44,45 +43,75 @@
             submitFunc();
         }
 
-        function confirmDeleteMacro(){
-            var deleteElem = document.getElementById("deleteId").value;
-            var url = new URL(location.protocol + '//' + location.host + location.pathname);
-            var search_params = new URLSearchParams(url.search); 
-            search_params.set('deleteElem', deleteElem);
-            url.search = search_params.toString();
-
-            location.href = url.toString();
+        function returnPage(){
+            location.href = location.protocol + '//' + location.host + "/verPauta/" + location.pathname.split("/")[2] + location.search;
         }
 
-        function displayModalDelete(id, name){
-            var modalDiv = document.getElementById("page-modal-delete");
-            document.getElementById("textDeleteMacro").innerHTML = "<ul style='list-style-type:disc;'><li>" + name + "</ul></li>";
-            document.getElementById("deleteId").value = id;
-            modalDiv.style.display = "block";
-        }
+        //TODO: function socketIO save
     </script>
 
 {% endblock %}
 
 {% block content %}
 
-{{ modalDeleteMacro("de este grupo") }}
-
 {{ breadCrumbMacro(rowsBreadCrumb, "Ver grupos de pautas") }}
 
 <!-- Title -->
 <section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver grupos de pautas") }}
+    {{ titleMacro("Enlazar grupos de pautas") }}
 </section>
+
+<!-- Input data -->
 
 <div class="columns is-vcentered is-centered">
     <div class="column is-8 box" align="center">
 
-        <br>
+        <div class="box">
+            <h4 class="title is-4">Datos de la pauta</h4>
+
+            <b> Nombre</b>: {{ patternInfo.name }}
+            <br><br>
+            <b> Descripción </b>: {{ patternInfo.description }}
+            
+            <br><br>
+            
+            <b>Intensidad amarilla</b>:
+
+            {% if patternInfo.intensity1=="No" %}
+                No<span style='color:red;'><i class='fas fa-times'></i></span>
+            {% else %}
+                Sí;<span style='color:green;'><i class='fas fa-check'></i></span>
+            {% endif %}
+            
+            <br><br>
+            
+            <b>Intensidad naranja</b>:
+
+            {% if patternInfo.intensity2=="No" %}
+                No<span style='color:red;'><i class='fas fa-times'></i></span>
+            {% else %}
+                Sí<span style='color:green;'><i class='fas fa-check'></i></span>
+            {% endif %}
+
+            <br><br>
+            
+            <b>Intensidad roja</b>:
+
+            {% if patternInfo.intensity3=="No" %}
+                No<span style='color:red;'><i class='fas fa-times'></i></span>
+            {% else %}
+                Sí<span style='color:green;'><i class='fas fa-check'></i></span>
+            {% endif %}
+        </div>
+
+        <br>    
 
         <div class="columns is-centered">
 
             <div class="column is-3" align="center">
+
+                <br>
+
                 <h5 class="title is-5">Filtrar grupos</h5>
                 <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
                     {{ form.hidden_tag() }}
@@ -108,35 +137,54 @@
                     <br>
 
                     {{ form.patterns }}
-
-                    <br>
-
                     {% for error in form.patterns.errors %}
                         <span style="color: red;">[{{ error }}]</span>
                     {% endfor %}
 
-                    <br><br>
+                    <br><br>           
 
                     {{ form.searchBtn() }}
+                    
                 </form>
             </div>
 
-            <div class="column is-7 box" align="center">
+            <div class="column is-7" align="center">
 
-                {% if rowGroups|length > 0 %}
-                    {{ groupsTableMacro(rowGroups, 1) }}
-                {% endif %}
-                
-                Número de registros totales: <b>{{ numberTotalRows }}</b>
-                
-                {% if numberPages > 1 %}
-                    <br>
-                    {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
-                {% endif %}
+                <br>
+                <div id="tablearea" align="center" class="box">
+                    {% if rowGroups|length > 0 %}
+                        {{ groupsTableMacro(rowGroups, 3) }}
+                    {% endif %}
+                    
+                    Número de registros totales: <b>{{ numberTotalRows }}</b>
+                    
+                    {% if numberPages > 1 %}
+                        <br>
+                        {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+                    {% endif %}
+
+                    <br><br>
+
+                    <input class="button is-link" id="linkBtn" name="linkBtn" onclick="linkGroups()" value="Enlazar a grupos">
+                    <input class="button is-light" id="returnBtn" name="returnBtn" onclick="returnPage()" type="button" value="Volver">
+                </div>
 
             </div>
         </div>
     </div>
+</div>
+
+<div class="columns is-vcentered is-centered">
+    <div class="column is-1">
+    </div>
+
+    <div class="column is-8 box">
+
+        <div align="center">
+                
+        </div>
+
+
 </div>
 
 {% endblock %}

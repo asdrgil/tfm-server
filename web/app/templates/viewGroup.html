@@ -39,16 +39,29 @@
         }
 
         function paginationFunc2(){
-            socket.emit('paginationPatient', {"idGroup": {{ idGroup }}, "patientPage": document.getElementById("paginationSelect2").value});
+            socket.emit('paginationPattern', {"idGroup": {{ idGroup }}, "patientPage": document.getElementById("paginationSelect2").value});
         }
 
-        socket.on('paginationPatient', function(message) {
+        function newPattern(){
+            location.href = location.protocol + '//' + location.host + "/registrarPautaGrupo/" + {{idGroup}};
+        }
+
+        function linkPattern(){
+            location.href = location.protocol + '//' + location.host + "/enlazarPautasGrupo/"+{{idGroup}};
+        }
+
+        function unlinkPattern(pattId){
+            location.href = location.protocol + '//' + location.host + "/verGrupo/"+{{idGroup}} + "?unlinkPatt=" + pattId;
+        }
+
+
+        socket.on('paginationPattern', function(message) {
 
             var bodyContent = "";
 
             //No registers, but also no errors
             if(message.body == ""){
-                $("#tablePatients tbody").html("");
+                $("#tablePatterns tbody").html("");
             }else {
                 var rows = message.body.split(";");
 
@@ -76,7 +89,7 @@
                 }
             }
 
-            $("#tablePatients tbody").html(bodyContent);
+            $("#tablePatterns tbody").html(bodyContent);
         });
 
         socket.on('paginationPattern', function(message) {
@@ -135,11 +148,17 @@
         <br><br>
         <b> Descripción </b>:&nbsp;&nbsp; {{ groupInfo.description }}
 
+        <br><br>
+
+        <a href=/editarGrupo/{{ groupInfo.id }}><input class="button is-primary" type="button" value="Modificar"></a>
+
         <div style='max-width:400px'><hr></div>
 
         <div class="box" style='max-width:1000px'>
+            <h4 class="title is-4 is-spaced">Pautas incluidas en este grupo</h4>
+
             {% if rowsPatterns|length > 0 %}
-                {{ patternsTableMacro(rowsPatterns, 0) }}
+                {{ patternsTableMacro(rowsPatterns, 0, 1) }}
             {% endif %}
 
             Número de registros totales: <b>{{ numberRowsPattern }}</b>
@@ -147,15 +166,12 @@
                 <br>
                 {{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
             {% endif %}
+
+            <br><br>
+
+            <input class="button is-link" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:newPattern()" type="button" value="Registrar una nueva pauta">
+            <input class="button is-info" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:linkPattern()" type="button" value="Enlazar una nueva pauta">
         </div>
-
-        <div style='max-width:400px'><hr></div>
-
-        <div id="divBtns" align="center">
-            <a href=/editarGrupo/{{ idGroup }} target="_blank"><input class="button is-warning" type="button" value="Editar grupo de pautas" ></a>
-        </div>
-
-        <br>
 
     </div>
 
