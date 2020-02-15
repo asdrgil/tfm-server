@@ -1,6 +1,5 @@
-from app import app, db, socketio
-from flask_assets import Environment, Bundle
-from flask import Flask
+from app import app, socketio
+from flask_assets import Environment
 
 if __name__ == '__main__':
     CSSPATH = ""

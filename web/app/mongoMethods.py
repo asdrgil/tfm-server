@@ -1,20 +1,16 @@
 from flask_login import current_user
-from pymongo import MongoClient, errors
-from flask_login import current_user
-from flask import session
 import random
 import string
 from datetime import datetime
 import re
 import math
-from .constants import mongoClient, rowsPerPage
+from .constants import mongoClient, rowsPerPage, tokenLength
 
 def getCurentUser():
     current_user.get_id()
 
 def searchPatterns(form, pageNum=1):
 
-    numberRows = 0
     numberPages = 0
     rows = []
 
@@ -86,16 +82,13 @@ def searchPatterns(form, pageNum=1):
     cursorPatterns = mongoClient["patterns"].find(query).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
 
     for cur in cursorPatterns:
-        description = "" if "description" not in cur else cur["description"]
+        #description = "" if "description" not in cur else cur["description"]
 
         intensity1 = "No" #Yellow
         intensity2 = "No" #Orange
         intensity3 = "No" #Red
 
-        intensities = []
-
         if "intensities" in cur:
-            intensities = cur["intensities"]
 
             if 1 in cur["intensities"]:
                 intensity1 = "Sí"
@@ -254,18 +247,20 @@ def searchPatternsPatient(idPatient, pageNum=1, outputFormat="arr"):
     cursorPatterns = mongoClient["patterns"].find({"therapist":current_user.get_id(), \
         "id" :{"$in": cursorPatient["patterns"]}}).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
 
+    '''
     cookiePatternsExists = "viewPatientPatterns-{}".format(idPatient) in session and \
         len(session["viewPatientPatterns-{}".format(idPatient)]) > 0
 
     unlinkPatternsCookie = False
-
     unlinkPatterns = []
 
     if cookiePatternsExists:
         pattCookies = session.get("viewPatientPatterns-{}".format(idPatient)).split("|")
+        
         if len(pattCookies[2]) > 0:
             unlinkPatterns = list(map(int, pattCookies[2].split(",")))
             unlinkPatternsCookie = True
+    '''
 
     for cur in cursorPatterns:
 
@@ -518,7 +513,7 @@ def getTmpPatterns(windowId, outputFormat="str"):
     return result
 
 def getPatternsSelectPattern(msg):
-    therapist = current_user.get_id()
+    #therapist = current_user.get_id()
     msg = msg.split(",")
     windowId = msg[0]
     pattIds = msg[1:]
@@ -526,8 +521,6 @@ def getPatternsSelectPattern(msg):
     print(windowId)
 
     mongoClient["tmpPatterns"].delete_many({"windowId": windowId, "pattType": "selectPatt"})
-
-    result = ""
 
     if len(pattIds[0]) > 0:
         
@@ -539,15 +532,12 @@ def getPatternsSelectPattern(msg):
     return getTmpPatterns(windowId)
 
 def getPatternsSelectGroup(msg):
-    therapist = current_user.get_id()
     msg = msg.split(",")
     windowId = msg[0]
-    patientId = msg[1]
+    #patientId = msg[1]
     groupIds = msg[2:]
 
     mongoClient["tmpPatterns"].delete_many({"windowId": windowId, "pattType": "selectGroup"})
-
-    result = ""
 
     if len(groupIds[0]) > 0:
 
@@ -937,7 +927,7 @@ def viewEpisodes(idPatient, date1, time1, date2, time2):
     return rowEpisodes, numberTotalRows, numberPages
 
 def generateUniqueRandom(collection, field):
-    token = ''.join(random.choice('0123456789ABCDEF') for i in range(6))
+    token = ''.join(random.choice('0123456789ABCDEF') for i in range(tokenLength))
 
     while mongoClient[collection].find({field:token}).count() > 0:
         generateUniqueRandom(token)

@@ -1,35 +1,19 @@
 from datetime import datetime
-from flask import render_template, flash, redirect, url_for, request, session
+from flask import render_template, flash, redirect, url_for, request
 from flask_login import login_user, logout_user, current_user, login_required
-from werkzeug.urls import url_parse
-from app import app, db, socketio, thread_lock, thread
+from app import app, db
 from app.forms import LoginForm, RegisterTherapistForm, RegisterPatientForm, RegisterPatternForm, \
     RegistrationGroupForm, EditPatternForm, SearchPatternsForm, SearchPatientsForm, SearchGroupsForm, EditPatientForm, \
-    RegisterPatternForm2, GenericEditForm, FilterByDateForm, TryoutForm, PaginationForm, PaginationForm2
+    GenericEditForm, FilterByDateForm, PaginationForm, PaginationForm2
 from app.models import User
-import random
-from threading import Lock
-from flask_socketio import SocketIO, emit, join_room, leave_room, \
-close_room, rooms, disconnect
-import sys
-from bson.json_util import dumps
-import string
-from pymongo import MongoClient, errors
-import json
 import math
-import datetime as dt
 from datetime import datetime
-from datetime import timedelta
-from datetime import date
 import time
-from operator import itemgetter
-from .socketIOMethods import editPatternSocket, changedSelectGroup, changedSelectPattern, registerPatientEvent, \
-    insertNewPattern, getTmpPatterns
 from .mongoMethods import searchPatterns, searchPatients, searchGroups, getMultipleEpisodes, getOneEpisode, \
-    insertPatient, generateUniqueRandom, updatePattern, searchGroupsPattern, searchPatientsPattern, \
-    searchPatientsGroup, searchPatternsGroup, updateGroup, searchGroupsPatient, searchPatternsPatient, \
-    getCountMultipleEpisodes, getWindowId
+    generateUniqueRandom, updatePattern, searchGroupsPattern, searchPatientsPattern, \
+    searchPatternsGroup, updateGroup, searchPatternsPatient, getCountMultipleEpisodes
 from .constants import mongoClient, rowsPerPage
+from .routesApi import syncDevice
 
 
 @app.before_request
@@ -251,7 +235,7 @@ def registerPatternGroup(idGroup):
                 'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities})
 
             flash("Pauta creada correctamente.", "success")
-            return redirect(url_for('viewPatient', idPatient=idPatient))
+            return redirect(url_for('viewGroup', idGroup=idGroup))
         else:
             flash("El nombre de la pauta debe ser unívoco", "error")
 
@@ -727,7 +711,7 @@ def registerGroup():
                 idGroup = cur["id"] + 1
 
             mongoClient["groups"].insert_one({'name': form.name.data, 'description': form.description.data, \
-                'patterns': list(map(int, form.patterns.data))})
+                'patterns': list(map(int, form.patterns.data)), "id":idGroup})
             
             flash("Grupo creado correctamente", "info")
             return render_template('index.html')
@@ -793,7 +777,6 @@ def editGroup(idGroup):
 
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
-    therapist = current_user.get_id()
 
     form = RegistrationGroupForm(current_user.get_id())
     form2 = GenericEditForm()
@@ -828,7 +811,6 @@ def viewGroup(idGroup):
 
     therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
         current_user.get_surname2())
-    therapist = current_user.get_id()
 
     form = PaginationForm(1)
     form2 = PaginationForm2(1)
@@ -846,9 +828,6 @@ def viewGroup(idGroup):
         form=form, form2=form2, idGroup=idGroup, rowsPatterns=queryResultPatterns["rows"], \
         pagesPatterns=queryResultPatterns["numberPages"], numberRowsPattern=queryResultPatterns["numberTotalRows"], \
         rowsBreadCrumb=rowsBreadCrumb)
-
-
-    return render_template('viewGroup.html', rowPatterns=rowPatterns, therapistLiteral=therapistLiteral)
 
 
 @app.route('/', methods=['GET', 'POST'])

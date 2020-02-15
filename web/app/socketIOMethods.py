@@ -1,10 +1,8 @@
-from flask_socketio import SocketIO, emit
-from app import app, db, socketio, thread_lock, thread
-from pymongo import MongoClient, errors
-from .mongoMethods import deletePattern, insertPatternTmp, getTmpPatterns, getPatternsSelectPattern, \
+from flask_socketio import emit
+from app import socketio, thread_lock
+from .mongoMethods import deletePattern, insertPatternTmp, getPatternsSelectPattern, \
     getPatternsSelectGroup, insertPatient, getUnlinkPattern, searchGroupsPattern, searchPatientsPattern, \
-    searchPatientsGroup, searchPatternsGroup, searchPatternsPatient, searchGroupsPatient, viewEpisodes
-from datetime import datetime
+    searchPatientsGroup, searchPatternsGroup, searchPatternsPatient, viewEpisodes
 from .constants import mongoClient, counterSleepTmp
 
 
@@ -99,17 +97,8 @@ def paginationPatternViewPattern(message):
 @socketio.on('paginationPatient', namespace='/viewPattern')
 def paginationPatientViewPattern(message):
     body = searchPatientsPattern(int(message["idPattern"]), int(message["patientPage"]), "str")
-
     print("[DEBUG] body:")
     print(body)
-
-    emit("paginationPatient", {'body': body, "error": ""})
-
-
-
-@socketio.on('paginationPatient', namespace='/viewGroup')
-def paginationGroupViewPattern(message):
-    body = searchPatientsGroup(int(message["idGroup"]), int(message["patientPage"]), "str")
 
     emit("paginationPatient", {'body': body, "error": ""})
 
