@@ -1,2 +1,2 @@
-rm /var/lib/mongodb/mongod.lock
-service mongod start
+sudo rm /var/lib/mongodb/mongod.lock
+sudo service mongod start

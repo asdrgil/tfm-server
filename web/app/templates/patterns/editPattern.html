@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+    	$(document).ready(function() {
+    		$(function () {
+    		  	$('#patientsSelect').multipleSelect();
+            	$('#groupsSelect').multipleSelect();
+    		})
+    	});
+
+        function returnPage(){
+            var url = "{{url_for('patterns.viewPattern', idPattern=123456)}}".replace(123456, document.getElementById("patternId").value);
+            location.href = url;
+        }
+    </script>
+
+{% endblock %}
+
+{% block content %}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Editar pauta") }}
+
+<!-- Modal[Persist changes] -->
+<div class="modal" id="page-modal-save">
+    <div class="modal-background" onclick="closeModalSave()"></div>
+    <div class="modal-content box" style="background-color:#A9A9A9;width:800px;height:150px;top:30%;border-style:solid" align="center">
+        <br>
+        <span> <b>Por favor, confirma si quieres modificar los datos de la pauta. </b></span><br><br>
+        <button class="button is-primary" onclick="confirmSave();">Confirmar</button>
+        <button class="button is-warning" onclick="closeModalSave()">Volver</button>
+    </div>
+    <button class="modal-close is-large" aria-label="close" onclick="closeModalSave()"></button>
+</div>
+
+
+<!-- Title -->
+{{ titleMacro("Editar una pauta") }}
+
+<!-- Input data -->
+<div class="columns is-vcentered is-centered" style="margin-top:50px">
+	<div class="column is-8 box">
+
+		<div align="center">
+			<h4 class="title is-4">Datos de la pauta</h4>
+		    <form action="" id="generalForm" method="post" novalidate>
+		        {{ form.hidden_tag() }}
+                {{ form.csrf_token }}
+
+		        <div class="columns is-vcentered is-centered" style="margin-top:50px">
+		        	<div class="column is-8">
+				        <p>
+				            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+				            
+				            {% for error in form.name.errors %}
+				                <span style="color: red;">[{{ error }}]</span>
+				            {% endfor %}
+				        </p>
+			        </div>
+		        </div>
+
+		        <br>
+
+
+	            <b>{{ form.description.label }}</b> <br>
+	            {{ form.description(maxlength=50) }}
+
+		        <br>
+
+	            <b>{{ form.intensity1.label }}</b> &nbsp;&nbsp; {{ form.intensity1 }}
+
+		        <br>
+
+	            <b>{{ form.intensity2.label }}</b> &nbsp;&nbsp; {{ form.intensity2 }}
+
+		        <br>
+
+		        <b>{{ form.intensity3.label }}</b> &nbsp;&nbsp; {{ form.intensity3 }}
+
+		        <br><br>
+		        
+				<div id="divBtns" align="center">
+			        {{ form2.saveBtn }}
+			        {{ form2.returnBtn }}
+		        </div>
+
+		    </form>
+		</div>
+
+		<br>
+
+	</div>
+
+
+</div>
+
+{% endblock %}

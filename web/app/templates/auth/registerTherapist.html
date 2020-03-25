@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% set notLogged = True %}
+
+{% from 'macros.html' import titleMacro with context %}
+
+{% block content %}
+
+ <div>
+
+  <section id="contact" class="section section-light-grey">
+      <div class="container">
+          <div class="title-wrapper has-text-centered">
+              {{ titleMacro("Registrar usuario") }}
+              <p class="subtitle is-5 is-muted">
+                  Introduce tus credenciales
+              </p>
+
+              <hr width="32%" style="margin-left: 34%"/>
+
+          </div>
+      </div>
+      <div class="hero-body">
+        <div class="container">
+          <div class="columns is-centered"">
+            <article class="card is-rounded">
+              <div class="card-content">
+                  <form method="post">
+
+                      <div class="field">
+                        <div class="control has-icons-left">
+                          {{ form.name(size=33) }}<br>
+                          {% for error in form.name.errors %}
+                              <span style="color: red;">[{{ error }}]</span>
+                          {% endfor %}
+
+                          <span class="icon is-small is-left">
+                            <i class="fas fa-pencil-alt fa-xs"></i>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="field">
+                        <div class="control has-icons-left">
+                          {{ form.surname1(size=33) }}<br>
+                          {% for error in form.surname1.errors %}
+                              <span style="color: red;">[{{ error }}]</span>
+                          {% endfor %}
+
+                          <span class="icon is-small is-left">
+                            <i class="fas fa-pencil-alt fa-xs"></i>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="field">
+                        <div class="control has-icons-left">
+                          {{ form.surname2(size=33) }}<br>
+                          {% for error in form.surname2.errors %}
+                              <span style="color: red;">[{{ error }}]</span>
+                          {% endfor %}
+
+                          <span class="icon is-small is-left">
+                            <i class="fas fa-pencil-alt fa-xs"></i>
+                          </span>
+                        </div>
+                      </div>                        
+
+                      <div class="field">
+                        <div class="control has-icons-left">
+                          {{ form.email(size=33) }}<br>
+                          {% for error in form.email.errors %}
+                              <span style="color: red;">[{{ error }}]</span>
+                          {% endfor %}
+
+                          <span class="icon is-small is-left">
+                            <i class="fas fa-envelope fa-xs"></i>
+                          </span>
+                        </div>
+                      </div>
+
+
+
+                      <div class="field">
+                        <div class="control has-icons-left">
+                          {{ form.password(size=33) }}<br>
+                          {% for error in form.password.errors %}
+                              <span style="color: red;">[{{ error }}]</span>
+                          {% endfor %}
+
+                          <span class="icon is-small is-left">
+                            <i class="fas fa-key fa-xs"></i>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="field">
+                        <div class="control has-icons-left">
+                          {{ form.password2(size=33) }}<br>
+                          {% for error in form.password2.errors %}
+                              <span style="color: red;">[{{ error }}]</span>
+                          {% endfor %}
+
+                          <span class="icon is-small is-left">
+                            <i class="fas fa-key fa-xs"></i>
+                          </span>
+                        </div>
+                      </div>
+
+                      <br>
+                          
+                      <p align="center">{{ form.submit() }}</p>
+
+                  </form>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+  </section>
+
+</div>
+
+<div id="log"></div>
+
+{% endblock %}

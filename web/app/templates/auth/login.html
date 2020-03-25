@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% set notLogged = True %}
+
+{% from 'macros.html' import titleMacro with context %}
+
+{% block content %}
+
+ <div style="background-color:#F2F2F2">
+
+    <section id="contact" class="section section-light-grey">
+        <div class="container">
+            <div class="title-wrapper has-text-centered">
+                {{ titleMacro("Iniciar sesión") }}
+                <p class="subtitle is-5 is-muted">
+                    Inicia sesión con tus credenciales
+                </p>
+
+                <hr width="32%" style="margin-left: 34%"/>
+
+            </div>
+        </div>
+        <div class="hero-body">
+          <div class="container">
+            <div class="columns is-centered"">
+              <article class="card is-rounded">
+                <div class="card-content" align="center">
+                    <form action="" method="post" novalidate>
+                        {{ form.hidden_tag() }}
+                        {{ form.csrf_token }}
+                        
+                        <div class="field">
+                          <div class="control has-icons-left">
+                            {{ form.email(size=33) }}<br>
+                            {% for error in form.email.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <span class="icon is-small is-left">
+                              <i class="fas fa-envelope fa-xs"></i>
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <br>
+
+                        <div class="field">
+                          <div class="control has-icons-left">
+                            {{ form.password(size=33) }}<br>
+                            {% for error in form.password.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <span class="icon is-small is-left">
+                              <i class="fas fa-key fa-xs"></i>
+                            </span>
+                          </div>
+                        </div>
+
+                        <br>
+                    
+                        <label class="checkbox">
+                            {{ form.remember_me() }} {{ form.remember_me.label }}
+                        </label>
+
+                        <br><br>
+
+                        <p>{{ form.submit() }}</p>
+                    </form>
+                    
+                    <p>¿Eres nuevo? Registrate <a href="{{ url_for('auth.register') }}">aquí</a>.</p>
+                    
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+    </section>
+
+    </div>
+
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+<!-- Import macros -->
+
+{% from 'macros.html' import titleMacro with context %}
+
+{% from 'macros.html' import modalCancelMacro with context %}
+
+{% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import groupsTableMacro with context %}
+{% from 'macros.html' import patternsTableMacro with context %}
+{% from 'macros.html' import patientInfoMacro with context %}
+{% from 'macros.html' import viewEpisodesTableMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}?aux" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+?aux2
+    <!-- Multiselect, accordion and general scripts -->
+    <script type="text/javascript" charset="utf-8">
+
+        function modifyPatientInfo(){
+            location.href = "{{ url_for('patients.modifyPatient', idPatient=patientInfo.id) }}"
+        }
+
+        function newPattern(){
+            //TODO:check
+            location.href = "{{ url_for('patients.registerPatternPatient', idPatient=patientInfo.id) }}";
+        }
+
+        function linkPattern(){
+            location.href = "{{ url_for('patients.linkPatternsPatient', idPatient=patientInfo.id) }}";
+        }
+
+        function unlinkPattern(pattId){
+            location.href = "{{ url_for('patients.viewPatient', idPatient=patientInfo.id) }}?unlinkPatt=" + pattId;
+        }        
+
+    </script> 
+
+    <script>
+
+        function episodesFunc(){
+
+            var urlParameters =  "?time1=" + document.getElementById("time1").value + "&time2="+document.getElementById("time2").value+"&date1="+document.getElementById("date1").value+"&date2="+document.getElementById("date2").value;
+            //document.getElementById("date1").value
+
+            $.ajax({
+                url: '/ajax/episodiosPaciente/{{patientInfo.id}}' + urlParameters,
+                data: $('form').serialize(),
+                type: 'POST',
+                success: function(response){
+                    if(response["code"] == 1){
+                        updateTableEpisodes(response["episodes"]);
+                    }
+                },
+                error: function(error){
+                    console.log(error);
+                }
+            });
+        }
+
+        function updateTableEpisodes(message){
+            var bodyContent = "";
+
+            if(message["numberTotalRows"] > 0){
+                var rows = message["rowEpisodes"].split(";");
+
+                for(i=0; i<rows.length; i++){
+                    var cols = rows[i].split(",");
+
+                    bodyContent += "<tr>"
+                    
+                    //FirstDate
+                    bodyContent += "<td>"+cols[0]+"</td>";
+                    //FirstTime
+                    bodyContent += "<td>"+cols[1]+"</td>";
+                    //LastDate
+                    bodyContent += "<td>"+cols[2]+"</td>";
+                    //Duration
+                    bodyContent += "<td>"+cols[3]+"</td>";
+                    //Cause
+                    bodyContent += "<td>"+cols[4]+"</td>";
+                    //View episode
+                    
+                    bodyContent += "<td><a href={{url_for('patients.viewOneEpisode')}}?idPatient={{patientInfo.id}}&timestampFrom="+cols[5]+"&timestampTo="+cols[6]+" style='color:#3273dc'><i class='fas fa-eye'></i>Ver</a></td>";
+                    
+                    bodyContent += "</tr>"
+                }
+            }
+
+            $("#episodesTable tbody").html(bodyContent);
+
+            document.getElementById("numberRowsEpisodes").value = message["numberTotalRows"];
+
+            if(document.getElementById("date1").value.length == 0){
+                document.getElementById("date1").value = "2000-01-01";
+                document.getElementById("time1").value = "00:00";
+            } else if(document.getElementById("time1").value.length == 0){
+                document.getElementById("time1").value = "00:00";
+            }
+
+            if(document.getElementById("date2").value.length == 0){
+                document.getElementById("date2").value = "2050-01-01";
+                document.getElementById("time2").value = "23:59";
+            } else if(document.getElementById("time2").value.length == 0){
+                document.getElementById("time2").value = "23:59";
+            }
+        }
+
+    </script>    
+
+{% endblock %}
+
+{% block content %}
+<!-- Modal[Cancelar] -->
+{{ modalCancelMacro() }}
+
+{{ breadCrumbMacro(rowsBreadCrumb, patientInfo.name + ' ' + patientInfo.surname1) }}
+
+{{ titleMacro("Ver paciente") }}
+
+<div class="columns is-vcentered is-centered">
+    <div class="column is-8" align="center">
+        <article class="card is-rounded">
+            <div class="card-content">
+                {{ patientInfoMacro(patientInfo) }}
+
+                <br>
+
+                <div id="divBtns" align="center">
+                    <input class="button is-primary" id="saveBtn" name="saveBtn" onclick="modifyPatientInfo()" type="button" value="Modificar">
+                </div>
+
+                <div style='max-width:400px'><hr></div>
+
+                <div class="box" style='max-width:1000px' align="center">
+                    <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
+                    {% if rowsPatterns|length > 0 %}
+                        {{ patternsTableMacro(rowsPatterns, 0, 1) }}
+                    {% endif %}
+
+                    Número de registros totales: <b>{{ numberRowsPattern }}</b>
+                    {% if pagesPatterns > 1 %}
+                        <br>
+                        {{ form3.pagination.label }} &nbsp;&nbsp; {{ form3.pagination }}
+                    {% endif %}
+
+                    <br><br>
+
+                    {{ form.newPatternBtn }} {{ form.linkPatternBtn }}
+
+                </div>                
+
+                <div style='max-width:400px'><hr></div><br>
+
+
+                <div class="columns is-vcentered is-centered">
+                    <div class="column is-8 box" align="center">
+                        <br>
+
+                        <div class="columns is-vcentered is-centered">
+                            <div class="column is-5" align="center">
+                                <h3 class="title is-3">Episodios de un paciente</h3>
+                            </div>
+                        </div>
+
+                        <br>
+
+                        <div class="columns is-centered">
+
+                            <div class="column is-3" align="center" style="border-right: 0.5px solid #e4e4e4;">
+                                <h5 class="title is-5">Filtrar episodios</h5>
+                                    <form action="" id="episodesForm" method="post" novalidate>
+                                        {{ form4.hidden_tag() }}
+                                        {{ form4.csrf_token }}
+
+                                        <!-- FROM -->
+
+                                        {{ form4.date1.label }}
+
+                                        <br>
+
+                                        {{ form4.date1 }}
+                                        {% for error in form4.date1.errors %}
+                                            <span style="color: red;">[{{ error }}]</span>
+                                        {% endfor %}
+
+                                        <br>
+
+                                        {{ form4.time1.label }}
+
+                                        <br>
+
+                                        {{ form4.time1 }}
+                                        {% for error in form4.time1.errors %}
+                                            <span style="color: red;">[{{ error }}]</span>
+                                        {% endfor %}
+
+                                        <br>
+
+                                        <!-- TO -->
+                                        {{ form4.date2.label }}
+
+                                        <br>
+
+                                        {{ form4.date2 }}
+                                        {% for error in form4.date2.errors %}
+                                            <span style="color: red;">[{{ error }}]</span>
+                                        {% endfor %}
+
+                                        <br>
+
+                                        {{ form4.time2.label }}
+
+                                        <br>
+
+                                        {{ form4.time2 }}
+                                        {% for error in form4.time2.errors %}
+                                            <span style="color: red;">[{{ error }}]</span>
+                                        {% endfor %}
+
+                                        <br><br>
+                                        
+                                        {{ form.unlinkPatternId }}
+                                        {{ form4.searchBtn2 }}
+                                    
+                                    </form>
+                            </div>
+
+                            <div class="column is-7 verticalLine" align="center">
+                                {% if rowEpisodes|length > 0 %}
+                                    {{ viewEpisodesTableMacro(rowEpisodes) }}
+                                {% endif %}
+                                Número de registros totales: <b id="numberRowsEpisodes">{{ numberRowsEpisodes }}</b>
+                                <!-- TODO: add pagination -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </div>
+</div>
+
+{% endblock %}

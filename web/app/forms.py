@@ -6,14 +6,10 @@ from wtforms.validators import ValidationError, DataRequired, Optional, Email, E
     Length
 from app.models import User
 from pymongo import MongoClient, errors
-#from .mongoMethods import getCurentUser
-
-#TODO: solve it.
-therapist = 4
 
 mongoClient = MongoClient('localhost:27017').tfm
 
-def patientOpts(therapistId) -> list:
+def patientOpts(therapistId):
     cursorPatients = mongoClient["patients"].find({"therapist": therapistId})\
     .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
     result = []
@@ -24,7 +20,7 @@ def patientOpts(therapistId) -> list:
 
     return result
 
-def patternOpts(therapistId) -> list:
+def patternOpts(therapistId):
     cursorPatterns = mongoClient["patterns"].find({"therapist": therapistId, "windowId": {"$exists":False}})\
     .sort([("name", 1)])
     result = []
@@ -35,7 +31,7 @@ def patternOpts(therapistId) -> list:
 
     return result
 
-def groupOpts(therapistId) -> list:
+def groupOpts(therapistId):
     cursorGroups = mongoClient["groups"].find({"therapist": therapistId, "windowId": {"$exists":False}})\
     .sort([("name", 1)])
     result = []
@@ -289,10 +285,8 @@ class SearchPatientsForm(FlaskForm):
         "style":"text-align:center;width:250px;"}) 
     genders = SelectMultipleField('Género', validators=[Optional()], choices=[('M','Masculino'),('F','Femenino')], \
         render_kw={'multiple':'multiple', 'id':'gendersSelect'})
-    patterns = SelectMultipleField('Pautas', validators=[Optional()], choices=[], \
+    patterns = SelectMultipleField('Pautas asociadas al paciente', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'patternsSelect'})
-    groups = SelectMultipleField('Grupos', validators=[Optional()], choices=[], \
-        render_kw={'multiple':'multiple', 'id':'groupsSelect'})
     searchBtn = SubmitField('Buscar', render_kw={"class":"button is-primary"})
     returnBtn = SubmitField('Volver', render_kw={"class":"button is-light", "onclick": "returnPage()", \
         'type':'button'})
@@ -307,33 +301,10 @@ class SearchPatientsForm(FlaskForm):
     def __init__(self, therapistId: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.patterns.choices = patternOpts(therapistId)
-        self.groups.choices = groupOpts(therapistId)
 
 
+#TODO: remove therapist direct assignation
 class SearchGroupsForm(FlaskForm):
-    cursorPatients = mongoClient["patients"].find({"therapist":therapist})\
-    .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
-    patientOpts = []
-
-    for pt in cursorPatients:
-        row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
-        patientOpts.append(row)
-
-    cursorGroups = mongoClient["groups"].find({}).sort([("name", 1)])
-    groupOpts = []
-
-    for pt in cursorGroups:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
-        groupOpts.append(row)
-
-
-    cursorPatterns = mongoClient["patterns"].find({}).sort([("name", 1), ("description", 1)])
-    patternOpts = []
-
-    for pt in cursorPatterns:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
-        patternOpts.append(row)    
-
     name = StringField('Nombre', validators=[Optional()], \
         render_kw={"class":"input is-small", "placeholder":"Nombre", "style":"text-align:center;"})
     patients = SelectMultipleField('Pacientes asociados al grupo', validators=[Optional()], choices=patientOpts, \
@@ -345,6 +316,11 @@ class SearchGroupsForm(FlaskForm):
     pageNumber = HiddenField("pageNumber")
     submitDone = HiddenField("submitDone")
     deleteId = HiddenField("deleteId")
+
+    def __init__(self, therapistId: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.patients.choices = patientOpts(therapistId)
+        self.patterns.choices = patternOpts(therapistId)
 
 
 class FilterByDateForm(FlaskForm):

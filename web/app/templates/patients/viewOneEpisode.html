@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import patientInfoMacro with context %}
+{% from 'macros.html' import oneEpisodeTableMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
+
+{% block head %}
+
+    <style>
+        .dot {
+          height: 25px;
+          width: 25px;
+          background-color: #bbb;
+          border-radius: 50%;
+          display: inline-block;
+        }
+    </style>
+
+    {% assets "highchartsJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script>
+
+    var data = [];
+
+    {% for row in rowEpisodes %}
+        data.push([{{row.plotDate}}, {{row.alertLevel}}]);
+    {% endfor %}
+
+        $(function() {
+            var chart = new Highcharts.StockChart({
+                
+                chart: {
+                    renderTo: 'container'
+                },
+                
+                /*xAxis: {
+                    events: {
+                        afterSetExtremes: function(e) {
+                            $('#report').html('<b>Set extremes:</b> e.min: '+ Highcharts.dateFormat(null, e.min) +
+                                ' | e.max: '+ Highcharts.dateFormat(null, e.max));
+                        }
+                    }
+                },*/
+                
+            rangeSelector: {
+                buttons: [{
+                    type: 'hour',
+                    count: 1,
+                    text: '1h'
+                }, {
+                    type: 'day',
+                    count: 1,
+                    text: '1D'
+                }, {
+                    type: 'all',
+                    count: 1,
+                    text: 'All'
+                }],
+                selected: 1,
+                inputEnabled: true
+            },
+                
+                series: [{
+                    name: 'Nivel de alerta',
+                    data: data
+                }]
+            });
+        });
+    </script>
+
+{% endblock %}
+
+{% block content %}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Ver un episodio del paciente") }}
+
+<section id="contact" class="section section-light-grey">
+    {{ titleMacro("Ver un episodio concreto") }}
+</section>
+
+<div class="columns is-vcentered is-centered">
+
+    <div class="column is-8 box">
+        <article class="card is-rounded">
+            {{ patientInfoMacro(patientInfo) }}
+            <br>
+        </article>
+
+        <br>
+
+        
+        <div align="center">
+            <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+            <div id="container" style="height: 400px; min-width: 600px"></div>
+            <div id="report" style="font: 0.8em sans-serif"></div>
+
+            {{ oneEpisodeTableMacro(rowEpisodes) }}
+
+            <br>
+            
+            <a href="{{ url_for('patients.viewPatient', idPatient=123456) }}".replace("123456", "{{patientInfo.id}}")><input class="button is-light" id="returnBtn" name="returnBtn" type="button" value="Volver"></a>
+        </div>
+</div>
+
+
+
+<br>
+
+{% endblock %}

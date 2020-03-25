@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+<!-- Import macros -->
+
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import patternsTableMacro with context %}
+{% from 'macros.html' import patientsTableMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            $(function () {
+                $('#paginationSelect').multipleSelect();
+                $('#paginationSelect2').multipleSelect();
+            })
+        });
+    </script>
+
+    <!-- SocketIO methods -->
+    <script>
+        namespace = '/viewGroup';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        function paginationFunc(){
+            socket.emit('paginationPattern', {"idGroup": {{ idGroup }}, "patternPage": document.getElementById("paginationSelect").value});
+        }
+
+        function paginationFunc2(){
+            socket.emit('paginationPattern', {"idGroup": {{ idGroup }}, "patientPage": document.getElementById("paginationSelect2").value});
+        }
+
+        function newPattern(){
+            location.href = "{{ url_for('groups.registerPatternGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+        }
+
+        function linkPattern(){
+            location.href = "{{ url_for('groups.linkPatternsGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+        }
+
+        function unlinkPattern(pattId){
+            location.href = "{{ url_for('groups.viewGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+        }
+
+        function modifyGroup(){
+            var url = "{{ url_for('groups.editGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+            location.href = url;
+        }
+    </script>    
+
+{% endblock %}
+
+{% block content %}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Ver un grupo de pautas") }}
+
+<!-- Title -->
+{{ titleMacro("Ver un grupo de pautas") }}
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+
+    <div class="column is-8 box" align="center">
+        <h4 class="title is-4">Datos del grupo de pautas</h4>
+        <b> Nombre</b>:&nbsp;&nbsp; {{ groupInfo.name }}
+        <br><br>
+        <b> Descripción </b>:&nbsp;&nbsp; {{ groupInfo.description }}
+
+        <br><br>
+
+        <a onclick="modifyGroup()"><input class="button is-primary" type="button" value="Modificar"></a>
+
+        <div style='max-width:400px'><hr></div>
+
+        <div class="box" style='max-width:1000px'>
+            <h4 class="title is-4 is-spaced">Pautas incluidas en este grupo</h4>
+
+            {% if rowsPatterns|length > 0 %}
+                {{ patternsTableMacro(rowsPatterns, 0, 1) }}
+            {% endif %}
+
+            Número de registros totales: <b>{{ numberRowsPattern }}</b>
+            {% if pagesPatterns > 1 %}
+                <br>
+                {{ form.pagination.label }} &nbsp;&nbsp; {{ form.pagination }}
+            {% endif %}
+
+            <br><br>
+
+            <input class="button is-link" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:newPattern()" type="button" value="Registrar una nueva pauta">
+            <input class="button is-info" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:linkPattern()" type="button" value="Enlazar una nueva pauta">
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

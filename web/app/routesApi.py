@@ -17,5 +17,3 @@ def syncDevice(registrationToken):
     
     else:
         return jsonify({'code': 2, "message":u"El token introducido no es correcto."})
-
-@app.route('/api/v1/sincronizarDispositivo/<registrationToken>', methods=['GET'])

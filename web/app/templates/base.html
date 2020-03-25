@@ -1,5 +1,7 @@
 <html>
-    <head>
+    <head>        
+        <meta charset="UTF-8">
+
         {% set therapistName = therapistLiteral %}
 
         {% assets "mainCss" %}
@@ -45,7 +47,7 @@
               
               <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
 
-              <a class="navbar-item" href="/index">
+              <a class="navbar-item" href="{{ url_for('general.index') }}">
                 <i class="fas fa-home fa-2x"></i>
                 <span style="margin-left: 10px;"> Pantalla principal</span>
               </a>
@@ -67,11 +69,11 @@
                     </a>
 
                     <div class="navbar-dropdown">
-                      <a class="navbar-item" href="/registrarPaciente">
+                      <a class="navbar-item" href="{{ url_for('patients.registerPatient') }}">
                         <i class="fas fa-user fa-2x"></i>
                         <span style="margin-left: 10px;">Registrar paciente</span>
                       </a>
-                      <a class="navbar-item" href="/verPacientes">
+                      <a class="navbar-item" href="{{ url_for('patients.viewPatients') }}">
                         <i class="fas fa-user fa-2x"></i>
                         <span style="margin-left: 10px;">Ver pacientes</span>
                       </a>
@@ -96,20 +98,20 @@
                     </a>
 
                     <div class="navbar-dropdown">
-                      <a class="navbar-item" href="/registrarPauta">
+                      <a class="navbar-item" href="{{ url_for('patterns.registerPattern') }}">
                         <i class="fas fa-sticky-note fa-2x"></i>
                         <span style="margin-left: 10px;">Crear una pauta</span>
                       </a>
-                      <a class="navbar-item" href="/verPautas">
+                      <a class="navbar-item" href="{{ url_for('patterns.viewPatterns') }}">
                         <i class="fas fa-sticky-note fa-2x"></i>
                         <span style="margin-left: 10px;">Ver pautas</span>
                       </a>
                       <hr class="dropdown-divider">
-                      <a class="navbar-item" href="/registrarGrupo">
+                      <a class="navbar-item" href="{{ url_for('groups.registerGroup') }}">
                         <i class="fas fa-sticky-note fa-2x"></i>
                         <span style="margin-left: 10px;">Crear un grupo de pautas</span>
                       </a>
-                      <a class="navbar-item" href="/verGrupos">
+                      <a class="navbar-item" href="{{ url_for('groups.viewGroups') }}">
                         <i class="fas fa-sticky-note fa-2x"></i>
                         <span style="margin-left: 10px;">Ver grupos de pautas</span>
                       </a>
@@ -160,7 +162,7 @@
                           <span style="margin-left: 10px;">Configuración</span>
                         </a>
                         <hr class="navbar-divider">
-                        <a class="navbar-item" href="/logout">
+                        <a class="navbar-item" href="{{ url_for('general.logout') }}">
                           <i class="fas fa-sign-out-alt fa-2x"></i>
                           <span style="margin-left: 10px;">Cerrar sesión</span>
                         </a>

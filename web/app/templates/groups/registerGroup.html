@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+
+{% from 'macros.html' import breadCrumbMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        //Multiselect 
+        $(function () {
+            $('#patientsSelect').multipleSelect();
+            $('#patternsSelect').multipleSelect();
+            bulmaAccordion.attach();
+        })
+    });
+</script>
+
+{% endblock %}
+
+{% block content %}	
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Crear un grupo de pautas") }}
+
+<!-- Titulo -->
+
+<div class="columns is-vcentered is-centered" style="height: 10px; margin-top:30px">
+
+	<div class="column is-one-third">
+		<hr>
+	</div>
+
+	<div class="column is-one-third" align="center">
+		<h3 class="title is-3">Crear un grupo de pautas</h3>
+	</div>
+	
+	<div class="column is-one-third">
+		<hr>
+	</div>
+</div>
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered" style="margin-top:50px">
+	<div class="column is-1">
+	</div>
+
+	<div class="column is-8 box">
+
+		<div align="center">
+			<h4 class="title is-4">Datos sobre el grupo</h4>
+		    <form action="" id="generalForm" method="post" novalidate>
+		        {{ form.hidden_tag() }}
+		        {{ form.csrf_token }}
+
+		        <div class="columns is-vcentered is-centered">
+					<div class="column is-2">
+					</div>
+		        	<div class="column is-8">
+				        <p>
+				            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+				            
+				            {% for error in form.name.errors %}
+				            <span style="color: red;">[{{ error }}]</span>
+				            {% endfor %}
+				        </p>
+			        </div>
+			        <div class="column is-2">
+					</div>
+		        </div>
+
+		        <br>
+
+
+		        <p>
+		            <b>{{ form.description.label }}</b> <br>
+		            {{ form.description(maxlength=50) }} 
+		        </p>
+
+		        <br>
+
+				<!-- Vincular pautas preexistentes a este grupo -->
+				<div class="columns is-vcentered is-centered" style="margin-top:50px">
+					<div class="column is-1">
+					</div>
+
+					<br>
+
+	              	<div align="center">
+              	  		{{ form.patterns.label }} {{ form.patterns }}
+			        </div>
+					<div class="column is-1">
+					</div>
+				</div>
+
+                <br>
+
+		        {{ form.submit }}
+
+		    </form>
+		</div>
+
+		<br>
+
+	</div>
+
+
+	<div class="column is-1">
+	</div>
+
+
+</div>
+
+{% endblock %}

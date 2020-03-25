@@ -337,7 +337,7 @@
         <div class="modal-content box" style="background-color:#A9A9A9;width:800px;height:150px;top:30%;border-style:solid" align="center">
             <br>
             <span> <b>Los datos que no hayan sigo guardados se perderán. Por favor, confirma si quieres realizar esta acción </b></span><br><br>
-            <button class="button is-primary" onclick="window.location.href = '/';">Confirmar</button>
+            <button class="button is-primary" onclick="window.location.href = '';">Confirmar</button>
             <button class="button is-warning" onclick="closeModalCancel()">Volver</button>
         </div>
         <button class="modal-close is-large" aria-label="close" onclick="closeModalCancel()"></button>
@@ -391,4 +391,30 @@
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Descripción</b>:&nbsp;&nbsp; {{ groupInfo.description }}
 
     </div>
+{% endmacro %}
+
+{% macro viewEpisodesTableMacro(rows) %}
+
+    <table id="episodesTable" class="table">
+        <thead>
+            <th> <span> Fecha de inicio </span></th>
+            <th> <span> Hora de inicio </span></th>
+            <th> <span> Hora de fin </span></th>
+            <th> <span> Duración </span></th>
+            <th> <span> Causa </span></th>
+            <th> <span>  </span></th>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td>{{row.firstDate}}</td>
+                <td>{{row.firstTime}}</td>
+                <td>{{row.lastTime}}</td>
+                <td>{{row.duration}}</td>
+                <td>{{row.cause}}</td>
+                <td><a href="{{url_for('patients.viewOneEpisode')}}?idPatient={{patientInfo.id}}&timestampFrom={{row.timestampFrom}}&timestampTo={{row.timestampTo}}"><i class='fas fa-eye'></i>Ver</a></td>
+            </tr>
+        {% endfor %}        
+        </tbody>
+    </table>
 {% endmacro %}

@@ -1,4 +1,5 @@
-from app import app, socketio
+from app import app, db, socketio
+from app.constants import host, port, urlPrefix
 from flask_assets import Environment
 
 if __name__ == '__main__':
@@ -29,4 +30,4 @@ if __name__ == '__main__':
         'js/vendor/highstockV8.0.0.js', 'js/vendor/highstockExportingV8.0.0.js',
         output='cached5.js', filters='jsmin')
 
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True, host=host, port=port)

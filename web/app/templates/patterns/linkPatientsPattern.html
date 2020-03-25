@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% set logged = True %}
+{% set therapistName = therapistLiteral %}
+
+<!-- Import macros -->
+{% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import patientsTableMacro with context %}
+{% from 'macros.html' import breadCrumbMacro with context %}
+
+{% block head %}
+
+    {% assets "accordionMultiselectCss" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+    {% endassets %}
+
+    {% assets "accordionMultiselectJs" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            $(function () {
+              $('#patternsSelect').multipleSelect();
+              $('#groupsSelect').multipleSelect();
+              $('#gendersSelect').multipleSelect();
+              $('#paginationSelect').multipleSelect();
+            })
+        });
+
+        function submitFunc(){
+            //Store pagination
+            if(document.getElementById("paginationSelect") == null){
+                document.getElementById("pageNumber").value = 1;
+            } else {
+                document.getElementById("pageNumber").value = parseInt(document.getElementById("paginationSelect").value);
+            }
+
+            window.history.pushState({}, document.title, location.pathname);
+
+            document.getElementById("generalForm").submit();
+        }
+
+        //This is done just to allow code reuse of forms
+        function paginationFunc(){
+            submitFunc();
+        }
+
+        function linkPatient(patiId){
+            var url = "{{ url_for('patterns.linkPatientsPattern', idPattern=123456) }}?linkPatt=".replace(123456, {{patternInfo.id}}) + patiId;
+            location.href = url;
+        }
+
+        function returnPage(){
+            //location.href = location.protocol + '//' + location.host + "/verPauta/" + location.pathname.split("/")[2] + location.search;
+            //TODO:check
+            location.href = "{{ url_for('patterns.viewPattern', idPattern=123456) }}".replace(123456, {{patternInfo.id}});
+        }
+
+        function linkPatients(){
+            var checkboxes = document.getElementsByName("checkboxPattPat");
+            var patiIds = "";
+
+            for (var i=0; i<checkboxes.length; i++) {
+              if (checkboxes[i].checked) {
+                patiIds += checkboxes[i].id.replace("checkbox_", "") + ",";
+                checkboxes[i].checked = false;
+              }
+            }
+
+            if(patiIds.length > 0){
+                patiIds = patiIds.substring(0, patiIds.length-1);
+
+                location.href = "{{ url_for('patterns.linkPatientsPattern', idPattern=123456) }}"
+                    .replace(123456, {{patternInfo.id}}) + "?patiIds=" + patiIds;
+
+                generateNotification("success", "Pauta vinculada correctamente a los pacientes");
+            
+            } else {
+                generateNotification("alert", "No se ha seleccionado ningun paciente");
+            }
+        }
+
+    </script>
+
+{% endblock %}
+
+{% block content %}
+
+{{ breadCrumbMacro(rowsBreadCrumb, "Enlazar pauta a pacientes") }}
+
+<!-- Title -->
+<section id="contact" class="section section-light-grey">
+    {{ titleMacro("Enlazar pauta a pacientes") }}
+</section>
+
+<!-- Input data -->
+
+<div class="columns is-vcentered is-centered">
+
+    <div class="column is-8 box">
+        <div align="center">
+            <div class="box">
+                <h4 class="title is-4">Datos de la pauta</h4>
+
+                <b> Nombre</b>: {{ patternInfo.name }}
+                <br><br>
+                <b> Descripción </b>: {{ patternInfo.description }}
+                
+                <br><br>
+                
+                <b>Intensidad amarilla</b>:
+
+                {% if patternInfo.intensity1=="No" %}
+                    No<span style='color:red;'><i class='fas fa-times'></i></span>
+                {% else %}
+                    Sí;<span style='color:green;'><i class='fas fa-check'></i></span>
+                {% endif %}
+                
+                <br><br>
+                
+                <b>Intensidad naranja</b>:
+
+                {% if patternInfo.intensity2=="No" %}
+                    No<span style='color:red;'><i class='fas fa-times'></i></span>
+                {% else %}
+                    Sí<span style='color:green;'><i class='fas fa-check'></i></span>
+                {% endif %}
+
+                <br><br>
+                
+                <b>Intensidad roja</b>:
+
+                {% if patternInfo.intensity3=="No" %}
+                    No<span style='color:red;'><i class='fas fa-times'></i></span>
+                {% else %}
+                    Sí<span style='color:green;'><i class='fas fa-check'></i></span>
+                {% endif %}
+            </div>
+
+            <br>
+
+
+
+                <div class="columns is-vcentered is-centered">
+                    <div class="column is-5" align="center">
+                        <h3 class="title is-3">Pacientes</h3>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="columns is-centered">
+
+                    <div class="column is-3" align="center">
+                        <h5 class="title is-5">Filtrar pautas</h5>
+                        <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
+                            {{ form.hidden_tag() }}
+                            {{ form.csrf_token }}
+                            {{ form. deleteId }}
+
+                            {{ form.name.label }}
+
+                            {{ form.name(size=5, maxlength=15) }}
+
+                            <br>
+
+                            {% for error in form.name.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <br>
+
+                            {{ form.surname1.label }}
+
+                            <br>
+
+                            {{ form.surname1(size=5, maxlength=15) }}
+
+                            <br>
+
+                            {% for error in form.surname1.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <br>
+
+                            {{ form.surname2.label }}
+
+                            {{ form.surname2(size=5, maxlength=15) }}
+                            {% for error in form.surname2.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <br>
+
+                            {{ form.age.label }}
+
+                            <br>
+
+                            {{ form.age(size=5, maxlength=15) }}
+                            {% for error in form.age.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <br>
+
+                            {{ form.genders.label }}
+
+                            <br>
+
+                            {{ form.genders(size=5, maxlength=15) }}
+                            {% for error in form.genders.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <br>
+
+                            {{ form.patterns.label }}
+
+                            <br>
+
+                            {{ form.patterns(size=5, maxlength=15) }}
+                            {% for error in form.patterns.errors %}
+                                <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+
+                            <br><br>
+
+                            {{ form.searchBtn() }}
+                            
+                        </form>
+                    </div>
+
+                    <div id="tablearea" class="column is-7 box" align="center">
+                        {% if rowPatients|length > 0 %}
+                            {{ patientsTableMacro(rowPatients, 3) }}
+                        {% endif %}
+                        
+                        Número de registros totales: <b>{{ numberTotalRows }}</b>
+                        
+                        {% if numberPages > 1 %}
+                            <br>
+                            {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+                        {% endif %}
+
+                        {% if rowPatients|length > 0 %}
+                            <br><br>
+                            <input class="button is-link" id="linkBtn" name="linkBtn" onclick="linkPatients()" value="Enlazar pauta a pacientes">
+                        {% endif %}
+                        {{ form.returnBtn }}
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
