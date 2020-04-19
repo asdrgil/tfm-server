@@ -147,7 +147,7 @@
                 {% if edit == 3 %}
                     <th align="center"> <span> Seleccionar </span></th>
                 {% endif %}
-                <th align="center"> <span> Paciente </span></th>
+                <th align="center"> <span> Nombre </span></th>
                 <th align="center"> <span> Primer apellido </span></th>
                 <th align="center"> <span> Segundo apellido </span></th>
                 <th align="center"> <span>  </span></th>
@@ -399,21 +399,21 @@
             <tbody>
                 <tr>
 			        {% if patternInfo.intensity1=="No" %}
-			            <td> <span style='color:red;' data-tooltip="No"><i class='fas fa-times'></i></span> </td>
+			            <td> <span style='color:red;' data-tooltip="No" class="has-tooltip-bottom"><i class='fas fa-times'></i></span> </td>
                     {% else %}
-                        <td> <span style='color:green;' data-tooltip="Sí"><i class='fas fa-check'></i></span> </td>
+                        <td> <span style='color:green;' data-tooltip="Sí" class="has-tooltip-bottom"><i class='fas fa-check'></i></span> </td>
                     {% endif %}
                     
 			        {% if patternInfo.intensity2=="No" %}
-			            <td> <span style='color:red;' data-tooltip="No"><i class='fas fa-times'></i></span> </td>
+			            <td> <span style='color:red;' data-tooltip="No" class="has-tooltip-bottom"><i class='fas fa-times'></i></span> </td>
                     {% else %}
-                        <td> <span style='color:green;'data-tooltip="Sí"><i class='fas fa-check'></i></span> </td>
+                        <td> <span style='color:green;'data-tooltip="Sí" class="has-tooltip-bottom"><i class='fas fa-check'></i></span> </td>
                     {% endif %}
                     
 			        {% if patternInfo.intensity3=="No" %}
-			            <td> <span style='color:red;' data-tooltip="No"><i class='fas fa-times'></i></span> </td>
+			            <td> <span style='color:red;' data-tooltip="No" class="has-tooltip-bottom"><i class='fas fa-times'></i></span> </td>
                     {% else %}
-                        <td> <span style='color:green;'data-tooltip="Sí"><i class='fas fa-check'></i></span> </td>
+                        <td> <span style='color:green;'data-tooltip="Sí" class="has-tooltip-bottom"><i class='fas fa-check'></i></span> </td>
                     {% endif %}
                 </tr>
             </tbody>        

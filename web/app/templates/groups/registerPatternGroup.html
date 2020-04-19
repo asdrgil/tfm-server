@@ -25,7 +25,7 @@
 		});
 
 		function returnPage(){
-         	var url = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}";
+         	var url = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=groupInfo.id)) }}";
          	location.href = url;
 		}
 	</script>

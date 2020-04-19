@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.views.groups import bp
 from app.forms import RegistrationGroupForm, PaginationForm, PaginationForm2, SearchGroupsForm, \
-    RegisterPatternForm, GenericEditForm, SearchPatternsForm, PatternSelectForm
+    RegisterPatternForm, GenericEditForm, SearchPatternsForm
 from app.constants import mongoClient, urlPrefix
 from app.mongoMethods import searchPatterns, searchPatternsGroup, searchGroups, updateGroup, registerTraceUsers
 from datetime import datetime
@@ -112,7 +112,6 @@ def viewGroup(idGroup):
 
     form = PaginationForm(1)
     form2 = PaginationForm2(1)
-    form3 = PatternSelectForm([current_user.get_id(), idGroup])
 
     cursorGroup = mongoClient["groups"].find_one({"therapist":current_user.get_id(), "id": idGroup})
 
@@ -123,7 +122,7 @@ def viewGroup(idGroup):
     queryResultPatterns = searchPatternsGroup(idGroup, 1)
 
     return render_template('groups/viewGroup.html', therapistLiteral=therapistLiteral, groupInfo=groupInfo,
-        form=form, form2=form2, form3=form3, idGroup=idGroup, rowsPatterns=queryResultPatterns["rows"], \
+        form=form, form2=form2, idGroup=idGroup, rowsPatterns=queryResultPatterns["rows"], \
         pagesPatterns=queryResultPatterns["numberPages"], numberRowsPattern=queryResultPatterns["numberTotalRows"], \
         rowsBreadCrumb=rowsBreadCrumb)
 
@@ -173,6 +172,7 @@ def linkPatternsGroup(idGroup):
         pattIds = list(map(int, request.args.get("pattIds").split(",")))
         mongoClient["groups"].update_one({"id":idGroup}, {"$push": {"patterns":{"$each" : pattIds}} })
         flash("Pautas vinculadas al grupo correctamente", "success")
+        return redirect(urlPrefix + url_for('groups.viewGroup', idGroup=idGroup))
 
     if form.validate_on_submit() is False:
         form.name.data = ""
@@ -181,7 +181,7 @@ def linkPatternsGroup(idGroup):
         form.intensities.data = []
         form.pageNumber.data = "1"
 
-    queryResult = searchPatterns(form, int(form.pageNumber.data))
+    queryResult = searchPatterns(form, int(form.pageNumber.data), {"type":"groups", "id":idGroup})
     form2 = PaginationForm(queryResult["numberPages"])
     form2.pagination.data = form.pageNumber.data
 

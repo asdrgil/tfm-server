@@ -27,40 +27,25 @@
                 
                 $('#paginationSelect').multipleSelect();
                 $('#paginationSelect2').multipleSelect();
-                $('#patternsSelect').multipleSelect();
-                
-            	document.getElementById("boxLinkPatterns").style.display = "none";                
+                $('#patternsSelect').multipleSelect();     
             })
         });
 
         function newPattern(){
-            location.href = "{{ url_for('groups.registerPatternGroup', idGroup=idGroup) }}";
+            location.href = "{{ addUrlPrefixMacro(url_for('groups.registerPatternGroup', idGroup=idGroup)) }}";
         }
+        
+        function linkPattern(){
+            location.href = "{{ addUrlPrefixMacro(url_for('groups.linkPatternsGroup', idGroup=123456)) }}".replace(123456, {{idGroup}});
+        }        
         
         function unlinkPattern(pattId){
             location.href = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}?unlinkPatt=" + pattId;
-        }
-        
-        function linkPatterns(){
-            if(document.getElementById("patternsSelect").value == ""){
-                generateNotification("alert", "No se ha seleccionado ninguna pauta");
-            } else {
-                var patterns = $("#patternsSelect").multipleSelect('getSelects').toString();            
-                location.href = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}?linkPatts=" + patterns;            
-            }            
         }
 
         function modifyGroup(){
             var url = "{{ url_for('groups.editGroup', idGroup=idGroup) }}";
             location.href = url;
-        }
-        
-        function linkPatternsVisibility(){
-            if(document.getElementById("boxLinkPatterns").style.display == "none"){
-                document.getElementById("boxLinkPatterns").style.display = "block";
-            } else {
-                document.getElementById("boxLinkPatterns").style.display = "none";
-            }
         }        
     </script>    
 
@@ -100,25 +85,9 @@
             {% endif %}
 
             <br><br>
-            
-            <div class="field">
-                <input type="checkbox" id="switchLinkPatterns" class="switch is-thin" onchange="linkPatternsVisibility()">
-                <label for="switchLinkPatterns">&nbsp;&nbsp;Enlazar una nueva pauta</label>
-            </div>
 
-            <div class="box" id="boxLinkPatterns" style='max-width:400px'>
-                <form action="" id="patternsForm" method="post" novalidate">
-                    {{ form3.patterns.label }}
-                    <br>
-                    {{ form3.patterns }}
-                    <br><br>
-                    {{ form3.submitBtn }}
-                </form>
-            </div>            
-            
-            <br>
-
-            <input class="button is-link" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:newPattern()" type="button" value="Registrar una nueva pauta">
+            <input class="button is-link" id="newPatternBtn" name="newPatternBtn" onclick="javascript:newPattern()" type="button" value="Registrar una nueva pauta">
+            <input class="button is-info" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:linkPattern()" type="button" value="Enlazar una nueva pauta">
         </div>
 
     </div>

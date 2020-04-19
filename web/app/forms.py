@@ -67,20 +67,6 @@ def patternOpts(therapistId):
         result.append(row)
 
     return result
-    
-def patternMinusOpts(therapistId, field, value):
-    cursorGroup = mongoClient["groups"].find_one({"therapist": therapistId, "id":value})
-    excludedPatterns = cursorGroup["patterns"]
-    
-    result = []
-    cursorPatterns = mongoClient["patterns"].find({"therapist": therapistId, "id":{"$nin":excludedPatterns}})\
-        .sort([("name", 1)])
-
-    for pt in cursorPatterns:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")[:maxSelectlength].ljust(maxSelectlength, ' ')))
-        result.append(row)
-
-    return result
 
 def groupOpts(therapistId):
     cursorGroups = mongoClient["groups"].find({"therapist": therapistId}).sort([("name", 1)])
@@ -175,15 +161,7 @@ class PatientSelectForm(FlaskForm):
     submitBtn = SubmitField('Enlazar', render_kw={"class":"button is-primary", "onclick": "linkPatients()", "type":"button"})
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.patients.choices = patientMinusOpts(args[0][0], "patterns", args[0][1])
-        
-class PatternSelectForm(FlaskForm):
-    patterns = SelectMultipleField('Pautas a enlazar', validators=[Optional()], choices=[], \
-        render_kw={'multiple':'multiple', 'id':'patternsSelect'})
-    submitBtn = SubmitField('Enlazar', render_kw={"class":"button is-primary", "onclick": "linkPatterns()", "type":"button"})
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.patterns.choices = patternMinusOpts(args[0][0], "groups", args[0][1])        
+        self.patients.choices = patientMinusOpts(args[0][0], "patterns", args[0][1])  
         
 class GroupSelectForm(FlaskForm):
     groups = SelectMultipleField('Grupos a enlazar', validators=[Optional()], choices=[], \
