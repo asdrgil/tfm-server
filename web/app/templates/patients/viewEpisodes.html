@@ -3,17 +3,17 @@
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
 
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import episodesTableMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
@@ -33,10 +33,6 @@
 {% endblock %}
 
 {% block content %}
-
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver episodios de un paciente") }}
-</section>
 
 <div class="columns is-vcentered is-centered">
 
@@ -139,17 +135,13 @@
             
             </form>
 
-            {% if rowEpisodes|length > 0 %}
-                {{ episodesTableMacro(rowEpisodes, patientInfo.id) }}
-            {% endif %}
+            {{ episodesTableMacro(rowEpisodes, patientInfo.id) }}
 
-            {% if form.submitDone.data == 1 %}
-                Número de registros totales: <b>{{ numberTotalRows }}</b>
+            Número de registros totales: <b>{{ numberTotalRows }}</b>
 
-                {% if numberPages > 1 %}
-                    <br>
-                    Página &nbsp;&nbsp;{{ form.pagination }}
-                {% endif %}
+            {% if numberPages > 1 %}
+                <br>
+                Página &nbsp;&nbsp;{{ form.pagination }}
             {% endif %}
 
         </div>

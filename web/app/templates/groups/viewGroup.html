@@ -5,59 +5,63 @@
 
 <!-- Import macros -->
 
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 {% from 'macros.html' import patientsTableMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             $(function () {
+                window.history.pushState({}, document.title, "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}");
+                
                 $('#paginationSelect').multipleSelect();
                 $('#paginationSelect2').multipleSelect();
+                $('#patternsSelect').multipleSelect();
+                
+            	document.getElementById("boxLinkPatterns").style.display = "none";                
             })
         });
-    </script>
-
-    <!-- SocketIO methods -->
-    <script>
-        namespace = '/viewGroup';
-        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
-
-        function paginationFunc(){
-            socket.emit('paginationPattern', {"idGroup": {{ idGroup }}, "patternPage": document.getElementById("paginationSelect").value});
-        }
-
-        function paginationFunc2(){
-            socket.emit('paginationPattern', {"idGroup": {{ idGroup }}, "patientPage": document.getElementById("paginationSelect2").value});
-        }
 
         function newPattern(){
-            location.href = "{{ url_for('groups.registerPatternGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+            location.href = "{{ url_for('groups.registerPatternGroup', idGroup=idGroup) }}";
         }
-
-        function linkPattern(){
-            location.href = "{{ url_for('groups.linkPatternsGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
-        }
-
+        
         function unlinkPattern(pattId){
-            location.href = "{{ url_for('groups.viewGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+            location.href = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}?unlinkPatt=" + pattId;
+        }
+        
+        function linkPatterns(){
+            if(document.getElementById("patternsSelect").value == ""){
+                generateNotification("alert", "No se ha seleccionado ninguna pauta");
+            } else {
+                var patterns = $("#patternsSelect").multipleSelect('getSelects').toString();            
+                location.href = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}?linkPatts=" + patterns;            
+            }            
         }
 
         function modifyGroup(){
-            var url = "{{ url_for('groups.editGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+            var url = "{{ url_for('groups.editGroup', idGroup=idGroup) }}";
             location.href = url;
         }
+        
+        function linkPatternsVisibility(){
+            if(document.getElementById("boxLinkPatterns").style.display == "none"){
+                document.getElementById("boxLinkPatterns").style.display = "block";
+            } else {
+                document.getElementById("boxLinkPatterns").style.display = "none";
+            }
+        }        
     </script>    
 
 {% endblock %}
@@ -65,9 +69,6 @@
 {% block content %}
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Ver un grupo de pautas") }}
-
-<!-- Title -->
-{{ titleMacro("Ver un grupo de pautas") }}
 
 <!-- Input data -->
 
@@ -99,9 +100,25 @@
             {% endif %}
 
             <br><br>
+            
+            <div class="field">
+                <input type="checkbox" id="switchLinkPatterns" class="switch is-thin" onchange="linkPatternsVisibility()">
+                <label for="switchLinkPatterns">&nbsp;&nbsp;Enlazar una nueva pauta</label>
+            </div>
+
+            <div class="box" id="boxLinkPatterns" style='max-width:400px'>
+                <form action="" id="patternsForm" method="post" novalidate">
+                    {{ form3.patterns.label }}
+                    <br>
+                    {{ form3.patterns }}
+                    <br><br>
+                    {{ form3.submitBtn }}
+                </form>
+            </div>            
+            
+            <br>
 
             <input class="button is-link" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:newPattern()" type="button" value="Registrar una nueva pauta">
-            <input class="button is-info" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:linkPattern()" type="button" value="Enlazar una nueva pauta">
         </div>
 
     </div>

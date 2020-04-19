@@ -1,12 +1,12 @@
-from flask import render_template, flash, redirect, request, url_for
+from flask import render_template, flash, redirect, request, url_for, request
 from flask_login import current_user, login_required
 from app import db
 from app.views.patterns import bp
 from app.forms import RegisterPatternForm, SearchPatternsForm, PaginationForm, EditPatternForm, GenericEditForm, \
-    SearchPatientsForm, PaginationForm2, SearchGroupsForm
+    SearchPatientsForm, PaginationForm2, SearchGroupsForm, PatientSelectForm, GroupSelectForm
 from app.constants import mongoClient
 from app.mongoMethods import searchPatterns, updatePattern, searchGroupsPattern, searchPatientsPattern, \
-    searchPatients, searchGroups
+    searchPatients, searchGroups, registerTraceUsers
 from app.constants import urlPrefix
 from datetime import datetime
 
@@ -16,13 +16,15 @@ therapistLiteral = ""
 def before_request():
 
     if current_user.is_authenticated:
-        current_user.last_seen = datetime.utcnow()
-        db.session.commit()
+        registerTraceUsers(current_user.get_id(), request.endpoint)
 
         global therapistLiteral
 
         therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
             current_user.get_surname2())
+    else:
+        #Trace for users is not added here because it will be spotted when redirecting the user
+        return redirect(urlPrefix + url_for('auth.login'))    
     
 @login_required    
 @bp.route('/registrarPauta', methods=['GET', 'POST'])
@@ -67,7 +69,6 @@ def registerPattern():
 
             mongoClient["patterns"].insert_one({"therapist":current_user.get_id(), "id":idPattern, \
                 'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities})
-            
             flash("Pauta creada correctamente.", "success")
             return redirect(urlPrefix + url_for('general.index'))
         else:
@@ -85,16 +86,6 @@ def viewPattern(idPattern):
         flash("No existe la pauta especificada", "error")
         return redirect(urlPrefix + url_for('general.index'))
 
-    #Unlink pattern
-    if request.args.get("unlinkPati") is not None:
-        mongoClient["patients"].update_one({"id":int(request.args.get("unlinkPati"))}, {"$pull": \
-            {"patterns": idPattern}})
-
-    #Unlink group
-    if request.args.get("unlinkGroup") is not None:
-        mongoClient["groups"].update_one({"id":int(request.args.get("unlinkGroup"))}, {"$pull": \
-            {"patterns": idPattern}})    
-
     cursorPattern = mongoClient["patterns"].find_one({"therapist":current_user.get_id(), "id": idPattern})
 
     intensity1 = "Sí" if 1 in cursorPattern["intensities"] else "No"
@@ -105,17 +96,45 @@ def viewPattern(idPattern):
         "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3}
 
     rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPautas", "name":"Ver pautas"}]
+    
+    #UNLINK patient
+    if request.args.get("unlinkPati") is not None:
+        mongoClient["patients"].update_one({"id":int(request.args.get("unlinkPati"))}, {"$pull": \
+            {"patterns": idPattern}})
+        flash("Paciente desvinculado correctamente.", "success")
 
+    #UNLINK group
+    if request.args.get("unlinkGroup") is not None:
+        mongoClient["groups"].update_one({"id":int(request.args.get("unlinkGroup"))}, {"$pull": \
+            {"patterns": idPattern}})
+        flash("Grupo desvinculado correctamente.", "success")            
+
+    #LINK patients
+    if request.args.get("linkPatis") is not None:
+        patients = list(map(int, request.args.get("linkPatis").split(",")))
+        mongoClient["patients"].update_many({"id": {"$in": list(map(int, patients))}}, \
+            {"$push": {"patterns":idPattern}})
+        flash("Pacientes vinculados correctamente.", "success")            
+            
+    #LINK groups
+    if request.args.get("linkGroups") is not None:
+        groups = list(map(int, request.args.get("linkGroups").split(",")))
+        mongoClient["groups"].update_many({"id": {"$in": list(map(int, groups))}}, \
+            {"$push": {"patterns":idPattern}})
+        flash("Grupos vinculados correctamente.", "success")
+        
     form = PaginationForm(1)
     form2 = PaginationForm2(1)
+    form3 = PatientSelectForm([current_user.get_id(), idPattern])
+    form4 = GroupSelectForm([current_user.get_id(), idPattern])
 
     queryResultGroups = searchGroupsPattern(idPattern, 1)
     queryResultPatients = searchPatientsPattern(idPattern, 1)
 
     return render_template('patterns/viewPattern.html', therapistLiteral=therapistLiteral, patternInfo=patternInfo, \
         rowsGroups=queryResultGroups["rows"], rowsPatients=queryResultPatients["rows"], form=form, form2=form2, \
-        pagesGroups=queryResultGroups["numberPages"], pagesPatients=queryResultPatients["numberPages"], \
-        numberRowsPatient=queryResultPatients["numberTotalRows"], \
+        form3=form3, form4=form4, pagesGroups=queryResultGroups["numberPages"], \
+        pagesPatients=queryResultPatients["numberPages"], numberRowsPatient=queryResultPatients["numberTotalRows"], \
         numberRowsGroup=queryResultGroups["numberTotalRows"], rowsBreadCrumb=rowsBreadCrumb)
         
 
@@ -154,8 +173,8 @@ def editPattern(idPattern):
             form.intensity2.data = 2 in patternData["intensities"]
             form.intensity3.data = 3 in patternData["intensities"]
 
-        return render_template('patterns/editPattern.html', form=form, form2=form2, therapistLiteral=therapistLiteral, \
-            rowsBreadCrumb=rowsBreadCrumb)
+        return render_template('patterns/editPattern.html', form=form, form2=form2, \
+            therapistLiteral=therapistLiteral, rowsBreadCrumb=rowsBreadCrumb)
 
 
 #TODO

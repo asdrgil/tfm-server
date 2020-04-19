@@ -5,6 +5,7 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField, \
 from wtforms.validators import ValidationError, DataRequired, Optional, Email, EqualTo, \
     Length
 from app.models import User
+from app.constants import maxSelectlength
 from pymongo import MongoClient, errors
 
 mongoClient = MongoClient('localhost:27017').tfm
@@ -15,32 +16,94 @@ def patientOpts(therapistId):
     result = []
 
     for pt in cursorPatients:
-        row = (str(pt.get("id")), "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")))
+        patientString = "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name"))
+        
+        #Cut the select to maxLength
+        if len(patientString) > maxSelectlength:
+            patientString = "{} {}, {}.".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")[0])
+        
+        if len(patientString) > maxSelectlength:
+            patientString = "{}. {}., {}.".format(pt.get("surname1")[0], pt.get("surname2")[0], pt.get("name")[0])
+        
+        #Add padding in case the string is smaller than maxLength        
+        patientString = patientString.ljust(maxSelectlength, ' ')
+            
+    
+        row = (str(pt.get("id")), patientString)
+        result.append(row)
+
+    return result
+    
+def patientMinusOpts(therapistId, field, value):
+    cursorPatients = mongoClient["patients"].find({"therapist": therapistId, field:{"$ne":value}})\
+    .sort([("surname1", 1), ("surname2", 1), ("name", 1)])
+    result = []
+
+    for pt in cursorPatients:
+        patientString = "{} {}, {}".format(pt.get("surname1"), pt.get("surname2"), pt.get("name"))
+        
+        #Cut the select to maxLength
+        if len(patientString) > maxSelectlength:
+            patientString = "{} {}, {}.".format(pt.get("surname1"), pt.get("surname2"), pt.get("name")[0])
+        
+        if len(patientString) > maxSelectlength:
+            patientString = "{}. {}., {}.".format(pt.get("surname1")[0], pt.get("surname2")[0], pt.get("name")[0])
+        
+        #Add padding in case the string is smaller than maxLength        
+        patientString = patientString.ljust(maxSelectlength, ' ')
+            
+    
+        row = (str(pt.get("id")), patientString)
         result.append(row)
 
     return result
 
 def patternOpts(therapistId):
-    cursorPatterns = mongoClient["patterns"].find({"therapist": therapistId, "windowId": {"$exists":False}})\
-    .sort([("name", 1)])
+    cursorPatterns = mongoClient["patterns"].find({"therapist": therapistId}).sort([("name", 1)])
     result = []
 
     for pt in cursorPatterns:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
+        row = (str(pt.get("id")), "{}".format(pt.get("name")[:maxSelectlength].ljust(maxSelectlength, ' ')))
+        result.append(row)
+
+    return result
+    
+def patternMinusOpts(therapistId, field, value):
+    cursorGroup = mongoClient["groups"].find_one({"therapist": therapistId, "id":value})
+    excludedPatterns = cursorGroup["patterns"]
+    
+    result = []
+    cursorPatterns = mongoClient["patterns"].find({"therapist": therapistId, "id":{"$nin":excludedPatterns}})\
+        .sort([("name", 1)])
+
+    for pt in cursorPatterns:
+        row = (str(pt.get("id")), "{}".format(pt.get("name")[:maxSelectlength].ljust(maxSelectlength, ' ')))
         result.append(row)
 
     return result
 
 def groupOpts(therapistId):
-    cursorGroups = mongoClient["groups"].find({"therapist": therapistId, "windowId": {"$exists":False}})\
-    .sort([("name", 1)])
+    cursorGroups = mongoClient["groups"].find({"therapist": therapistId}).sort([("name", 1)])
     result = []
 
     for pt in cursorGroups:
-        row = (str(pt.get("id")), "{}".format(pt.get("name")))
+        row = (str(pt.get("id")), "{}".format(pt.get("name")[:maxSelectlength].ljust(maxSelectlength, ' ')))
         result.append(row)
 
-    return result    
+    return result
+    
+def groupMinusOpts(therapistId, field, value):
+    cursorGroups = mongoClient["groups"].find({"therapist": therapistId, field:{"$ne":value}})\
+        .sort([("name", 1)])
+    result = []
+
+    for pt in cursorGroups:
+        row = (str(pt.get("id")), "{}".format(pt.get("name")[:maxSelectlength].ljust(maxSelectlength, ' ')))
+        result.append(row)
+
+    return result
+    
+
 
 
 class RegisterTherapistForm(FlaskForm):
@@ -106,6 +169,29 @@ class RegisterPatternForm(FlaskForm):
         self.patients.choices = patientOpts(therapistId)
         self.groups.choices = groupOpts(therapistId)
 
+class PatientSelectForm(FlaskForm):
+    patients = SelectMultipleField('Pacientes a enlazar', validators=[Optional()], choices=[], \
+        render_kw={'multiple':'multiple', 'id':'patientsSelect'})
+    submitBtn = SubmitField('Enlazar', render_kw={"class":"button is-primary", "onclick": "linkPatients()", "type":"button"})
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.patients.choices = patientMinusOpts(args[0][0], "patterns", args[0][1])
+        
+class PatternSelectForm(FlaskForm):
+    patterns = SelectMultipleField('Pautas a enlazar', validators=[Optional()], choices=[], \
+        render_kw={'multiple':'multiple', 'id':'patternsSelect'})
+    submitBtn = SubmitField('Enlazar', render_kw={"class":"button is-primary", "onclick": "linkPatterns()", "type":"button"})
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.patterns.choices = patternMinusOpts(args[0][0], "groups", args[0][1])        
+        
+class GroupSelectForm(FlaskForm):
+    groups = SelectMultipleField('Grupos a enlazar', validators=[Optional()], choices=[], \
+        render_kw={'multiple':'multiple', 'id':'groupsSelect'})
+    submitBtn = SubmitField('Enlazar', render_kw={"class":"button is-primary", "onclick": "linkGroups()", "type":"button"})
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.groups.choices = groupMinusOpts(args[0][0], "patterns", args[0][1])
 
 
 class EditPatternForm(FlaskForm):
@@ -152,7 +238,8 @@ class RegisterPatientForm(FlaskForm):
     returnBtn = SubmitField('Volver', \
         render_kw={"class":"button is-light", "onclick": "returnPage()", 'type':'button'})
 
-    gender = RadioField('Género', choices = [('M','Masculino'),('F','Femenino')], validators=[DataRequired()])
+    gender = RadioField('Género', choices = [('M','Masculino'.ljust(maxSelectlength, ' ')),('F','Femenino'.ljust(maxSelectlength, ' '))], \
+        validators=[DataRequired()])
 
     #Auxiliary variables
     patientId = HiddenField("patientId")
@@ -188,7 +275,8 @@ class EditPatientForm(FlaskForm):
     age = IntegerField('Edad', validators=[DataRequired()], \
         render_kw={"class":"input is-medium", "placeholder":"Edad", "style":"text-align:center;"})
 
-    gender = RadioField('Género', choices = [('M','Masculino'),('F','Femenino')], validators=[DataRequired()])
+    gender = RadioField('Género', choices = [('M','Masculino'.ljust(maxSelectlength, ' ')),('F','Femenino'.ljust(maxSelectlength, ' '))], \
+        validators=[DataRequired()])
     groups = SelectMultipleField('Grupos de pautas asociados al paciente', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'groupsSelect', 'onchange':'changedSelectGroup();'})
     patterns = SelectMultipleField('Pautas ya creadas asociadas al paciente', validators=[Optional()], \
@@ -283,7 +371,8 @@ class SearchPatientsForm(FlaskForm):
     age = StringField('Edad', validators=[Optional()], \
         render_kw={"class":"input is-small", "placeholder":"Edad", 'type':'number', 'min':5, 'max':100, \
         "style":"text-align:center;width:250px;"}) 
-    genders = SelectMultipleField('Género', validators=[Optional()], choices=[('M','Masculino'),('F','Femenino')], \
+    genders = SelectMultipleField('Género', validators=[Optional()], choices=[('M','Masculino'.ljust(maxSelectlength, ' ')),('F','Femenino'),
+    ], \
         render_kw={'multiple':'multiple', 'id':'gendersSelect'})
     patterns = SelectMultipleField('Pautas asociadas al paciente', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'patternsSelect'})
@@ -303,7 +392,6 @@ class SearchPatientsForm(FlaskForm):
         self.patterns.choices = patternOpts(therapistId)
 
 
-#TODO: remove therapist direct assignation
 class SearchGroupsForm(FlaskForm):
     name = StringField('Nombre', validators=[Optional()], \
         render_kw={"class":"input is-small", "placeholder":"Nombre", "style":"text-align:center;"})

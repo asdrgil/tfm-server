@@ -32,6 +32,9 @@ def ajaxRegisterPatient(registrationToken):
 
 @bp.route('/ajax/episodiosPaciente/<int:idPatient>', methods=['GET', 'POST'])
 def ajaxEpisodesPatient(idPatient):
+    print("\n ---- [DEBUG] INNNNN ----\n")
+
+
     #Check if all the arguments where passed
     if request.args.get("date1") == None or request.args.get("time1") == None or request.args.get("date2") == None \
         or request.args.get("time2") == None:

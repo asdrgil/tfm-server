@@ -2,9 +2,18 @@ from flask_login import current_user
 import random
 #import string
 from datetime import datetime
+import time
 import re
 import math
 from .constants import mongoClient, rowsPerPage, tokenLength
+
+def registerTraceUsers(user, url):
+    mongoClient["tracesUsers"].insert_one({"user": user, "url": url, "timestamp": round(time.time())})
+    
+#This method is intended to register the IPs and frequency of external accesses of unregistered users
+#in order to detect DDOS attacks
+def registerTraceIPs(ip, url):
+    mongoClient["tracesIPs"].insert_one({"ip": ip, "url": url, "timestamp": round(time.time())})
 
 def searchPatterns(form, pageNum=1, excludeRegisters=None):
 
@@ -392,7 +401,7 @@ def searchPatternsGroup(idGroup, pageNum=1, outputFormat="arr"):
     numberPages = numberPages = math.ceil(numberTotalRows/rowsPerPage)
     
     cursorPatterns = mongoClient["patterns"].find({"therapist":current_user.get_id(), "id" : \
-        {"$in": patternsIds}}).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+        {"$in": patternsIds}}).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage).sort("name",1)
 
     if outputFormat == "arr":
         rows = []
@@ -627,12 +636,15 @@ def viewEpisodes(idPatient, date1, time1, date2, time2):
     elif len(time2) == 0:
         time2 = "23:59"
 
-    timestampTo = 0
-
     timestampFrom = int(datetime.strptime('{} {}'.format(date1, time1), '%Y-%m-%d %H:%M')\
         .strftime("%s"))
     timestampTo = int(datetime.strptime('{} {}'.format(date2, time2), '%Y-%m-%d %H:%M')\
         .strftime("%s"))
+        
+    print("[DEBUG] timestampFrom: " + str(timestampFrom))
+    print("[DEBUG] timestampTo: " + str(timestampTo))
+    print("[DEBUG] idPatient: " + str(idPatient))
+    print(type(idPatient))
 
     rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, "str")
     numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)
@@ -855,6 +867,7 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outpu
     totalAlerts = [0, 0, 0]
 
     for episode in cursor:
+    
         firstDateTimestamp = 0
         lastDateTimestamp = 0
         firstAlert = True
@@ -862,11 +875,11 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outpu
 
             if firstAlert:
                 firstAlert = False
-                firstDateTimestamp = int(alert["tmstamp"])
+                firstDateTimestamp = float(alert["tmstamp"])
 
-            lastDateTimestamp = int(alert["tmstamp"])
+            lastDateTimestamp = float(alert["tmstamp"])
 
-            totalAlerts[alert["value"] -1] += 1
+            totalAlerts[int(alert["value"]) -1] += 1
 
         dateFirst = datetime.fromtimestamp(firstDateTimestamp)
         dateLast = datetime.fromtimestamp(lastDateTimestamp)
@@ -959,6 +972,11 @@ def getEpisodes(idPatient, date1, time1, date2, time2):
         .strftime("%s"))
     timestampTo = int(datetime.strptime('{} {}'.format(date2, time2), '%Y-%m-%d %H:%M')\
         .strftime("%s"))
+        
+    print("[DEBUG] timestampFrom:")
+    print(timestampFrom)
+    print("[DEBUG] timestampTo:")
+    print(timestampTo)            
 
     rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, "arr")
     numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)

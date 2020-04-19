@@ -3,15 +3,16 @@
 {% set logged = True %}
 
 {% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
 <script type="text/javascript" charset="utf-8">
@@ -37,10 +38,6 @@
 
 	<div class="column is-one-third">
 		<hr>
-	</div>
-
-	<div class="column is-one-third" align="center">
-		<h3 class="title is-3">Crear un grupo de pautas</h3>
 	</div>
 	
 	<div class="column is-one-third">

@@ -4,19 +4,19 @@
 {% set therapistName = therapistLiteral %}
 
 <!-- Import macros -->
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import groupsTableMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
 {% from 'macros.html' import modalDeleteMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
@@ -69,11 +69,6 @@
 {{ modalDeleteMacro("de este grupo") }}
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Ver grupos de pautas") }}
-
-<!-- Title -->
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver grupos de pautas") }}
-</section>
 
 <div class="columns is-vcentered is-centered">
     <div class="column is-8 box" align="center">

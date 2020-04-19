@@ -5,15 +5,16 @@
 
 {% from 'macros.html' import breadCrumbMacro with context %}
 {% from 'macros.html' import groupInfoMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 	
 	<script type="text/javascript" charset="utf-8">
@@ -24,7 +25,7 @@
 		});
 
 		function returnPage(){
-         	var url = "{{ url_for('groups.viewGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+         	var url = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}";
          	location.href = url;
 		}
 	</script>
@@ -41,10 +42,6 @@
 
 	<div class="column is-one-third">
 		<hr>
-	</div>
-
-	<div class="column is-one-third" align="center">
-		<h3 class="title is-3">Crear una pauta para un grupo concreto</h3>
 	</div>
 	
 	<div class="column is-one-third">
@@ -71,7 +68,7 @@
 					</div>
 		        	<div class="column is-8">
 				        <p>
-				            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+				            <b>{{ form.name.label }}</b> {{ form.name(maxlength=75) }}
 				            
 				            {% for error in form.name.errors %}
 				            <span style="color: red;">[{{ error }}]</span>

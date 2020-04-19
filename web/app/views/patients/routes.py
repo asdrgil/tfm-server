@@ -2,7 +2,7 @@ from flask import render_template, flash, redirect, url_for, request
 from flask_login import current_user, login_required
 from app import db
 from app.mongoMethods import searchPatterns, generateUniqueRandom, searchPatients, getMultipleEpisodes, \
-    getCountMultipleEpisodes, getOneEpisode, searchPatternsPatient, getEpisodes
+    getCountMultipleEpisodes, getOneEpisode, searchPatternsPatient, getEpisodes, registerTraceUsers
 from app.views.patients import bp
 from app.constants import mongoClient, urlPrefix
 from app.forms import RegisterPatternForm, SearchPatternsForm, PaginationForm, RegisterPatientForm, EditPatientForm, \
@@ -16,15 +16,16 @@ therapistLiteral = ""
 
 @bp.before_request
 def before_request():
-
     if current_user.is_authenticated:
-        current_user.last_seen = datetime.utcnow()
-        db.session.commit()
+        registerTraceUsers(current_user.get_id(), request.endpoint)
 
         global therapistLiteral
 
         therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
             current_user.get_surname2())
+    else:
+        #Trace for users is not added here because it will be spotted when redirecting the user
+        return redirect(urlPrefix + url_for('auth.login'))
 
 @login_required
 @bp.route('/registrarPautaPaciente/<int:idPatient>', methods=['GET', 'POST'])
@@ -153,6 +154,9 @@ def registerPatient():
             flash("Ya existe un paciente con estos credenciales", "error")
     
     else:
+        print("[DEBUG] form.errors: ")
+        print(form.errors)
+        
         form.syncHidden.data = "False"
 
         if form.name.data is None:
@@ -210,7 +214,7 @@ def modifyPatient(idPatient):
         form.gender.data = cursorPatient["gender"]
 
     return render_template('patients/modifyPatient.html', title='RegisterPatient', form=form, \
-        therapistLiteral=therapistLiteral, rowsBreadCrumb=rowsBreadCrumb)
+        therapistLiteral=therapistLiteral, rowsBreadCrumb=rowsBreadCrumb, idPatient=idPatient)
 
 @login_required
 @bp.route('/verPaciente/<int:idPatient>/', methods=['GET', 'POST'])

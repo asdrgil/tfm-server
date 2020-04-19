@@ -1,10 +1,10 @@
-from flask import render_template, url_for, request, flash, redirect
+from flask import render_template, url_for, request, flash, redirect, request
 from flask_login import login_user, logout_user, current_user, login_required
 from app import db
 from app.views.general import bp
 from app.forms import FilterByDateForm, SearchPatientsForm, PaginationForm
 from app.mongoMethods import getMultipleEpisodes, getCountMultipleEpisodes, \
-    searchPatients
+    searchPatients, registerTraceUsers
 from app.constants import mongoClient, urlPrefix
 
 from datetime import datetime
@@ -20,70 +20,14 @@ therapistLiteral = ""
 def before_request():
 
     if current_user.is_authenticated:
-        current_user.last_seen = datetime.utcnow()
-        db.session.commit()
-
+        registerTraceUsers(current_user.get_id(), request.endpoint)
         global therapistLiteral
 
         therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
             current_user.get_surname2())
-
-
-'''
-@bp.route('/index2', methods=['GET', 'POST'])
-@login_required
-def index2():
-
-    if request.args.get('noty') is "1":
-        flash("Paciente registrado correctamente", "success")
-
-    form = FilterByDateForm(current_user.get_id(), 1)
-    form.submitDone.data = 0
-    numberPages = 0
-    patientInfo  = {}
-
-    if form.validate_on_submit():
-
-        form.submitDone.data = 1
-        idPatient = int(form.patients.data)
-        patientInfo  = {"id": idPatient}
-
-        pageNumber = 1 if form.pagination.data == str(None) else int(form.pagination.data)
-
-        #FROM
-        if len(form.date1.data) == 0:
-            form.date1.data = "2000-01-01"
-            form.time1.data = "00:00"
-
-        elif len(form.time1.data) == 0:
-            form.time1.data = "00:00"
-
-        #TO
-        if len(form.date2.data) == 0:
-            form.date2.data = "2050-01-01"
-            form.time2.data = "23:59"
-
-        elif len(form.time2.data) == 0:
-            form.time2.data = "23:59"
-
-        timestampTo = 0
-
-        timestampFrom = int(datetime.strptime('{} {}'.format(form.date1.data, form.time1.data), \
-            '%Y-%m-%d %H:%M').strftime("%s"))
-        timestampTo = int(datetime.strptime('{} {}'.format(form.date2.data, form.time2.data), \
-            '%Y-%m-%d %H:%M').strftime("%s"))
-
-        rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber)
-        numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)
-        numberPages = math.ceil(numberTotalRows/rowsPerPage)
-
-        return render_template('general/viewEpisodesGeneric.html', form=form, \
-            therapistLiteral=therapistLiteral, patientInfo=patientInfo, rowEpisodes=rowEpisodes, \
-            numberTotalRows=numberTotalRows, numberPages=numberPages)
-
-    return render_template('patients/viewEpisodesGeneric.html', form=form, \
-        therapistLiteral=therapistLiteral, patientInfo=patientInfo)
-'''
+    else:
+        #Trace for users is not added here because it will be spotted when redirecting the user
+        return redirect(urlPrefix + url_for('auth.login'))
 
 @login_required
 @bp.route('/', methods=['GET', 'POST'])
@@ -92,6 +36,9 @@ def index():
 
     if request.args.get('noty') is "1":
         flash("Paciente registrado correctamente", "success")
+
+    print("[DEBUG] Therapist id:")
+    print(current_user.get_id())
 
     #Count of the three types of elements for the given therapist
     totalNumberPatients = mongoClient["patients"]\
@@ -134,8 +81,3 @@ def index():
 def logout():
     logout_user()
     return redirect(url_for('general.index'))
-    
-
-@bp.route('/tryout')
-def tryout():
-    return render_template('general/tryout.html')

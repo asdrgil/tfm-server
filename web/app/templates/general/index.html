@@ -3,28 +3,28 @@
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
 
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patientsTableMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="/termoira{{ ASSET_URL }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="/termoira{{ ASSET_URL }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             $(function () {
-              $('#patternsSelect').multipleSelect();
+              $('#patternsSelect').multipleSelect({ filter: true });
               $('#gendersSelect').multipleSelect();
               $('#paginationSelect').multipleSelect();
             })
         });
-
+        
         function submitFunc(){
             //Store pagination
             if(document.getElementById("paginationSelect") == null){
@@ -34,10 +34,10 @@
             }
             
             //Remove parameters from url before submitting
-            window.history.pushState({}, document.title, "/verPacientes");
+            window.history.pushState({}, document.title, "{{ addUrlPrefixMacro(url_for('general.index')) }}");
 
             document.getElementById("generalForm").submit();
-        }
+        }        
 
         //This is done just to allow code reuse of forms
         function paginationFunc(){
@@ -50,9 +50,7 @@
 
 {% block content %}
 
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Página principal") }}
-</section>
+<br><br>
 
 <div class="columns is-vcentered is-centered">
 
@@ -63,9 +61,9 @@
             <p>
               <h4 class="title is-5"> <i class="fas fa-book" aria-hidden="true"></i>&nbsp;&nbsp;Resumen de la información almacenada</h4>
 
-              <strong>Número de pacientes</strong>: <a href="{{ url_for('patients.viewPatients') }}"> {{totalNumberElements.patients}} (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
-              <strong>Número de pautas almacenadas</strong>: <a href="{{ url_for('patterns.viewPatterns') }}"> {{totalNumberElements.patterns}} (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
-              <strong>Número de grupos almacenados</strong>: <a href="{{ url_for('groups.viewGroups') }}"> {{totalNumberElements.groups}} (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
+	      	       <strong>Número de pacienes</strong>:<a href="{{ addUrlPrefixMacro(url_for('patients.viewPatients')) }}" data-tooltip="Explorar"> {{totalNumberElements.patients}}</a><br>
+		      <strong>Número de pautas almacenadas</strong>:<a href="{{ addUrlPrefixMacro(url_for('patterns.viewPatterns')) }}" data-tooltip="Explorar"> {{totalNumberElements.patterns}}</a> <br>
+		      <strong>Número de grupos almacenados</strong>: <a href="{ addUrlPrefixMacro(url_for('groups.viewGroups')) }}" data-tooltip="Explorar"> {{totalNumberElements.groups}}</a> <br>
             </p>
           </div>
         </div>
@@ -135,7 +133,7 @@
 
                         <br>
 
-                        {{ form.age(size=5, maxlength=15) }}
+                        {{ form.age }}
                         {% for error in form.age.errors %}
                             <span style="color: red;">[{{ error }}]</span>
                         {% endfor %}
@@ -146,7 +144,7 @@
 
                         <br>
 
-                        {{ form.genders(size=5, maxlength=15) }}
+                        {{ form.genders }}
                         {% for error in form.genders.errors %}
                             <span style="color: red;">[{{ error }}]</span>
                         {% endfor %}
@@ -157,7 +155,7 @@
 
                         <br>
 
-                        {{ form.patterns(size=5, maxlength=15) }}
+                        {{ form.patterns }}
                         {% for error in form.patterns.errors %}
                             <span style="color: red;">[{{ error }}]</span>
                         {% endfor %}

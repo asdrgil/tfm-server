@@ -3,17 +3,17 @@
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
 
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
@@ -25,7 +25,7 @@
     	});
 
         function returnPage(){
-            var url = "{{url_for('patterns.viewPattern', idPattern=123456)}}".replace(123456, document.getElementById("patternId").value);
+            var url = "{{ addUrlPrefixMacro(url_for('patterns.viewPattern', idPattern=123456)) }}".replace(123456, document.getElementById("patternId").value);
             location.href = url;
         }
     </script>
@@ -48,12 +48,8 @@
     <button class="modal-close is-large" aria-label="close" onclick="closeModalSave()"></button>
 </div>
 
-
-<!-- Title -->
-{{ titleMacro("Editar una pauta") }}
-
 <!-- Input data -->
-<div class="columns is-vcentered is-centered" style="margin-top:50px">
+<div class="columns is-vcentered is-centered">
 	<div class="column is-8 box">
 
 		<div align="center">

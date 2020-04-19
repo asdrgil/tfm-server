@@ -4,20 +4,20 @@
 {% set therapistName = therapistLiteral %}
 
 <!-- Import macros --> 
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 {% from 'macros.html' import pagination with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
 {% from 'macros.html' import patientInfoMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 	
 	<script type="text/javascript" charset="utf-8">
@@ -44,8 +44,7 @@
 		function returnPage(){
 			var pathSplit = location.pathname.split("/");
 			var idPatient = pathSplit[pathSplit.length-1];
-			//Replace function is used because Jinja cannot read Javascript variables
-			location.href = "{{ url_for('patients.viewPatient', idPatient=123456) }}".replace(123456, idPatient);
+			location.href = "{{ addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=patientInfo.id)) }}";
 		}
 
 		function linkPatterns(){
@@ -60,12 +59,9 @@
 			}
 
 			if(pattIds.length > 0){
-				var pathSplit = location.pathname.split("/");
-				var idPatient = pathSplit[pathSplit.length-1];				
 				pattIds = pattIds.substring(0, pattIds.length-1);
 
-				location.href = "{{ url_for('patients.linkPatternsPatient', idPatient=123456) }}"
-					.replace(123456, idPatient) + "?pattIds=" + pattIds;
+				location.href = "{{ addUrlPrefixMacro(url_for('patients.linkPatternsPatient', idPatient=patientInfo.id)) }}" + "?pattIds=" + pattIds;
 
         		generateNotification("success", "Pautas vinculadas correctamente al paciente");
 			
@@ -85,11 +81,6 @@
 {% block content %}	
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Enlazar pauta ya creada") }}
-
-<!-- Title -->
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Enlazar pauta ya creada") }}
-</section>
 
 <!-- Input data -->
 

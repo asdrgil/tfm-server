@@ -3,17 +3,17 @@
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
 
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import episodesTableMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
@@ -25,9 +25,8 @@
 
             updatePatientValue();
         });
-    </script>
 
-    <script type="text/javascript" charset="utf-8">
+
         function updatePatientValue(){
             document.getElementById("patientId").value = document.getElementById("patientsSelect").value;
         }
@@ -42,10 +41,6 @@
 
 {% block content %}
 
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Página principal") }}
-</section>
-
 <div class="columns is-vcentered is-centered">
 
     <div class="box">
@@ -55,9 +50,9 @@
             <p>
               <h4 class="title is-5"> <i class="fas fa-book" aria-hidden="true"></i>&nbsp;&nbsp;Resumen de la información almacenada</h4>
 
-              <strong>Número de pacientes</strong>: <a href="{{ url_for('patients.viewPatients') }}"> 4 (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
-              <strong>Número de pautas almacenadas</strong>: <a href="{{ url_for('patterns.viewPatterns') }}"> 20 (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
-              <strong>Número de grupos almacenados</strong>: <a href="{{ url_for('groups.viewGroups') }}"> 3 (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
+              <strong>Número de pacientes</strong>: <a href="{{ addUrlPrefixMacro(url_for('patients.viewPatients')) }}"> 4 (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
+              <strong>Número de pautas almacenadas</strong>: <a href="{{ addUrlPrefixMacro(url_for('patterns.viewPatterns')) }}"> 20 (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
+              <strong>Número de grupos almacenados</strong>: <a href="{{ addUrlPrefixMacro(url_for('groups.viewGroups')) }}"> 3 (explorar&nbsp;<i class="fas fa-search" aria-hidden="true"></i>) </a> <br>
             </p>
           </div>
         </div>
@@ -73,7 +68,7 @@
 
         <div class="columns is-vcentered is-centered">
             <div class="column is-5" align="center">
-                <h3 class="title is-3">Episodios de un paciente</h3>
+                <h3 class="title is-3">Episodios del paciente</h3>
             </div>
         </div>
 
@@ -155,17 +150,13 @@
 
             <div class="column is-7" align="center">
 
-                {% if rowEpisodes|length > 0 %}
-                    {{ episodesTableMacro(rowEpisodes, patientInfo.id) }}
-                {% endif %}
+                {{ episodesTableMacro(rowEpisodes, patientInfo.id) }}
 
-                {% if form.submitDone.data == 1 %}
-                    Número de registros totales: <b>{{ numberTotalRows }}</b>
+                Número de registros totales: <b>{{ numberTotalRows }}</b>
 
-                    {% if numberPages > 1 %}
-                        <br>
-                        Página &nbsp;&nbsp;{{ form.pagination }}
-                    {% endif %}
+                {% if numberPages > 1 %}
+                    <br>
+                    Página &nbsp;&nbsp;{{ form.pagination }}
                 {% endif %}
 
             </div>

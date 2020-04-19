@@ -1,8 +1,10 @@
 from flask import jsonify
+#from flask_login import login_required
 from app import db
 from app.constants import mongoClient, tokenLength
 from app.views.api.v1 import bp
 
+#@login_required
 @bp.route('/api/v1/sincronizarDispositivo/<registrationToken>', methods=['GET', 'POST'])
 def syncDevice(registrationToken):
     #Request.get registrationToken

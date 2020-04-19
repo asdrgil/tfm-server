@@ -1,3 +1,5 @@
+{% from 'macros.html' import addUrlPrefixMacro with context %}
+
 <html>
     <head>        
         <meta charset="UTF-8">
@@ -5,11 +7,11 @@
         {% set therapistName = therapistLiteral %}
 
         {% assets "mainCss" %}
-            <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+            <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
         {% endassets %}
 
         {% assets "mainJs" %}
-            <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+            <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
         {% endassets %}
 
         <!-- Flash messages from flash calls -->
@@ -47,7 +49,7 @@
               
               <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
 
-              <a class="navbar-item" href="{{ url_for('general.index') }}">
+              <a class="navbar-item" href="{{ addUrlPrefixMacro(url_for('general.index')) }}">
                 <i class="fas fa-home fa-2x"></i>
                 <span style="margin-left: 10px;"> Pantalla principal</span>
               </a>
@@ -69,11 +71,11 @@
                     </a>
 
                     <div class="navbar-dropdown">
-                      <a class="navbar-item" href="{{ url_for('patients.registerPatient') }}">
+                      <a class="navbar-item" href="{{ addUrlPrefixMacro(url_for('patients.registerPatient')) }}">
                         <i class="fas fa-user fa-2x"></i>
                         <span style="margin-left: 10px;">Registrar paciente</span>
                       </a>
-                      <a class="navbar-item" href="{{ url_for('patients.viewPatients') }}">
+                      <a class="navbar-item" href="{{ addUrlPrefixMacro(url_for('patients.viewPatients')) }}">
                         <i class="fas fa-user fa-2x"></i>
                         <span style="margin-left: 10px;">Ver pacientes</span>
                       </a>
@@ -98,20 +100,20 @@
                     </a>
 
                     <div class="navbar-dropdown">
-                      <a class="navbar-item" href="{{ url_for('patterns.registerPattern') }}">
+                      <a class="navbar-item" href="{{ addUrlPrefixMacro(url_for('patterns.registerPattern')) }}">
                         <i class="fas fa-sticky-note fa-2x"></i>
                         <span style="margin-left: 10px;">Crear una pauta</span>
                       </a>
-                      <a class="navbar-item" href="{{ url_for('patterns.viewPatterns') }}">
+                      <a class="navbar-item" href="{{ addUrlPrefixMacro(url_for('patterns.viewPatterns')) }}">
                         <i class="fas fa-sticky-note fa-2x"></i>
                         <span style="margin-left: 10px;">Ver pautas</span>
                       </a>
                       <hr class="dropdown-divider">
-                      <a class="navbar-item" href="{{ url_for('groups.registerGroup') }}">
+                      <a class="navbar-item" href="{{ addUrlPrefixMacro(url_for('groups.registerGroup')) }}">
                         <i class="fas fa-sticky-note fa-2x"></i>
                         <span style="margin-left: 10px;">Crear un grupo de pautas</span>
                       </a>
-                      <a class="navbar-item" href="{{ url_for('groups.viewGroups') }}">
+                      <a class="navbar-item" href="{{ addUrlPrefixMacro(url_for('groups.viewGroups')) }}">
                         <i class="fas fa-sticky-note fa-2x"></i>
                         <span style="margin-left: 10px;">Ver grupos de pautas</span>
                       </a>
@@ -145,29 +147,23 @@
               <div class="navbar-end">
                 <div class="navbar-item">
 
-                  <nav class="navbar" role="navigation" aria-label="dropdown navigation">
+                  <nav class="navbar" role="navigation">
                     
                     <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
 
-                    <div class="navbar-item has-dropdown is-hoverable">
+                    <div class="navbar-item has-tooltip-bottom" data-tooltip="Nombre del terapeuta">
 
-                      <a class="navbar-link">
-                          <i class="fas fa-user fa-2x"></i>
-                          <span style="margin-left: 20px;">{{ therapistName }}</span>
-                      </a>
-
-                      <div class="navbar-dropdown">
-                        <a class="navbar-item">
-                          <i class="fas fa-cog fa-2x"></i>
-                          <span style="margin-left: 10px;">Configuración</span>
-                        </a>
-                        <hr class="navbar-divider">
-                        <a class="navbar-item" href="{{ url_for('general.logout') }}">
-                          <i class="fas fa-sign-out-alt fa-2x"></i>
-                          <span style="margin-left: 10px;">Cerrar sesión</span>
-                        </a>
-                      </div>
+                      <i class="fas fa-user fa-2x"></i>
+                      <span style="margin-left: 20px;">{{ therapistName }}</span>
                     </div>
+
+                    <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
+                    <div class="navbar-item">
+    
+                      <a class="navbar-item has-tooltip-bottom" href="{{ addUrlPrefixMacro(url_for('general.logout')) }}" data-tooltip="Cerrar sesión">
+                          <i class="fas fa-sign-out-alt fa-2x"></i>
+                      </a>
+                    </div>                    
 
                     <div style="border-left: solid #D3D3D3; border-left-width: thin;"> </div>
                   </nav>

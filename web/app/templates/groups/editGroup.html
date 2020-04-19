@@ -5,7 +5,6 @@
 
 <!-- Import macros -->
 
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import insertPatternMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 
@@ -13,14 +12,16 @@
 {% from 'macros.html' import modalCancelMacro with context %}
 {% from 'macros.html' import modalDeleteMacro with context %}
 
+{% from 'macros.html' import addUrlPrefixMacro with context %}
+
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
@@ -32,7 +33,7 @@
         });
 
         function returnPage(){
-            location.href = "{{ url_for('groups.viewGroup', idGroup=123456) }}".replace(123456, {{idGroup}});
+            location.href = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}";
         }        
     </script>
 
@@ -48,11 +49,6 @@
 
 <!-- Modal[Delete] -->
 {{ modalDeleteMacro("del grupo") }}
-
-<!-- Title -->
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Modificar un grupo de pautas") }}
-</section>
 
 <!-- Input data -->
 

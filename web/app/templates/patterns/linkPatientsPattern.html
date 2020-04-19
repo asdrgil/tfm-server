@@ -4,18 +4,18 @@
 {% set therapistName = therapistLiteral %}
 
 <!-- Import macros -->
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patientsTableMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
@@ -47,14 +47,12 @@
         }
 
         function linkPatient(patiId){
-            var url = "{{ url_for('patterns.linkPatientsPattern', idPattern=123456) }}?linkPatt=".replace(123456, {{patternInfo.id}}) + patiId;
+            var url = "{{ addUrlPrefixMacro(url_for('patterns.linkPatientsPattern', idPattern=patternInfo.id)) }}?linkPatt=" + patiId;
             location.href = url;
         }
 
         function returnPage(){
-            //location.href = location.protocol + '//' + location.host + "/verPauta/" + location.pathname.split("/")[2] + location.search;
-            //TODO:check
-            location.href = "{{ url_for('patterns.viewPattern', idPattern=123456) }}".replace(123456, {{patternInfo.id}});
+            location.href = "{{ addUrlPrefixMacro(url_for('patterns.viewPattern', idPattern=patternInfo.id)) }}";
         }
 
         function linkPatients(){
@@ -71,8 +69,7 @@
             if(patiIds.length > 0){
                 patiIds = patiIds.substring(0, patiIds.length-1);
 
-                location.href = "{{ url_for('patterns.linkPatientsPattern', idPattern=123456) }}"
-                    .replace(123456, {{patternInfo.id}}) + "?patiIds=" + patiIds;
+                location.href = "{{ addUrlPrefixMacro(url_for('patterns.linkPatientsPattern', idPattern=patternInfo.id)) }}" + "?patiIds=" + patiIds;
 
                 generateNotification("success", "Pauta vinculada correctamente a los pacientes");
             
@@ -88,11 +85,6 @@
 {% block content %}
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Enlazar pauta a pacientes") }}
-
-<!-- Title -->
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Enlazar pauta a pacientes") }}
-</section>
 
 <!-- Input data -->
 

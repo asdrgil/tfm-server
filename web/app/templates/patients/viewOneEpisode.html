@@ -3,25 +3,44 @@
 {% set logged = True %}
 {% set therapistName = therapistLiteral %}
 
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patientInfoMacro with context %}
 {% from 'macros.html' import oneEpisodeTableMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     <style>
-        .dot {
+        .dotYellow {
           height: 25px;
           width: 25px;
-          background-color: #bbb;
+          background-color: yellow;
           border-radius: 50%;
+          border: 1px solid black;
+          display: inline-block;
+        }
+        
+        .dotOrange {
+          height: 25px;
+          width: 25px;
+          background-color: orange;
+          border-radius: 50%;
+          border: 1px solid black;
+          display: inline-block;
+        }
+        
+        .dotRed {
+          height: 25px;
+          width: 25px;
+          background-color: red;
+          border-radius: 50%;
+          border: 1px solid black;
           display: inline-block;
         }
     </style>
 
     {% assets "highchartsJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script>
@@ -80,10 +99,6 @@
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Ver un episodio del paciente") }}
 
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver un episodio concreto") }}
-</section>
-
 <div class="columns is-vcentered is-centered">
 
     <div class="column is-8 box">
@@ -104,7 +119,7 @@
 
             <br>
             
-            <a href="{{ url_for('patients.viewPatient', idPatient=123456) }}".replace("123456", "{{patientInfo.id}}")><input class="button is-light" id="returnBtn" name="returnBtn" type="button" value="Volver"></a>
+            <a href="{{ addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=patientInfo.id)) }}"><input class="button is-light" id="returnBtn" name="returnBtn" type="button" value="Volver"></a>
         </div>
 </div>
 

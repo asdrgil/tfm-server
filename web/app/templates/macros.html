@@ -1,34 +1,18 @@
+{% macro addUrlPrefixMacro(text) -%}
+    /termoira{{text}}
+{%- endmacro -%}
+
 {% macro breadCrumbMacro(rows, current) %}
     <br>
 
     <nav class="breadcrumb is-centered" aria-label="breadcrumbs">
       <ul>
         {% for row in rows %}
-            <li><a href={{ row.href }}>{{ row.name }}</a></li>
+            <li><a href={{addUrlPrefixMacro(row.href)}}>{{ row.name }}</a></li>
         {% endfor %}
         <li class="is-active"><a href="#" aria-current="page">{{ current }}</a></li>
       </ul>
     </nav>
-
-{% endmacro %}
-
-{% macro patientInfoMacro(patientInfo) %}
-        <h4 class="title is-4">Datos del paciente</h4>
-
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Nombre</b>:&nbsp;&nbsp; {{ patientInfo.name }}
-        <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Primer apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname1 }}
-        <br>
-        <b> Segundo apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname2 }}
-        <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Edad </b>:&nbsp;&nbsp; {{ patientInfo.age }}
-        <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
-        {% if patientInfo.gender == "M" %}
-            <td align="center">Masculino</td>
-        {% else %}
-            <td align="center">Femenino</td>
-        {% endif %}
 
 {% endmacro %}
 
@@ -143,11 +127,11 @@
                     {% else %}
                         <td align="center"><span style='color:green;'><i class='fas fa-check'></i></span></td>
                     {% endif %}
-                    <td align="center"><a href=/verPauta/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                    <td align="center"><a href="{{addUrlPrefixMacro(url_for('patterns.viewPattern', idPattern=row.id))}}" data-tooltip="Ver"><i class='fas fa-eye'></i></a> </td>
                     {% if unlink == 1 %}
-                        <td align="center"><a onclick="unlinkPattern({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                        <td align="center"><a onclick="unlinkPattern({{ row.id }});" data-tooltip="Desvincular"><i class='fas fa-unlink'></i></a> </td>
                     {% elif unlink == 2 %}
-                        <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
+                        <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick" data-tooltip="Eliminar"><i class='fas fa-trash'></i> </a> </td>
                     {% endif %}
                 </tr>
             {% endfor %}                                    
@@ -163,11 +147,9 @@
                 {% if edit == 3 %}
                     <th align="center"> <span> Seleccionar </span></th>
                 {% endif %}
-                <th align="center"> <span> Nombre </span></th>
+                <th align="center"> <span> Paciente </span></th>
                 <th align="center"> <span> Primer apellido </span></th>
                 <th align="center"> <span> Segundo apellido </span></th>
-                <th align="center"> <span> Género </span></th>
-                <th align="center"> <span> Edad </span></th>
                 <th align="center"> <span>  </span></th>
                 {% if edit > 0 %}
                     <th align="center"> <span>  </span></th>
@@ -183,17 +165,11 @@
                     <td align="center">{{ row.name }}</td>
                     <td align="center">{{ row.surname1 }}</td>
                     <td align="center">{{ row.surname2 }}</td>
-                    {% if row.gender=="M" %}
-                        <td align="center"><i class='fas fa-mars'></i> &nbsp; Masculino</td>
-                    {% else %}
-                        <td align="center"><i class='fas fa-venus'></i> &nbsp; Femenino</td>
-                    {% endif %}
-                    <td align="center">{{ row.age }}</td>
-                    <td align="center"><a href=/verPaciente/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                    <td align="center"><a href="{{addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=row.id))}}" data-tooltip="Ver"><i class='fas fa-eye'></i></a> </td>
                     {% if edit == 1 %}
-                        <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}', '{{ row.surname1 }}', '{{ row.surname2 }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
+                        <td align="center" data-tooltip="Eliminar"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}', '{{ row.surname1 }}', '{{ row.surname2 }}')" style="color:firebrick"><i class='fas fa-trash'></i> </a> </td>
                     {% elif edit == 2 %}
-                        <td align="center"><a onclick="unlinkPatient({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                        <td align="center"><a onclick="unlinkPatient({{ row.id }});" data-tooltip="Desvincular"><i class='fas fa-unlink'></i></a> </td>
                     {% endif %}
                 </tr>
             {% endfor %}
@@ -224,11 +200,11 @@
                             <td align="center"> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
                         {% endif %}                    
                         <td align="center">{{ row.name }}</td>
-                        <td align="center"><a href=/verGrupo/{{ row.id }}><i class='fas fa-eye'></i> &nbsp; Ver </a> </td>
+                        <td align="center"><a href="{{addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=row.id))}}" data-tooltip="Ver"><i class='fas fa-eye'></i></a></td>
                         {% if edit == 1 %}
-                             <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> &nbsp; Eliminar </a> </td>
+                             <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick" data-tooltip="Eliminar"><i class='fas fa-trash'></i></a> </td>
                         {% elif edit == 2 %}
-                            <td align="center"><a onclick="unlinkGroup({{ row.id }});"><i class='fas fa-unlink'></i> &nbsp; Desvincular </a> </td>
+                            <td align="center"><a onclick="unlinkGroup({{ row.id }});" data-tooltip="Desvincular"><i class='fas fa-unlink'></i></a> </td>
                         {% endif %}                        
                     </tr>
                 {% endfor %}
@@ -258,7 +234,7 @@
                         <td align="center">{{ row.lastTime }}</td>
                         <td align="center">{{ row.duration }}</td>
                         <td align="center">{{ row.cause }}</td>
-                        <td align="center"><a href=/verUnEpisodio?idPatient={{ patientId }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }}><i class='fas fa-eye'></i>Ver</a> </td>
+                        <td align="center"><a href="{{addUrlPrefixMacro(url_for('patients.viewOneEpisode')) }}?idPatient={{ patientId }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }}" data-tooltip="Ver"><i class='fas fa-eye'></i></a> </td>
                     </tr>
                 {% endfor %}
             <tbody>                 
@@ -285,11 +261,11 @@
                             <td align="center">{{ row.date }}</td>
                             <td align="center">{{ row.time }}</td>
                             {% if row.alertLevel == 1 %}
-                                <td align="center">Amarillo</td>
+                                <td align="center"><span class="dotYellow"></span></td>
                             {% elif row.alertLevel == 2 %}
-                                <td align="center">Naranja</td>
+                                <td align="center"><span class="dotOrange"></span></td>
                             {% elif row.alertLevel == 3 %}
-                                <td align="center">Rojo</td>
+                                <td align="center"><span class="dotRed"></span></td>
                             {% endif %}
                             <td align="center">Nombre de la pauta</td>
                             <td align="center">Sí</td>
@@ -364,22 +340,86 @@
     <div align="center">
         <h4 class="title is-4">Datos del paciente</h4>
 
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Nombre</b>:&nbsp;&nbsp; {{ patientInfo.name }}
-        <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Primer apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname1 }}
-        <br>
-        <b> Segundo apellido</b>:&nbsp;&nbsp; {{ patientInfo.surname2 }}
-        <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Edad </b>:&nbsp;&nbsp; {{ patientInfo.age }}
-        <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b> Género </b>:&nbsp;&nbsp; 
-        {% if patientInfo.gender == "M" %}
-            <td align="center">Masculino</td>
-        {% else %}
-            <td align="center">Femenino</td>
-        {% endif %}
+        <div class="columns is-vcentered is-centered" style="margin-top:50px">
+            <div class="column is-5" align="right">
+                <b> Nombre</b>:
+                <br>
+                <b> Primer apellido</b>:
+                <br>
+                <b> Segundo apellido</b>:
+                <br>
+                <b> Edad </b>:
+                <br>
+                <b> Género </b>:
+            </div>
+            <div class="column is-5" align="left">
+                {{ patientInfo.name }}
+                <br>
+                {{ patientInfo.surname1 }}
+                <br>
+                {{ patientInfo.surname2 }}
+                <br>
+                {{ patientInfo.age }}
+                <br>
+                {% if patientInfo.gender == "M" %}
+                    Masculino
+                {% else %}
+                    Femenino
+                {% endif %}
+            </div>
+            
+        </div>
 
     </div>
+{% endmacro %}
+
+{% macro patternInfoMacro(patternInfo) %}
+    <div align="center">
+        <h4 class="title is-4">Datos de la pauta</h4>
+
+        <div class="columns is-vcentered is-centered">
+            <div class="column is-5" align="right">
+                <br><b> Nombre</b>:
+                <br><br>
+                <b> Descripción</b>:
+            </div>
+            <div class="column is-5" align="left">
+			    {{ patternInfo.name }}
+			    <br><br>
+			    {{ patternInfo.description }}
+            </div>
+        </div>
+        
+        <table id="intensitiesTable" class="table">
+            <thead>
+                <th> Intensidad amarilla </th>
+                <th> Intensidad naranja </th>
+                <th> Intensidad roja </th>
+            </thead>
+            <tbody>
+                <tr>
+			        {% if patternInfo.intensity1=="No" %}
+			            <td> <span style='color:red;' data-tooltip="No"><i class='fas fa-times'></i></span> </td>
+                    {% else %}
+                        <td> <span style='color:green;' data-tooltip="Sí"><i class='fas fa-check'></i></span> </td>
+                    {% endif %}
+                    
+			        {% if patternInfo.intensity2=="No" %}
+			            <td> <span style='color:red;' data-tooltip="No"><i class='fas fa-times'></i></span> </td>
+                    {% else %}
+                        <td> <span style='color:green;'data-tooltip="Sí"><i class='fas fa-check'></i></span> </td>
+                    {% endif %}
+                    
+			        {% if patternInfo.intensity3=="No" %}
+			            <td> <span style='color:red;' data-tooltip="No"><i class='fas fa-times'></i></span> </td>
+                    {% else %}
+                        <td> <span style='color:green;'data-tooltip="Sí"><i class='fas fa-check'></i></span> </td>
+                    {% endif %}
+                </tr>
+            </tbody>        
+        </table>
+    </div>
+    <br>
 {% endmacro %}
 
 {% macro groupInfoMacro(groupInfo) %}
@@ -397,9 +437,9 @@
 
     <table id="episodesTable" class="table">
         <thead>
-            <th> <span> Fecha de inicio </span></th>
-            <th> <span> Hora de inicio </span></th>
-            <th> <span> Hora de fin </span></th>
+            <th> <span> Fecha </span></th>
+            <th> <span> Hora inicio </span></th>
+            <th> <span> Hora fin </span></th>
             <th> <span> Duración </span></th>
             <th> <span> Causa </span></th>
             <th> <span>  </span></th>
@@ -412,7 +452,7 @@
                 <td>{{row.lastTime}}</td>
                 <td>{{row.duration}}</td>
                 <td>{{row.cause}}</td>
-                <td><a href="{{url_for('patients.viewOneEpisode')}}?idPatient={{patientInfo.id}}&timestampFrom={{row.timestampFrom}}&timestampTo={{row.timestampTo}}"><i class='fas fa-eye'></i>Ver</a></td>
+                <td><a href="{{addUrlPrefixMacro(url_for('patients.viewOneEpisode'))}}?idPatient={{patientInfo.id}}&timestampFrom={{row.timestampFrom}}&timestampTo={{row.timestampTo}}"  data-tooltip="Ver"><i class='fas fa-eye'></i></a></td>
             </tr>
         {% endfor %}        
         </tbody>

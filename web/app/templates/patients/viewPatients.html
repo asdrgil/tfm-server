@@ -4,19 +4,19 @@
 {% set therapistName = therapistLiteral %}
 
 <!-- Import macros -->
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patientsTableMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
 {% from 'macros.html' import modalDeleteMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
@@ -37,7 +37,7 @@
             }
             
             //Remove parameters from url before submitting
-            window.history.pushState({}, document.title, "/verPacientes");
+            window.history.pushState({}, document.title, "{{ addUrlPrefixMacro(url_for('patients.viewPatients')) }}");
 
             document.getElementById("generalForm").submit();
         }
@@ -49,6 +49,7 @@
 
         function confirmDeleteMacro(){
             var deleteElem = document.getElementById("deleteId").value;
+            //TODO:check (change to url_for)
             var url = new URL(location.protocol + '//' + location.host + location.pathname);
             var search_params = new URLSearchParams(url.search); 
             search_params.set('deleteElem', deleteElem);
@@ -63,7 +64,7 @@
             document.getElementById("deleteId").value = id;
             modalDiv.style.display = "block";
         }
-    </script>
+    </script> 
 
 {% endblock %}
 
@@ -72,11 +73,6 @@
 {{ modalDeleteMacro("de este paciente") }}
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Ver pacientes") }}
-
-<!-- Title -->
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver pacientes") }}
-</section>
 
 <!-- Input data -->
 
@@ -170,9 +166,7 @@
 
             <div class="column is-7" align="center">
 
-                {% if rowPatients|length > 0 %}
-                    {{ patientsTableMacro(rowPatients, 1) }}
-                {% endif %}
+                {{ patientsTableMacro(rowPatients, 1) }}
                 
                 Número de registros totales: <b>{{ numberTotalRows }}</b>
                 

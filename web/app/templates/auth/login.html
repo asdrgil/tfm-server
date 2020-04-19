@@ -3,6 +3,7 @@
 {% set notLogged = True %}
 
 {% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block content %}
 
@@ -68,7 +69,7 @@
                         <p>{{ form.submit() }}</p>
                     </form>
                     
-                    <p>¿Eres nuevo? Registrate <a href="{{ url_for('auth.register') }}">aquí</a>.</p>
+                    <p>¿Eres nuevo? Registrate <a href="{{ addUrlPrefixMacro(url_for('auth.register')) }}">aquí</a>.</p>
                     
                 </div>
               </article>

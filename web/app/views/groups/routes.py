@@ -1,11 +1,11 @@
-from flask import render_template, flash, redirect, request, url_for
+from flask import render_template, flash, redirect, request, url_for, request
 from flask_login import current_user, login_required
 from app import db
 from app.views.groups import bp
 from app.forms import RegistrationGroupForm, PaginationForm, PaginationForm2, SearchGroupsForm, \
-    RegisterPatternForm, GenericEditForm, SearchPatternsForm
+    RegisterPatternForm, GenericEditForm, SearchPatternsForm, PatternSelectForm
 from app.constants import mongoClient, urlPrefix
-from app.mongoMethods import searchPatterns, searchPatternsGroup, searchGroups, updateGroup
+from app.mongoMethods import searchPatterns, searchPatternsGroup, searchGroups, updateGroup, registerTraceUsers
 from datetime import datetime
 
 therapistLiteral = ""
@@ -14,13 +14,15 @@ therapistLiteral = ""
 def before_request():
 
     if current_user.is_authenticated:
-        current_user.last_seen = datetime.utcnow()
-        db.session.commit()
+        registerTraceUsers(current_user.get_id(), request.endpoint)
 
         global therapistLiteral
 
         therapistLiteral = "{} {} {}".format(current_user.get_name(), current_user.get_surname1(), \
             current_user.get_surname2())
+    else:
+        #Trace for users is not added here because it will be spotted when redirecting the user
+        return redirect(urlPrefix + url_for('auth.login'))    
 
 @login_required
 @bp.route('/registrarGrupo', methods=['GET', 'POST'])
@@ -94,8 +96,23 @@ def viewGroup(idGroup):
         flash("No existe el grupo de pautas especificado", "error")
         return redirect(urlPrefix + url_for('general.index'))
 
+    #UNLINK pattern
+    if request.args.get("unlinkPatt") is not None:
+        mongoClient["groups"].update_one({"id":idGroup}, {"$pull": \
+            {"patterns": int(request.args.get("unlinkPatt"))}})
+        flash("Pauta desvinculada correctamente.", "success")
+
+    #LINK patterns
+    if request.args.get("linkPatts") is not None:
+        patterns = list(map(int, request.args.get("linkPatts").split(",")))
+        for patt in patterns:
+            mongoClient["groups"].update_one({"id": idGroup}, \
+                {"$push": {"patterns":patt}})
+        flash("Pautas vinculadas correctamente.", "success")
+
     form = PaginationForm(1)
     form2 = PaginationForm2(1)
+    form3 = PatternSelectForm([current_user.get_id(), idGroup])
 
     cursorGroup = mongoClient["groups"].find_one({"therapist":current_user.get_id(), "id": idGroup})
 
@@ -106,7 +123,7 @@ def viewGroup(idGroup):
     queryResultPatterns = searchPatternsGroup(idGroup, 1)
 
     return render_template('groups/viewGroup.html', therapistLiteral=therapistLiteral, groupInfo=groupInfo,
-        form=form, form2=form2, idGroup=idGroup, rowsPatterns=queryResultPatterns["rows"], \
+        form=form, form2=form2, form3=form3, idGroup=idGroup, rowsPatterns=queryResultPatterns["rows"], \
         pagesPatterns=queryResultPatterns["numberPages"], numberRowsPattern=queryResultPatterns["numberTotalRows"], \
         rowsBreadCrumb=rowsBreadCrumb)
 

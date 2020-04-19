@@ -4,18 +4,19 @@
 {% set therapistName = therapistLiteral %}
 
 <!-- Import macros -->
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import groupsTableMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
+
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 
     <script type="text/javascript" charset="utf-8">
@@ -44,13 +45,10 @@
         }
 
         function returnPage(){
-            //location.href = location.protocol + '//' + location.host + "/verPauta/" + location.pathname.split("/")[2] + location.search;
-            //TODO:check
-            var url = "{{url_for('patterns.viewPattern', idPattern=123456)}}".replace(123456, {{patternInfo.id}});
+            var url = "{{ addUrlPrefixMacro(url_for('patterns.viewPattern', idPattern=patternInfo.id)) }}";
             location.href = url;
         }
 
-        //TODO: function socketIO save
     </script>
 
 {% endblock %}
@@ -58,11 +56,6 @@
 {% block content %}
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Ver grupos de pautas") }}
-
-<!-- Title -->
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Enlazar grupos de pautas") }}
-</section>
 
 <!-- Input data -->
 

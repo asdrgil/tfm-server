@@ -5,8 +5,6 @@
 
 <!-- Import macros -->
 
-{% from 'macros.html' import titleMacro with context %}
-
 {% from 'macros.html' import modalCancelMacro with context %}
 
 {% from 'macros.html' import breadCrumbMacro with context %}
@@ -14,35 +12,36 @@
 {% from 'macros.html' import patternsTableMacro with context %}
 {% from 'macros.html' import patientInfoMacro with context %}
 {% from 'macros.html' import viewEpisodesTableMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
+{% from 'macros.html' import titleMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}?aux" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
-?aux2
+
     <!-- Multiselect, accordion and general scripts -->
     <script type="text/javascript" charset="utf-8">
 
         function modifyPatientInfo(){
-            location.href = "{{ url_for('patients.modifyPatient', idPatient=patientInfo.id) }}"
+            location.href = "{{ addUrlPrefixMacro(url_for('patients.modifyPatient', idPatient=patientInfo.id)) }}"
         }
 
         function newPattern(){
-            //TODO:check
-            location.href = "{{ url_for('patients.registerPatternPatient', idPatient=patientInfo.id) }}";
+            location.href = "{{ addUrlPrefixMacro(url_for('patients.registerPatternPatient', idPatient=patientInfo.id)) }}";
         }
 
         function linkPattern(){
-            location.href = "{{ url_for('patients.linkPatternsPatient', idPatient=patientInfo.id) }}";
+            location.href = "{{ addUrlPrefixMacro(url_for('patients.linkPatternsPatient', idPatient=patientInfo.id)) }}";
         }
 
         function unlinkPattern(pattId){
-            location.href = "{{ url_for('patients.viewPatient', idPatient=patientInfo.id) }}?unlinkPatt=" + pattId;
+            location.href = "{{ addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=patientInfo.id)) }}?unlinkPatt=" + pattId;
         }        
 
     </script> 
@@ -52,10 +51,9 @@
         function episodesFunc(){
 
             var urlParameters =  "?time1=" + document.getElementById("time1").value + "&time2="+document.getElementById("time2").value+"&date1="+document.getElementById("date1").value+"&date2="+document.getElementById("date2").value;
-            //document.getElementById("date1").value
 
             $.ajax({
-                url: '/ajax/episodiosPaciente/{{patientInfo.id}}' + urlParameters,
+                url: "/termoira/ajax/episodiosPaciente/{{patientInfo.id}}" + urlParameters,
                 data: $('form').serialize(),
                 type: 'POST',
                 success: function(response){
@@ -92,7 +90,7 @@
                     bodyContent += "<td>"+cols[4]+"</td>";
                     //View episode
                     
-                    bodyContent += "<td><a href={{url_for('patients.viewOneEpisode')}}?idPatient={{patientInfo.id}}&timestampFrom="+cols[5]+"&timestampTo="+cols[6]+" style='color:#3273dc'><i class='fas fa-eye'></i>Ver</a></td>";
+                    bodyContent += "<td><a href={{ addUrlPrefixMacro(url_for('patients.viewOneEpisode'))}}?idPatient={{patientInfo.id}}&timestampFrom="+cols[5]+"&timestampTo="+cols[6]+" style='color:#3273dc'><i class='fas fa-eye'></i>Ver</a></td>";
                     
                     bodyContent += "</tr>"
                 }
@@ -127,7 +125,7 @@
 
 {{ breadCrumbMacro(rowsBreadCrumb, patientInfo.name + ' ' + patientInfo.surname1) }}
 
-{{ titleMacro("Ver paciente") }}
+{{ titleMacro(patientInfo.name + ' ' + patientInfo.surname1) }}
 
 <div class="columns is-vcentered is-centered">
     <div class="column is-8" align="center">
@@ -143,7 +141,7 @@
 
                 <div style='max-width:400px'><hr></div>
 
-                <div class="box" style='max-width:1000px' align="center">
+                <div class="box" style='max-width:1300px' align="center">
                     <h4 class="title is-4 is-spaced">Pautas asociadas</h4>
                     {% if rowsPatterns|length > 0 %}
                         {{ patternsTableMacro(rowsPatterns, 0, 1) }}
@@ -164,86 +162,86 @@
                 <div style='max-width:400px'><hr></div><br>
 
 
-                <div class="columns is-vcentered is-centered">
-                    <div class="column is-8 box" align="center">
-                        <br>
+                <div class="box" style='max-width:1300px' align="center">
+                    <br>
 
-                        <div class="columns is-vcentered is-centered">
-                            <div class="column is-5" align="center">
-                                <h3 class="title is-3">Episodios de un paciente</h3>
-                            </div>
+                    <div class="columns is-centered">
+                        <div class="column is-5" align="center">
+                            <h3 class="title is-3">Episodios del paciente</h3>
+                        </div>
+                    </div>
+
+                    <br>
+
+                    <div class="columns is-centered">
+
+                        <div class="column is-5" align="center" style="border-right: 0.5px solid #e4e4e4;">
+                            <h5 class="title is-5">Filtrar episodios</h5>
+                                <form action="" id="episodesForm" method="post" novalidate>
+                                    {{ form4.hidden_tag() }}
+                                    {{ form4.csrf_token }}
+
+                                    <!-- FROM -->
+                                    
+                                    <br>
+                                    
+                                    <div class="columns is-centered is-vcentered">
+                                        <div class="colunm is-1">
+                                            <b>Fecha</b>:&nbsp;&nbsp;&nbsp;Desde&nbsp;&nbsp;&nbsp;
+                                        </div>
+                                        <div class="colunm is-4">
+                                            {{ form4.date1 }}
+                                            {% for error in form4.date1.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}                                        
+                                        </div>
+                                        <div class="colunm is-1">
+                                            &nbsp;&nbsp;&nbsp;Hasta&nbsp;&nbsp;&nbsp;
+                                        </div>                                        
+                                        <div class="colunm is-4">
+                                            {{ form4.date2 }}
+                                            {% for error in form4.date2.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}                                        
+                                        </div>                                                                                
+                                    </div>
+                                    
+                                    <br>
+
+                                    <!-- TO -->
+                                    
+                                    <div class="columns is-centered is-vcentered">
+                                        <div class="colunm is-1">
+                                            <b>Hora</b>:&nbsp;&nbsp;&nbsp;Desde&nbsp;&nbsp;&nbsp;
+                                        </div>
+                                        <div class="colunm is-4">
+                                            {{ form4.time1 }}
+                                            {% for error in form4.time1.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}                                        
+                                        </div>
+                                        <div class="colunm is-1">
+                                            &nbsp;&nbsp;&nbsp;Hasta&nbsp;&nbsp;&nbsp;
+                                        </div>                                        
+                                        <div class="colunm is-4">
+                                            {{ form4.time2 }}
+                                            {% for error in form4.time2.errors %}
+                                                <span style="color: red;">[{{ error }}]</span>
+                                            {% endfor %}
+                                        </div>                                                                                
+                                    </div>
+                                    
+                                    
+                                    {{ form4.searchBtn2 }}
+                                </form>
                         </div>
 
-                        <br>
-
-                        <div class="columns is-centered">
-
-                            <div class="column is-3" align="center" style="border-right: 0.5px solid #e4e4e4;">
-                                <h5 class="title is-5">Filtrar episodios</h5>
-                                    <form action="" id="episodesForm" method="post" novalidate>
-                                        {{ form4.hidden_tag() }}
-                                        {{ form4.csrf_token }}
-
-                                        <!-- FROM -->
-
-                                        {{ form4.date1.label }}
-
-                                        <br>
-
-                                        {{ form4.date1 }}
-                                        {% for error in form4.date1.errors %}
-                                            <span style="color: red;">[{{ error }}]</span>
-                                        {% endfor %}
-
-                                        <br>
-
-                                        {{ form4.time1.label }}
-
-                                        <br>
-
-                                        {{ form4.time1 }}
-                                        {% for error in form4.time1.errors %}
-                                            <span style="color: red;">[{{ error }}]</span>
-                                        {% endfor %}
-
-                                        <br>
-
-                                        <!-- TO -->
-                                        {{ form4.date2.label }}
-
-                                        <br>
-
-                                        {{ form4.date2 }}
-                                        {% for error in form4.date2.errors %}
-                                            <span style="color: red;">[{{ error }}]</span>
-                                        {% endfor %}
-
-                                        <br>
-
-                                        {{ form4.time2.label }}
-
-                                        <br>
-
-                                        {{ form4.time2 }}
-                                        {% for error in form4.time2.errors %}
-                                            <span style="color: red;">[{{ error }}]</span>
-                                        {% endfor %}
-
-                                        <br><br>
-                                        
-                                        {{ form.unlinkPatternId }}
-                                        {{ form4.searchBtn2 }}
-                                    
-                                    </form>
-                            </div>
-
-                            <div class="column is-7 verticalLine" align="center">
-                                {% if rowEpisodes|length > 0 %}
-                                    {{ viewEpisodesTableMacro(rowEpisodes) }}
-                                {% endif %}
-                                Número de registros totales: <b id="numberRowsEpisodes">{{ numberRowsEpisodes }}</b>
-                                <!-- TODO: add pagination -->
-                            </div>
+                        <div class="column is-7 verticalLine" align="center">
+                            {% if rowEpisodes|length > 0 %}
+                                {{ viewEpisodesTableMacro(rowEpisodes) }}
+                            {% endif %}
+                            Número de registros totales: <b id="numberRowsEpisodes">{{ numberRowsEpisodes }}</b>
+                            <!-- TODO: add pagination -->
                         </div>
                     </div>
                 </div>

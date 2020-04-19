@@ -4,20 +4,20 @@
 {% set therapistName = therapistLiteral %}
 
 <!-- Import macros -->
-{% from 'macros.html' import titleMacro with context %}
 {% from 'macros.html' import patternsTableMacro with context %}
 {% from 'macros.html' import pagination with context %}
 {% from 'macros.html' import modalDeleteMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 	
 	<script type="text/javascript" charset="utf-8">
@@ -39,7 +39,7 @@
 			}
 
 			//Remove parameters from url before submitting
-            window.history.pushState({}, document.title, "/verPautas");
+            window.history.pushState({}, document.title, "{{ addUrlPrefixMacro(url_for('patterns.viewPatterns')) }}");
 			
 			document.getElementById("generalForm").submit();
 		}
@@ -49,6 +49,7 @@
 			submitFunc();
 		}
 
+        //TODO: do it with url_for
         function confirmDeleteMacro(){
 
             var deleteElem = document.getElementById("deleteId").value;
@@ -78,11 +79,6 @@
 {{ modalDeleteMacro("de esta pauta") }}
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Ver pautas") }}
-
-<!-- Title -->
-<section id="contact" class="section section-light-grey">
-    {{ titleMacro("Ver pautas") }}
-</section>
 
 <div class="columns is-vcentered is-centered">
     <div class="column is-9 box" align="center">

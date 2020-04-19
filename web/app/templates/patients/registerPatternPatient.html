@@ -5,15 +5,16 @@
 
 {% from 'macros.html' import breadCrumbMacro with context %}
 {% from 'macros.html' import patientInfoMacro with context %}
+{% from 'macros.html' import addUrlPrefixMacro with context %}
 
 {% block head %}
 
     {% assets "accordionMultiselectCss" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css" />
+        <link rel="stylesheet" href="{{ addUrlPrefixMacro(ASSET_URL) }}" type="text/css" />
     {% endassets %}
 
     {% assets "accordionMultiselectJs" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        <script type="text/javascript" src="{{ addUrlPrefixMacro(ASSET_URL) }}"></script>
     {% endassets %}
 	
 	<script type="text/javascript" charset="utf-8">
@@ -27,9 +28,8 @@
 	<script type="text/javascript" charset="utf-8">
 		function returnPage(){
 			var pathSplit = location.pathname.split("/");
-			var idPatient = pathSplit[pathSplit.length-1];
 			//Replace function is used because Jinja cannot read Javascript variables
-			location.href = "{{ url_for('patients.viewPatient', idPatient=123456) }}".replace(123456, idPatient);
+			location.href = "{{ addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=patientInfo.id)) }}";
 		}
 	</script>
 
@@ -38,23 +38,6 @@
 {% block content %}	
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Crear una pauta para un paciente concreto") }}
-
-<!-- Titulo -->
-
-<div class="columns is-vcentered is-centered" style="height: 10px; margin-top:30px">
-
-	<div class="column is-one-third">
-		<hr>
-	</div>
-
-	<div class="column is-one-third" align="center">
-		<h3 class="title is-3">Crear una pauta para un paciente concreto</h3>
-	</div>
-	
-	<div class="column is-one-third">
-		<hr>
-	</div>
-</div>
 
 <div class="columns is-vcentered is-centered" style="margin-top:50px">
 
@@ -75,7 +58,7 @@
 					</div>
 		        	<div class="column is-8">
 				        <p>
-				            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+				            <b>{{ form.name.label }}</b> {{ form.name(maxlength=75) }}
 				            
 				            {% for error in form.name.errors %}
 				            <span style="color: red;">[{{ error }}]</span>
