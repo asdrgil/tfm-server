@@ -14,6 +14,7 @@
 {% from 'macros.html' import viewEpisodesTableMacro with context %}
 {% from 'macros.html' import addUrlPrefixMacro with context %}
 {% from 'macros.html' import titleMacro with context %}
+{% from 'macros.html' import linkPatternsMacro with context %}
 
 {% block head %}
 
@@ -27,6 +28,17 @@
 
     <!-- Multiselect, accordion and general scripts -->
     <script type="text/javascript" charset="utf-8">
+
+    	$(document).ready(function() {
+            window.history.pushState({}, document.title, "{{ addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=patientInfo.id)) }}");    	
+    	
+            $('#patientsSelect').multipleSelect();
+            $('#groupsSelect').multipleSelect();
+            $('#intensitiesSelect').multipleSelect();
+            $('#paginationSelect').multipleSelect();
+    	
+        	document.getElementById("boxLinkPatterns").style.display = "none";
+    	});
 
         function modifyPatientInfo(){
             location.href = "{{ addUrlPrefixMacro(url_for('patients.modifyPatient', idPatient=patientInfo.id)) }}"
@@ -42,12 +54,8 @@
 
         function unlinkPattern(pattId){
             location.href = "{{ addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=patientInfo.id)) }}?unlinkPatt=" + pattId;
-        }        
-
-    </script> 
-
-    <script>
-
+        }
+        
         function episodesFunc(){
 
             var urlParameters =  "?time1=" + document.getElementById("time1").value + "&time2="+document.getElementById("time2").value+"&date1="+document.getElementById("date1").value+"&date2="+document.getElementById("date2").value;
@@ -114,6 +122,41 @@
                 document.getElementById("time2").value = "23:59";
             }
         }
+        
+        function linkPatternsVisibility(){
+            if(document.getElementById("boxLinkPatterns").style.display == "none"){
+                document.getElementById("modifyPatternVisibilityBtn").className = "button is-link";            
+                document.getElementById("modifyPatternVisibilityBtn").value = "Ocultar  ✖";
+                document.getElementById("boxLinkPatterns").style.display = "block";
+            } else {
+                document.getElementById("modifyPatternVisibilityBtn").className = "button is-primary";            
+                document.getElementById("modifyPatternVisibilityBtn").value = "Enlazar a pautas ya creadas  ✚";
+                document.getElementById("boxLinkPatterns").style.display = "none";
+            }   
+        }
+        
+		function linkPatterns(){
+			var checkboxes = document.getElementsByName("checkboxPattPat");
+			var pattIds = "";
+
+			for (var i=0; i<checkboxes.length; i++) {
+			  if (checkboxes[i].checked) {
+			    pattIds += checkboxes[i].id.replace("checkbox_", "") + ",";
+			    checkboxes[i].checked = false;
+			  }
+			}
+
+			if(pattIds.length > 0){
+				pattIds = pattIds.substring(0, pattIds.length-1);
+
+				location.href = "{{ addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=patientInfo.id)) }}" + "?linkPattIds=" + pattIds;
+
+        		generateNotification("success", "Pautas vinculadas correctamente al paciente");
+			
+			} else {
+				generateNotification("alert", "No se ha seleccionado ninguna pauta");
+			}
+		}        
 
     </script>    
 
@@ -155,11 +198,23 @@
 
                     <br><br>
 
-                    {{ form.newPatternBtn }} {{ form.linkPatternBtn }}
+                    {{ form.newPatternBtn }}
+                    
+                    <br><br>
+                    
+                    <div align="center">
+                        <input class="button is-primary" id="modifyPatternVisibilityBtn" onclick="linkPatternsVisibility()" type="button" value="Enlazar a pautas ya creadas&nbsp;&nbsp;✚">
+                    </div>
+                    
+                    <br>                    
+
+                    <div class="box" id="boxLinkPatterns" style='max-width:1000px'>
+                        {{ linkPatternsMacro(form5, form6, rowLinkPatt, numberTotalRowsLinkPatt, numberPagesLinkPatt) }}
+                    </div>                    
 
                 </div>                
 
-                <div style='max-width:400px'><hr></div><br>
+                <div style='max-width:400px'><hr></div>
 
 
                 <div class="box" style='max-width:1300px' align="center">

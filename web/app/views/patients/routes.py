@@ -227,11 +227,27 @@ def viewPatient(idPatient):
 
     patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
         "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+        
+    #Link patterns to patient
+    if request.args.get("linkPattIds") is not None:
+        pattIds = list(map(int, request.args.get("linkPattIds").split(",")))
+        print(pattIds)
+        mongoClient["patients"].update_one({"id":idPatient}, {"$push": {"patterns":{"$each" : pattIds}} })
+        flash("Pautas vinculadas al paciente correctamente", "success")
 
     form = EditPatientForm(current_user.get_id())
     form2 = GenericEditForm()
     form3 = PaginationForm(1)
     form4 = FilterByDateForm(current_user.get_id(), 1)
+    form5 = SearchPatternsForm(current_user.get_id())
+    form6 = PaginationForm(1)
+    
+    if form5.validate_on_submit() is False:
+        form5.name.data = ""
+        form5.patients.data = []
+        form5.groups.data = []
+        form5.intensities.data = []
+        form5.pageNumber.data = "1"
 
     #Set default values of filter by date form
 
@@ -266,13 +282,20 @@ def viewPatient(idPatient):
 
     #Get episodes from the patient
     rowEpisodes, numberRowsEpisodes, pagesEpisodes = getEpisodes(idPatient, "", "", "", "")
+    
+    queryResultLinkPatt = searchPatterns(form5, int(form5.pageNumber.data), {"type":"patients", "id":idPatient})
+    form6 = PaginationForm(queryResultLinkPatt["numberPages"])
+    form6.pagination.data = form5.pageNumber.data   
 
     return render_template('patients/viewPatient.html', therapistLiteral=therapistLiteral, \
         rowsPatterns=queryResultPatterns["rows"], form=form, form2=form2, \
-        form3=form3, form4=form4, pagesPatterns=queryResultPatterns["numberPages"], \
+        form3=form3, form4=form4, form5=form5, form6=form6, \
+        pagesPatterns=queryResultPatterns["numberPages"], \
         numberRowsPattern=queryResultPatterns["numberTotalRows"], rowsBreadCrumb=rowsBreadCrumb, \
         patientInfo=patientInfo, rowEpisodes=rowEpisodes, numberRowsEpisodes=numberRowsEpisodes, \
-        pagesEpisodes=pagesEpisodes)
+        pagesEpisodes=pagesEpisodes, rowLinkPatt=queryResultLinkPatt["rows"], \
+        numberTotalRowsLinkPatt=queryResultLinkPatt["numberTotalRows"], \
+        numberPagesLinkPatt=queryResultLinkPatt["numberPages"])
 
 
 @login_required

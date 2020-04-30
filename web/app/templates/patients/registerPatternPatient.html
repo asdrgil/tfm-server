@@ -39,7 +39,7 @@
 
 {{ breadCrumbMacro(rowsBreadCrumb, "Crear una pauta para un paciente concreto") }}
 
-<div class="columns is-vcentered is-centered" style="margin-top:50px">
+<div class="columns is-vcentered is-centered">
 
 	<div class="column is-8 box" align="center">
 		<div class="box">
@@ -53,12 +53,16 @@
 		        {{ form.hidden_tag() }}
 		        {{ form.csrf_token }}
 
-		        <div class="columns is-vcentered is-centered" style="margin-top:30px">
+		        <div class="columns is-vcentered is-centered">
 					<div class="column is-2">
 					</div>
 		        	<div class="column is-8">
 				        <p>
-				            <b>{{ form.name.label }}</b> {{ form.name(maxlength=75) }}
+				            <b>{{ form.name.label }}</b>
+				            
+				            <br>
+				            
+				            {{ form.name(style="max-width:617px;text-align: center;") }}
 				            
 				            {% for error in form.name.errors %}
 				            <span style="color: red;">[{{ error }}]</span>

@@ -79,19 +79,27 @@
         
         function linkPatientsVisibility(){
             if(document.getElementById("boxLinkPatients").style.display == "none"){
+                document.getElementById("modifyPatternVisibilityBtn").className = "button is-link";
+                document.getElementById("modifyPatternVisibilityBtn").value = "Ocultar  ✖";            
                 document.getElementById("boxLinkPatients").style.display = "block";
             } else {
+                document.getElementById("modifyPatternVisibilityBtn").className = "button is-primary";
+                document.getElementById("modifyPatternVisibilityBtn").value = "Enlazar a nuevos pacientes  ✚";            
                 document.getElementById("boxLinkPatients").style.display = "none";
             }   
         }
         
         function linkGroupsVisibility(){
             if(document.getElementById("boxLinkGroups").style.display == "none"){
+                document.getElementById("modifyGroupsVisibilityBtn").className = "button is-link";
+                document.getElementById("modifyGroupsVisibilityBtn").value = "Ocultar  ✖";
                 document.getElementById("boxLinkGroups").style.display = "block";
             } else {
+                document.getElementById("modifyGroupsVisibilityBtn").className = "button is-primary";
+                document.getElementById("modifyGroupsVisibilityBtn").value = "Enlazar a nuevos grupos  ✚";
                 document.getElementById("boxLinkGroups").style.display = "none";
             }   
-        }        
+        }
     </script>
 
 {% endblock %}
@@ -108,20 +116,19 @@
 <div class="columns is-vcentered is-centered">
 
 	<div class="column is-8 box" align="center">
+	
 
         {{ patternInfoMacro(patternInfo) }}
         
-        <div id="divBtns" align="center">
-            <input class="button is-primary" id="saveBtn" name="saveBtn" onclick="modifyPattern()" type="button" value="Modificar">
+        <div align="center">
+            <input class="button is-primary" id="modifyPatternBtn" onclick="modifyPattern()" type="button" value="Modificar">
         </div>
-
-		<br><div style='max-width:400px'><hr></div><br>
+        
+        <br>
 
         <div class="box" style='max-width:1000px'>
             <h4 class="title is-4 is-spaced">Pacientes que incluyen esta pauta</h4>
-            {% if rowsPatients|length > 0 %}
-            	{{ patientsTableMacro(rowsPatients, 2) }}
-            {% endif %}
+        	{{ patientsTableMacro(rowsPatients, 2) }}
 
             Número de registros totales: <b>{{ numberRowsPatient }}</b>
 
@@ -131,12 +138,13 @@
                 <br>
     		{% endif %}
 
-            <br><br>            
-
-            <div class="field">
-                <input type="checkbox" id="switchLinkPatients" class="switch is-thin" onchange="linkPatientsVisibility()">
-                <label for="switchLinkPatients">&nbsp;&nbsp;Enlazar a nuevos pacientes</label>
+            <br><br>
+            
+            <div align="center">
+                <input class="button is-primary" id="modifyPatternVisibilityBtn" onclick="linkPatientsVisibility()" type="button" value="Enlazar a nuevos pacientes&nbsp;&nbsp;✚">
             </div>
+            
+            <br>
 
             <div class="box" id="boxLinkPatients" style='max-width:400px'>
                 <form action="" id="patientsForm" method="post" novalidate">
@@ -151,18 +159,13 @@
             
             
         </div>
-        
-        <div style='max-width:400px'><hr></div>
 
         <div class="box" style='max-width:1000px'>
             <h4 class="title is-4 is-spaced">Grupos de pautas que incluyen esta pauta</h4>
-
-
-
-        	<div id="tablearea" align="center" class="box">
-        	{% if rowsGroups|length > 0 %}
-    	    	{{ groupsTableMacro(rowsGroups, 2) }}
-        	{% endif %}
+            
+	    	{{ groupsTableMacro(rowsGroups, 2) }}
+	    	
+	    	<br>
         	
         	Número de registros totales: <b>{{ numberRowsGroup }}</b>
         	
@@ -173,10 +176,11 @@
 
             <br><br>
 
-            <div class="field">
-                <input type="checkbox" id="switchLinkGroups" class="switch is-thin" onchange="linkGroupsVisibility()">
-                <label for="switchLinkGroups">&nbsp;&nbsp;Enlazar a nuevos grupos</label>
+            <div align="center">
+                <input class="button is-primary" id="modifyGroupsVisibilityBtn" onclick="linkGroupsVisibility()" type="button" value="Enlazar a nuevos grupos&nbsp;&nbsp;✚">
             </div>
+            
+            <br>
 
             <div class="box" id="boxLinkGroups" style='max-width:400px'>
                 <form action="" id="groupsForm" method="post" novalidate">

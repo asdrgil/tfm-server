@@ -42,19 +42,15 @@
 		        {{ form.csrf_token }}
 
 		        <div class="columns is-vcentered is-centered">
-					<div class="column is-2">
-					</div>
 		        	<div class="column is-8">
-				        <p>
-				            <b>{{ form.name.label }}</b> {{ form.name(maxlength=75) }}
-				            
-				            {% for error in form.name.errors %}
-				            <span style="color: red;">[{{ error }}]</span>
-				            {% endfor %}
-				        </p>
+			            <b>{{ form.name.label }}</b> <br>
+			            
+			            {{ form.name(style="max-width:617px;text-align: center;") }}
+			            
+			            {% for error in form.name.errors %}
+			            <span style="color: red;">[{{ error }}]</span>
+			            {% endfor %}
 			        </div>
-			        <div class="column is-2">
-					</div>
 		        </div>
 
 		        <br>
@@ -74,19 +70,15 @@
 
 	            <b>{{ form.intensity3.label }}</b> &nbsp;&nbsp; {{ form.intensity3 }}
 
-		        <br>
+		        <br><br>
 
-				<!-- Link to groups -->
-				<div class="columns is-vcentered is-centered" style="margin-top:50px">
-					<div class="column is-1">
-					</div>
+                <div align="center">
+                    {{ form.groups.label }}
 
-	              	  <div align="center">
-              	  		{{ form.groups.label }} {{ form.groups }}
-			        </div>
-					<div class="column is-1">
-					</div>
-				</div>
+                    <br>
+
+                    {{ form.groups }}
+                </div>
 
 		        <br>
 		        

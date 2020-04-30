@@ -58,10 +58,14 @@
 		        {{ form.hidden_tag() }}
                 {{ form.csrf_token }}
 
-		        <div class="columns is-vcentered is-centered" style="margin-top:50px">
+		        <div class="columns is-vcentered is-centered" >
 		        	<div class="column is-8">
 				        <p>
-				            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+				            <b>{{ form.name.label }}</b>
+				            
+				            <br>
+				            
+				            {{ form.name(style="max-width:617px;text-align: center;") }}
 				            
 				            {% for error in form.name.errors %}
 				                <span style="color: red;">[{{ error }}]</span>
@@ -76,7 +80,7 @@
 	            <b>{{ form.description.label }}</b> <br>
 	            {{ form.description(maxlength=50) }}
 
-		        <br>
+		        <br><br>
 
 	            <b>{{ form.intensity1.label }}</b> &nbsp;&nbsp; {{ form.intensity1 }}
 

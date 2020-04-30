@@ -82,7 +82,23 @@
                     text: 'All'
                 }],
                 selected: 1,
-                inputEnabled: true
+                inputEnabled: false
+            },
+            
+            tooltip: {
+            
+                formatter: function() {
+                
+                    if(this.y == 0){
+                        return "Sin alertas (<span style='color:green'>◉</span>)<br>Fecha: " +  Highcharts.dateFormat('%d/%m/%Y', this.x) + "<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);
+                    } else if(this.y == 1){
+                        return "Alerta amarilla (<span style='color:yellow'>◉</span>)<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);
+                    } else if(this.y == 2){
+                        return "Alerta naranja (<span style='color:orange'>◉</span>)<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);
+                    } else {
+                        return "Alerta roja (<span style='color:red'>◉</span>)<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);
+                    }
+                }
             },
                 
                 series: [{

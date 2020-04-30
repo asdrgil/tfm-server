@@ -9,6 +9,7 @@
 {% from 'macros.html' import patientsTableMacro with context %}
 {% from 'macros.html' import breadCrumbMacro with context %}
 {% from 'macros.html' import addUrlPrefixMacro with context %}
+{% from 'macros.html' import linkPatternsMacro with context %}
 
 {% block head %}
 
@@ -27,7 +28,12 @@
                 
                 $('#paginationSelect').multipleSelect();
                 $('#paginationSelect2').multipleSelect();
-                $('#patternsSelect').multipleSelect();     
+                $('#patternsSelect').multipleSelect();
+                $('#patientsSelect').multipleSelect();
+                $('#groupsSelect').multipleSelect();
+                $('#intensitiesSelect').multipleSelect();
+                
+                document.getElementById("boxLinkPatterns").style.display = "none";     
             })
         });
 
@@ -46,7 +52,39 @@
         function modifyGroup(){
             var url = "{{ url_for('groups.editGroup', idGroup=idGroup) }}";
             location.href = url;
-        }        
+        }
+        
+        function linkPatternsVisibility(){
+            if(document.getElementById("boxLinkPatterns").style.display == "none"){
+                document.getElementById("modifyPatternsVisibilityBtn").className = "button is-link";
+                document.getElementById("modifyPatternsVisibilityBtn").value = "Ocultar  ✖";
+                document.getElementById("boxLinkPatterns").style.display = "block";
+            } else {
+                document.getElementById("modifyPatternsVisibilityBtn").className = "button is-primary";
+                document.getElementById("modifyPatternsVisibilityBtn").value = "Enlazar a una nueva pauta  ✚";
+                document.getElementById("boxLinkPatterns").style.display = "none";
+            }   
+        }
+        
+		function linkPatterns(){
+			var checkboxes = document.getElementsByName("checkboxPattPat");
+			var pattIds = "";
+
+			for (var i=0; i<checkboxes.length; i++) {
+			  if (checkboxes[i].checked) {
+			    pattIds += checkboxes[i].id.replace("checkbox_", "") + ",";
+			    checkboxes[i].checked = false;
+			  }
+			}
+
+			if(pattIds.length > 0){
+				pattIds = pattIds.substring(0, pattIds.length-1);
+
+				location.href = "{{ addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=idGroup)) }}" + "?linkPattIds=" + pattIds;
+			} else {
+				generateNotification("alert", "No se ha seleccionado ninguna pauta");
+			}
+		}                     
     </script>    
 
 {% endblock %}
@@ -87,7 +125,18 @@
             <br><br>
 
             <input class="button is-link" id="newPatternBtn" name="newPatternBtn" onclick="javascript:newPattern()" type="button" value="Registrar una nueva pauta">
-            <input class="button is-info" id="linkPatternBtn" name="linkPatternBtn" onclick="javascript:linkPattern()" type="button" value="Enlazar una nueva pauta">
+            
+            <br><br>
+
+            <div align="center">
+                <input class="button is-primary" id="modifyPatternsVisibilityBtn" onclick="linkPatternsVisibility()" type="button" value="Enlazar una nueva pauta&nbsp;&nbsp;✚">
+            </div>
+            
+            <br>
+            
+            <div class="box" id="boxLinkPatterns">
+                {{ linkPatternsMacro(form3, form4, rowLinkPatt, numberTotalRowsLinkPatt, numberPagesLinkPatt) }}
+            </div>            
         </div>
 
     </div>

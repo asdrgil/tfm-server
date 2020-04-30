@@ -63,7 +63,7 @@
 
 	      	       <strong>Número de pacienes</strong>:<a href="{{ addUrlPrefixMacro(url_for('patients.viewPatients')) }}" data-tooltip="Explorar"> {{totalNumberElements.patients}}</a><br>
 		      <strong>Número de pautas almacenadas</strong>:<a href="{{ addUrlPrefixMacro(url_for('patterns.viewPatterns')) }}" data-tooltip="Explorar"> {{totalNumberElements.patterns}}</a> <br>
-		      <strong>Número de grupos almacenados</strong>: <a href="{ addUrlPrefixMacro(url_for('groups.viewGroups')) }}" data-tooltip="Explorar"> {{totalNumberElements.groups}}</a> <br>
+		      <strong>Número de grupos almacenados</strong>: <a href="{{ addUrlPrefixMacro(url_for('groups.viewGroups')) }}" data-tooltip="Explorar"> {{totalNumberElements.groups}}</a> <br>
             </p>
           </div>
         </div>
@@ -71,10 +71,10 @@
     </div>
 </div>
 
-<br><br>
+<br>
 
 <div class="columns is-vcentered is-centered">
-    <div class="column is-8 box" align="center">
+    <div class="column is-9 box" align="center">
         <br>
 
         <div class="columns is-vcentered is-centered">
@@ -91,7 +91,7 @@
 
                 <br>
                 <div>
-                    <h5 class="title is-5">Buscar pacientes</h5>
+                    <h5 class="title is-5">Filtros de búsqueda</h5>
                     <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()">
                         {{ form.hidden_tag() }}
                         {{ form.csrf_token }}
@@ -167,22 +167,21 @@
                 </div>
             </div>
 
-            <div class="column is-7" align="center">
-                <div class="box">
-                    {{ patientsTableMacro(rowPatients, 0) }}
-                    Número de registros totales: <b>{{ numberTotalRows }}</b>
+            <div style="border-left: solid #D3D3D3; border-left-width: thin;max-height:440px"> </div> 
 
-                    {% if numberPages > 1 %}
-                        <br>
-                        {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
-                    {% endif %}                    
-                </div>
+            <div class="column is-7" align="center">
+                {{ patientsTableMacro(rowPatients, 0) }}
+                <div style='max-width:150px'><hr></div>
+                Número de registros totales: <b>{{ numberTotalRows }}</b>
+
+                {% if numberPages > 1 %}
+                    <br>
+                    {{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-
-<br>
 
 
 {% endblock %}

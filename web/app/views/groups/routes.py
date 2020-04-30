@@ -103,8 +103,9 @@ def viewGroup(idGroup):
         flash("Pauta desvinculada correctamente.", "success")
 
     #LINK patterns
-    if request.args.get("linkPatts") is not None:
-        patterns = list(map(int, request.args.get("linkPatts").split(",")))
+    if request.args.get("linkPattIds") is not None:
+        print("[DEBUG] INN.")
+        patterns = list(map(int, request.args.get("linkPattIds").split(",")))
         for patt in patterns:
             mongoClient["groups"].update_one({"id": idGroup}, \
                 {"$push": {"patterns":patt}})
@@ -112,6 +113,20 @@ def viewGroup(idGroup):
 
     form = PaginationForm(1)
     form2 = PaginationForm2(1)
+
+    form3 = SearchPatternsForm(current_user.get_id())
+    form4 = PaginationForm(1)
+    
+    if form3.validate_on_submit() is False:
+        form3.name.data = ""
+        form3.patients.data = []
+        form3.groups.data = []
+        form3.intensities.data = []
+        form3.pageNumber.data = "1"
+        
+    queryResultLinkPatt = searchPatterns(form3, int(form3.pageNumber.data), {"type":"groups", "id":idGroup})
+    form4 = PaginationForm(queryResultLinkPatt["numberPages"])
+    form4.pagination.data = form3.pageNumber.data   
 
     cursorGroup = mongoClient["groups"].find_one({"therapist":current_user.get_id(), "id": idGroup})
 
@@ -122,9 +137,11 @@ def viewGroup(idGroup):
     queryResultPatterns = searchPatternsGroup(idGroup, 1)
 
     return render_template('groups/viewGroup.html', therapistLiteral=therapistLiteral, groupInfo=groupInfo,
-        form=form, form2=form2, idGroup=idGroup, rowsPatterns=queryResultPatterns["rows"], \
+        form=form, form2=form2, form3=form3, form4=form4, idGroup=idGroup, rowsPatterns=queryResultPatterns["rows"], \
         pagesPatterns=queryResultPatterns["numberPages"], numberRowsPattern=queryResultPatterns["numberTotalRows"], \
-        rowsBreadCrumb=rowsBreadCrumb)
+        rowsBreadCrumb=rowsBreadCrumb, rowLinkPatt=queryResultLinkPatt["rows"], \
+        numberTotalRowsLinkPatt=queryResultLinkPatt["numberTotalRows"], \
+        numberPagesLinkPatt=queryResultLinkPatt["numberPages"])
 
 
 @login_required
@@ -146,7 +163,7 @@ def viewGroups():
 
     queryResult = searchGroups(form, int(form.pageNumber.data))
     form2 = PaginationForm(queryResult["numberPages"])
-    form2.pagination.data = form.pageNumber.data    
+    form2.pagination.data = form.pageNumber.data
 
     return render_template('groups/viewGroups.html', form=form, form2=form2, rowGroups=queryResult["rows"], \
         therapistLiteral=therapistLiteral, numberTotalRows=queryResult["numberTotalRows"], \

@@ -64,7 +64,11 @@
 					</div>
 		        	<div class="column is-8">
 				        <p>
-				            <b>{{ form.name.label }}</b> {{ form.name(size=5, maxlength=15) }}
+				            <b>{{ form.name.label }}</b>
+				            
+				            <br>
+				            
+				            {{ form.name(style="max-width:617px;text-align: center;") }}
 				            
 				            {% for error in form.name.errors %}
 				            <span style="color: red;">[{{ error }}]</span>

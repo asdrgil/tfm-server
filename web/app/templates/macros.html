@@ -86,29 +86,31 @@
 {% endmacro %}
 
 {% macro patternsTableMacro(rows, edit, unlink) %}
-    <table class="table" id="tablePatterns">
-        <thead>
-            {% if edit == 1 %}
-                <th align="center"> <span> Seleccionar </span></th>
-            {% endif %}
-            <th align="center"> <span> Nombre </span></th>
-            <th align="center"> <span> Intensidad amarilla </span></th>
-            <th align="center"> <span> Intensidad naranja </span></th>
-            <th align="center"> <span> Intensidad roja </span></th>
-            <th align="center"> <span>  </span></th>
-            {% if unlink > 0 %}
+    <div id="tablearea">
+    <!--<h4 class="title is-4 is-spaced">Pacientes asociados</h4>-->
+        <table class="table" id="tablePatterns" style="font-size: 18px;">
+            <thead>
+                {% if edit == 1 %}
+                    <th align="center"> <span> Seleccionar </span></th>
+                {% endif %}
+                <th align="center"> <span> Nombre </span></th>
+                <th align="center"> <span> Intensidad amarilla </span></th>
+                <th align="center"> <span> Intensidad naranja </span></th>
+                <th align="center"> <span> Intensidad roja </span></th>
                 <th align="center"> <span>  </span></th>
-            {% endif %}
-
-        </thead>
-        <tbody>
+                {% if unlink > 0 %}
+                    <th align="center"> <span>  </span></th>
+                {% endif %}
+            </thead>
+            
+            <tbody>
             {% for row in rows %}
                 <tr>
                     {% if edit == 1 %}
                         <td align="center"> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
                     {% endif %}
 
-                    <td align="center">{{ row.name }}</td>
+                    <td align="left">{{ row.name }}</td>
 
                     {% if row.intensity1=="No" %}
                         <td align="center"><span style='color:red;'><i class='fas fa-times'></i></span></td>
@@ -129,27 +131,26 @@
                     {% endif %}
                     <td align="center"><a href="{{addUrlPrefixMacro(url_for('patterns.viewPattern', idPattern=row.id))}}" data-tooltip="Ver"><i class='fas fa-eye'></i></a> </td>
                     {% if unlink == 1 %}
-                        <td align="center"><a onclick="unlinkPattern({{ row.id }});" data-tooltip="Desvincular"><i class='fas fa-unlink'></i></a> </td>
+                        <td align="center" data-tooltip="Desvincular"><a onclick="unlinkPattern({{ row.id }});"><i class='fas fa-unlink'></i></a> </td>
                     {% elif unlink == 2 %}
-                        <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick" data-tooltip="Eliminar"><i class='fas fa-trash'></i> </a> </td>
+                        <td align="center" data-tooltip="Eliminar"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick"><i class='fas fa-trash'></i> </a> </td>
                     {% endif %}
                 </tr>
-            {% endfor %}                                    
-        </tbody>
-    </table>
+            {% endfor %}  
+            </tbody>                 
+        </table>
+
+    </div>
 {% endmacro %}
 
 {% macro patientsTableMacro(rows, edit) %}
     <div id="tablearea">
-    <!--<h4 class="title is-4 is-spaced">Pacientes asociados</h4>-->
-        <table class="table" id="tablePatients">
+        <table class="table" id="tablePatients" style="font-size: 18px;">
             <thead>
                 {% if edit == 3 %}
                     <th align="center"> <span> Seleccionar </span></th>
                 {% endif %}
-                <th align="center"> <span> Nombre </span></th>
-                <th align="center"> <span> Primer apellido </span></th>
-                <th align="center"> <span> Segundo apellido </span></th>
+                <th align="center"> <span> Paciente </span></th>
                 <th align="center"> <span>  </span></th>
                 {% if edit > 0 %}
                     <th align="center"> <span>  </span></th>
@@ -162,9 +163,7 @@
                     {% if edit == 3 %}
                         <td align="center"> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
                     {% endif %}
-                    <td align="center">{{ row.name }}</td>
-                    <td align="center">{{ row.surname1 }}</td>
-                    <td align="center">{{ row.surname2 }}</td>
+                    <td align="left">{{ row.surname1 }} {{ row.surname2 }}, {{ row.name }}</td>
                     <td align="center"><a href="{{addUrlPrefixMacro(url_for('patients.viewPatient', idPatient=row.id))}}" data-tooltip="Ver"><i class='fas fa-eye'></i></a> </td>
                     {% if edit == 1 %}
                         <td align="center" data-tooltip="Eliminar"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}', '{{ row.surname1 }}', '{{ row.surname2 }}')" style="color:firebrick"><i class='fas fa-trash'></i> </a> </td>
@@ -180,9 +179,8 @@
 {% endmacro %}
 
 {% macro groupsTableMacro(rows, edit) %}
-    <div id="idTable">
-
-        <table class="table" id="tableGroups">
+    <div id="tablearea">
+        <table class="table" id="tableGroups" style="font-size: 18px;">
             <thead>
                 {% if edit == 3 %}
                     <th align="center"> <span> Seleccionar </span></th>
@@ -199,7 +197,7 @@
                         {% if edit == 3 %}
                             <td align="center"> <input type="checkbox" name="checkboxPattPat" id="checkbox_{{row.id}}"> </td>
                         {% endif %}                    
-                        <td align="center">{{ row.name }}</td>
+                        <td align="left">{{ row.name }}</td>
                         <td align="center"><a href="{{addUrlPrefixMacro(url_for('groups.viewGroup', idGroup=row.id))}}" data-tooltip="Ver"><i class='fas fa-eye'></i></a></td>
                         {% if edit == 1 %}
                              <td align="center"><a onclick="displayModalDelete('{{ row.id }}', '{{ row.name }}')" style="color:firebrick" data-tooltip="Eliminar"><i class='fas fa-trash'></i></a> </td>
@@ -233,7 +231,7 @@
                         <td align="center">{{ row.firstTime }}</td>
                         <td align="center">{{ row.lastTime }}</td>
                         <td align="center">{{ row.duration }}</td>
-                        <td align="center">{{ row.cause }}</td>
+                        <td align="left">{{ row.cause }}</td>
                         <td align="center"><a href="{{addUrlPrefixMacro(url_for('patients.viewOneEpisode')) }}?idPatient={{ patientId }}&timestampFrom={{ row.timestampFrom }}&timestampTo={{ row.timestampTo }}" data-tooltip="Ver"><i class='fas fa-eye'></i></a> </td>
                     </tr>
                 {% endfor %}
@@ -269,7 +267,7 @@
                             {% endif %}
                             <td align="center">Nombre de la pauta</td>
                             <td align="center">Sí</td>
-                            <td align="center">Esta pauta no me sirvió</td>
+                            <td align="left">Esta pauta no me sirvió</td>
                         </tr>
                     {% endif %}
                 {% endfor %}
@@ -340,7 +338,7 @@
     <div align="center">
         <h4 class="title is-4">Datos del paciente</h4>
 
-        <div class="columns is-vcentered is-centered" style="margin-top:50px">
+        <div class="columns is-vcentered is-centered">
             <div class="column is-5" align="right">
                 <b> Nombre</b>:
                 <br>
@@ -380,12 +378,12 @@
         <div class="columns is-vcentered is-centered">
             <div class="column is-5" align="right">
                 <br><b> Nombre</b>:
-                <br><br>
+                <br>
                 <b> Descripción</b>:
             </div>
             <div class="column is-5" align="left">
 			    {{ patternInfo.name }}
-			    <br><br>
+			    <br>
 			    {{ patternInfo.description }}
             </div>
         </div>
@@ -451,10 +449,94 @@
                 <td>{{row.firstTime}}</td>
                 <td>{{row.lastTime}}</td>
                 <td>{{row.duration}}</td>
-                <td>{{row.cause}}</td>
+                <td align="left">{{row.cause}}</td>
                 <td><a href="{{addUrlPrefixMacro(url_for('patients.viewOneEpisode'))}}?idPatient={{patientInfo.id}}&timestampFrom={{row.timestampFrom}}&timestampTo={{row.timestampTo}}"  data-tooltip="Ver"><i class='fas fa-eye'></i></a></td>
             </tr>
         {% endfor %}        
         </tbody>
     </table>
+{% endmacro %}
+
+{% macro linkPatternsMacro(form, form2, rowPatterns, numberTotalRows, numberPages) %}
+    <div class="columns is-vcentered">
+
+        <div class="column is-3" align="center">
+        	<br>
+        	<br>
+        	<h5 class="title is-4">Filtrar pautas</h5>
+		    <form action="" id="generalForm" method="post" novalidate onSubmit="submitFunc()" style="margin-top:-20px">
+		        {{ form.hidden_tag() }}
+		        {{ form.csrf_token }}
+		        {{ form2.pageNumber }}
+		        {{ form2.submitDone }}
+
+
+        		{{ form.name.label }}
+
+        		<br>
+
+        		{{ form.name(style="width:170px;text-align:center;") }}
+        		{% for error in form.name.errors %}
+        			<span style="color: red;">[{{ error }}]</span>
+        		{% endfor %}
+
+        		<br>
+
+        		{{ form.patients.label }}
+
+        		<br>
+
+        		{{ form.patients(style="width:170px") }}
+        		{% for error in form.patients.errors %}
+        			<span style="color: red;">[{{ error }}]</span>
+        		{% endfor %}
+
+        		<br>
+
+        		{{ form.groups.label }}
+
+        		<br>
+
+        		{{ form.groups(style="width:170px") }}
+        		{% for error in form.groups.errors %}
+        			<span style="color: red;">[{{ error }}]</span>
+        		{% endfor %}
+
+        		<br>
+
+        		{{ form.intensities.label }}
+
+        		<br>
+
+        		{{ form.intensities(style="width:170px") }}
+        		{% for error in form.intensities.errors %}
+        			<span style="color: red;">[{{ error }}]</span>
+        		{% endfor %}
+
+        		<br><br>
+
+	    		{{ form.searchBtn }}
+		    </form>
+        </div>
+        
+        <div style="border-right: 0.5px solid #C0C0C0; height:200px; margin-right:30px"></div>
+
+        <div class="column is-6" align="center">
+
+	    	{% if rowPatterns|length > 0 %}
+		    	{{ patternsTableMacro(rowPatterns, 1, 0) }}
+	    	{% endif %}
+	    	
+	    	Número de registros totales: <b>{{ numberTotalRows }}</b>
+	    	
+	    	{% if numberPages > 1 %}
+	    		{{ form2.pagination.label }} &nbsp;&nbsp; {{ form2.pagination }}
+	    	{% endif %}
+
+	    	<br><br>
+
+	    	<input class="button is-link" id="linkBtn" name="linkBtn" onclick="linkPatterns()" value="Enlazar pautas">
+
+        </div>
+    </div>
 {% endmacro %}
