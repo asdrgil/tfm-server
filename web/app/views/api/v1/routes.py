@@ -17,4 +17,4 @@ def syncDevice(registrationToken):
         mongoClient["tmpPatientToken"].update_one({'id': registrationToken}, {"$set": {'synced': True}})
         return jsonify({'code': 1, "message":u"Paciente sincronizado correctamente."})
     else:
-        return jsonify({'code': 3, "message":u"El token introducido no es correcto."})
+        return jsonify({'code': -2, "message":u"El token introducido no es correcto."})
