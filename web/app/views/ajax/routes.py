@@ -24,7 +24,7 @@ def ajaxRegisterPatient(registrationToken):
     else:
         cursorPatient = mongoClient["tmpPatientToken"].find_one({'id': registrationToken})
         insertPatient(cursorPatient["name"], cursorPatient["surname1"], cursorPatient["surname2"], \
-            cursorPatient["age"], cursorPatient["gender"])
+            cursorPatient["age"], cursorPatient["gender"], cursorPatient["communicationToken"]) #Communication token
 
         mongoClient["tmpPatientToken"].delete_one({'id': registrationToken})
         return jsonify({'code': 1})
@@ -32,8 +32,6 @@ def ajaxRegisterPatient(registrationToken):
 
 @bp.route('/ajax/episodiosPaciente/<int:idPatient>', methods=['GET', 'POST'])
 def ajaxEpisodesPatient(idPatient):
-    print("\n ---- [DEBUG] INNNNN ----\n")
-
 
     #Check if all the arguments where passed
     if request.args.get("date1") == None or request.args.get("time1") == None or request.args.get("date2") == None \

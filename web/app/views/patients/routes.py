@@ -4,7 +4,7 @@ from app import db
 from app.mongoMethods import searchPatterns, generateUniqueRandom, searchPatients, getMultipleEpisodes, \
     getCountMultipleEpisodes, getOneEpisode, searchPatternsPatient, getEpisodes, registerTraceUsers
 from app.views.patients import bp
-from app.constants import mongoClient, urlPrefix
+from app.constants import mongoClient, urlPrefix, registerTokenLength, communicationTokenLength
 from app.forms import RegisterPatternForm, SearchPatternsForm, PaginationForm, RegisterPatientForm, EditPatientForm, \
     GenericEditForm, FilterByDateForm, SearchPatientsForm
 
@@ -56,6 +56,14 @@ def registerPatternPatient(idPatient):
                 idPattern = cur["id"] + 1
 
             mongoClient["patients"].update_one({"id" : idPatient}, {"$push": {"patterns":idPattern}})
+            
+            cursor = mongoClient["patients"].find_one({"id" : idPatient})
+            communicationToken = cursor["communicationToken"]
+            
+            if mongoClient["updatePatternsAndroid"].count_documents({"communicationToken":communicationToken, "operation":"add"}) == 0:
+                mongoClient["updatePatternsAndroid"].insert_one({"communicationToken":communicationToken, "operation":"add", "patterns":[idPattern]})
+            else:
+                mongoClient["updatePatternsAndroid"].update_one({"communicationToken":communicationToken, "operation":"add"}, {"$push":{"patterns":idPattern}})
 
             #Add intensities
             intensities = []
@@ -137,8 +145,12 @@ def registerPatient():
         if mongoClient["patients"].count_documents({"therapist":current_user.get_id(), "name": form.name.data, \
             "surname1": form.surname1.data, "surname2": form.surname2.data, "age": form.age.data, \
             "gender": form.gender.data}) == 0:
-                
-            registrationToken = generateUniqueRandom("tmpPatientToken", 'id')
+            
+            #Registration token that the user should introduce in the app    
+            registrationToken = generateUniqueRandom("register", registerTokenLength)
+            
+            #Communication token that will be used to identify the user in the communications with the server
+            communicationToken = generateUniqueRandom("communication", communicationTokenLength)
 
             #Delete all possible temporal registers of tryouts to register this same user as they are no longer usefull
             mongoClient["tmpPatientToken"].delete_many({'name': form.name.data, 'surname1': form.surname1.data, \
@@ -146,7 +158,8 @@ def registerPatient():
 
             mongoClient["tmpPatientToken"].insert_one({'id': registrationToken, 'synced': False, \
                 "name": form.name.data, "surname1": form.surname1.data, "surname2": form.surname2.data, \
-                "age": form.age.data, "gender": form.gender.data, "timestamp" : int(time.time())})
+                "age": form.age.data, "gender": form.gender.data, "timestamp" : int(time.time()), \
+                "communicationToken":communicationToken})
             form.registrationToken.data = registrationToken
         
         else:
@@ -233,6 +246,15 @@ def viewPatient(idPatient):
         pattIds = list(map(int, request.args.get("linkPattIds").split(",")))
         print(pattIds)
         mongoClient["patients"].update_one({"id":idPatient}, {"$push": {"patterns":{"$each" : pattIds}} })
+        
+        cursor = mongoClient["patients"].find_one({"id" : idPatient})
+        communicationToken = cursor["communicationToken"]
+        
+        if mongoClient["updatePatternsAndroid"].count_documents({"communicationToken":communicationToken, "operation":"add"}) == 0:
+            mongoClient["updatePatternsAndroid"].insert_one({"communicationToken":communicationToken, "operation":"add", "patterns":pattIds})
+        else:
+            mongoClient["updatePatternsAndroid"].update_one({"communicationToken":communicationToken, "operation":"add"}, {"$push": {"patterns":{"$each" : pattIds}}})
+        
         flash("Pautas vinculadas al paciente correctamente", "success")
 
     form = EditPatientForm(current_user.get_id())
@@ -271,8 +293,18 @@ def viewPatient(idPatient):
 
     #Unlink pattern
     if request.args.get("unlinkPatt") is not None:
+        unlinkPatt = int(request.args.get("unlinkPatt"))
+        
         mongoClient["patients"].update_one({"id":idPatient}, {"$pull": \
-            {"patterns": int(request.args.get("unlinkPatt"))}})
+            {"patterns": unlinkPatt}})
+        
+        cursor = mongoClient["patients"].find_one({"id" : idPatient})
+        communicationToken = cursor["communicationToken"]        
+        
+        if mongoClient["updatePatternsAndroid"].count_documents({"communicationToken":communicationToken, "operation":"delete"}) == 0:
+            mongoClient["updatePatternsAndroid"].insert_one({"communicationToken":communicationToken, "operation":"delete", "patterns":[unlinkPatt]})
+        else:
+            mongoClient["updatePatternsAndroid"].update_one({"communicationToken":communicationToken, "operation":"delete"}, {"$push":{"patterns":unlinkPatt}})
 
 
     cursorPatient = mongoClient["patients"].find_one({"id":idPatient})
@@ -281,6 +313,7 @@ def viewPatient(idPatient):
     queryResultPatterns = searchPatternsPatient(idPatient, 1, "arr")
 
     #Get episodes from the patient
+    #TODO: check if the 4 params of time should be "". Probably form4 should be passed as param
     rowEpisodes, numberRowsEpisodes, pagesEpisodes = getEpisodes(idPatient, "", "", "", "")
     
     queryResultLinkPatt = searchPatterns(form5, int(form5.pageNumber.data), {"type":"patients", "id":idPatient})
@@ -329,6 +362,7 @@ def viewPatients():
         rowsBreadCrumb=rowsBreadCrumb)
 
 
+'''
 @login_required
 @bp.route('/verEpisodios/<int:idPatient>', methods=['GET', 'POST'])
 def viewEpisodes(idPatient):
@@ -384,6 +418,7 @@ def viewEpisodes(idPatient):
             patientInfo=patientInfo, rowEpisodes=rowEpisodes, numberTotalRows=numberTotalRows, numberPages=numberPages)
 
     return render_template('patients/viewEpisodes.html', form=form, therapistLiteral=therapistLiteral, patientInfo=patientInfo)
+'''
 
 @bp.route('/verUnEpisodio', methods=['GET', 'POST'])
 @login_required

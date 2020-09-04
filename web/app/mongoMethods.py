@@ -1,11 +1,12 @@
 from flask_login import current_user
 import random
-#import string
+import string
 from datetime import datetime
 import time
 import re
 import math
-from .constants import mongoClient, rowsPerPage, tokenLength
+from .constants import mongoClient, rowsPerPage, reasonAnger
+import pytz
 
 def registerTraceUsers(user, url):
     mongoClient["tracesUsers"].insert_one({"user": user, "url": url, "timestamp": round(time.time())})
@@ -584,8 +585,7 @@ def getPatternsSelectGroup(msg):
 
     return getTmpPatterns(windowId)
 
-#TODO: check usages (added gender)
-def insertPatient(name, surname1, surname2, age, gender):
+def insertPatient(name, surname1, surname2, age, gender, communicationToken):
 
     cursor = mongoClient["patients"].find({}).sort("id",-1).limit(1)
     idPatient = 1
@@ -593,7 +593,8 @@ def insertPatient(name, surname1, surname2, age, gender):
         idPatient = cur["id"] + 1
 
     mongoClient["patients"].insert_one({"name":name, "surname1":surname1, "surname2":surname2, \
-        "age":age, "gender":gender, "id":idPatient, "therapist":current_user.get_id()})
+        "age":age, "gender":gender, "id":idPatient, "therapist":current_user.get_id(), \
+        "communicationToken":communicationToken})
 
 def getUnlinkPattern(msg):
     therapist = current_user.get_id()
@@ -614,7 +615,7 @@ def getUnlinkPattern(msg):
 
     return tmpPatterns
 
-
+#TODO:redoit
 def viewEpisodes(idPatient, date1, time1, date2, time2):
 
     #DEBUG
@@ -652,7 +653,6 @@ def viewEpisodes(idPatient, date1, time1, date2, time2):
 
     return rowEpisodes, numberTotalRows, numberPages
 
-
 def getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip=0, limit=1000):
     #Query based on an answer in StackOverflow by @Valijon
     cursor = mongoClient["measurements"].aggregate([
@@ -661,9 +661,9 @@ def getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip=0, limit=1000)
           "alerts": [
             {
               "$match": {
-                "value": 0,
-                "patient":idPatient,
-                "tmstamp": {"$gte": timestampFrom, "$lte": timestampTo}
+                "level": 0,
+                "idPatient":idPatient,
+                "timestamp": {"$gte": timestampFrom, "$lte": timestampTo}
               }
             },
             {
@@ -678,7 +678,7 @@ def getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip=0, limit=1000)
           "episodes": [
             {
               "$match": {
-                "value": {
+                "level": {
                   "$gt": 0
                 }
               }
@@ -764,9 +764,9 @@ def getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient):
           "alerts": [
             {
               "$match": {
-                "value": 0,
+                "level": 0,
                 "patient":idPatient,
-                "tmstamp": {"$gte": timestampFrom, "$lte": timestampTo}
+                "timestamp": {"$gte": timestampFrom, "$lte": timestampTo}
               }
             },
             {
@@ -781,7 +781,7 @@ def getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient):
           "episodes": [
             {
               "$match": {
-                "value": {
+                "level": {
                   "$gt": 0
                 }
               }
@@ -853,8 +853,33 @@ def getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient):
     return len(list(cursor))
 
 
+def getCountEpisodes(timestampFrom, timestampTo, idPatient):
+    return mongoClient["episodes"].find({"idPatient":idPatient}).count()
 
-def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outputFormat="arr"):
+def getRowEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
+    result = []
+
+    #TODO: add skip
+    skip = (pageNumber-1)*rowsPerPage
+    
+    cursor = mongoClient["episodes"].find({"idPatient":idPatient, "tmpIni":{"$gte":timestampFrom}, "tmpEnd":{"$lte":timestampTo}})
+    
+    for cur in cursor:
+        dateFirst = datetime.fromtimestamp(cur["tmpIni"])
+        dateLast = datetime.fromtimestamp(cur["tmpEnd"])
+        
+        result.append(\
+            {"firstDate": dateFirst.strftime("%d/%m/%Y"), \
+            "firstTime": dateFirst.strftime("%H:%M:%S"), \
+            "lastTime": dateLast.strftime("%H:%M:%S"), \
+            "duration": str(dateLast - dateFirst),
+            "cause": reasonAnger[cur["reasonAnger"]], #TODO: sacarlo de un array en Constants
+            "timestampFrom":timestampFrom,
+            "timestampTo":timestampTo})
+
+    return result
+
+def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
     if outputFormat == "arr":
         result = []
     else:
@@ -864,7 +889,7 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outpu
 
     cursor = getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip, rowsPerPage)
 
-    totalAlerts = [0, 0, 0]
+    totalAlerts = [0, 0, 0, 0]
 
     for episode in cursor:
     
@@ -875,11 +900,11 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outpu
 
             if firstAlert:
                 firstAlert = False
-                firstDateTimestamp = float(alert["tmstamp"])
+                firstDateTimestamp = float(alert["timestamp"])
 
-            lastDateTimestamp = float(alert["tmstamp"])
+            lastDateTimestamp = float(alert["timestamp"])
 
-            totalAlerts[int(alert["value"]) -1] += 1
+            totalAlerts[int(alert["level"]) -1] += 1
 
         dateFirst = datetime.fromtimestamp(firstDateTimestamp)
         dateLast = datetime.fromtimestamp(lastDateTimestamp)
@@ -912,6 +937,40 @@ def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outpu
 
 def getOneEpisode(timestampFrom, timestampTo, idPatient):
     rows = []
+    cursor = mongoClient["displayPatterns"].find({"idPatient":idPatient, "timestamp":{"$gte": timestampFrom}, "timestamp":{"$lte":timestampTo}})
+
+    firstRow = True
+    valueFirstRow = {}
+    valueLastTimestamp = 0
+    valueLastRow = {}
+
+    for cur in cursor:
+        if firstRow:
+            currentDate = datetime.fromtimestamp(int(cur["timestamp"])-5)
+            valueFirstRow = {"plotDate": currentDate.strftime(\
+                "Date.UTC(%Y, %m, %d, %H, %M, %S)"), "alertLevel": 0}
+            firstRow = False
+        
+        valueLastTimestamp = int(cur["timestamp"])
+    
+        currentDate = datetime.fromtimestamp(int(cur["timestamp"]))
+        rows.append({"plotDate": currentDate.strftime("Date.UTC(%Y, %m, %d, %H, %M, %S)"), \
+            "date": currentDate.strftime("%d/%m/%Y"), "time": \
+            currentDate.strftime("%H:%M:%S"), "alertLevel": cur["level"]})
+
+    #Insert succeeding zero alert state
+    currentDate = datetime.fromtimestamp(valueLastTimestamp+5)
+    valueLastRow = {"plotDate": currentDate.strftime("Date.UTC(%Y, %m, %d, %H, %M, %S)"), \
+        "alertLevel": 0}
+
+    rows.insert(0, valueFirstRow)
+    rows.insert(len(rows), valueLastRow)
+    
+    return rows
+
+'''
+def getOneEpisode(timestampFrom, timestampTo, idPatient):
+    rows = []
     cursor = getEpisodesCursor(timestampFrom, timestampTo, idPatient)
 
     firstRow = True
@@ -923,17 +982,17 @@ def getOneEpisode(timestampFrom, timestampTo, idPatient):
         for alert in episode["v"]:
             #Insert preceeding zero alert state
             if firstRow:
-                currentDate = datetime.fromtimestamp(int(alert["tmstamp"])-5)
+                currentDate = datetime.fromtimestamp(int(alert["timestamp"])-5)
                 valueFirstRow = {"plotDate": currentDate.strftime(\
                     "Date.UTC(%Y, %m, %d, %H, %M, %S)"), "alertLevel": 0}
                 firstRow = False
             else:
-                valueLastTimestamp = int(alert["tmstamp"])
+                valueLastTimestamp = int(alert["timestamp"])
         
-            currentDate = datetime.fromtimestamp(int(alert["tmstamp"]))
+            currentDate = datetime.fromtimestamp(int(alert["timestamp"]))
             rows.append({"plotDate": currentDate.strftime("Date.UTC(%Y, %m, %d, %H, %M, %S)"), \
                 "date": currentDate.strftime("%d/%m/%Y"), "time": \
-                currentDate.strftime("%H:%M:%S"), "alertLevel": alert["value"]})
+                currentDate.strftime("%H:%M:%S"), "alertLevel": alert["level"]})
 
     #Insert succeeding zero alert state
     currentDate = datetime.fromtimestamp(valueLastTimestamp+5)
@@ -944,6 +1003,8 @@ def getOneEpisode(timestampFrom, timestampTo, idPatient):
     rows.insert(len(rows), valueLastRow)
     
     return rows
+'''
+
 
 def getEpisodes(idPatient, date1, time1, date2, time2):
 
@@ -976,19 +1037,30 @@ def getEpisodes(idPatient, date1, time1, date2, time2):
     print("[DEBUG] timestampFrom:")
     print(timestampFrom)
     print("[DEBUG] timestampTo:")
-    print(timestampTo)            
+    print(timestampTo)
 
-    rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, "arr")
-    numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)
+    #rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber)
+    #numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)
+    #numberPages = math.ceil(numberTotalRows/rowsPerPage)
+    rowEpisodes = getRowEpisodes(timestampFrom, timestampTo, idPatient, pageNumber)
+    numberTotalRows = getCountEpisodes(timestampFrom, timestampTo, idPatient)
     numberPages = math.ceil(numberTotalRows/rowsPerPage)
 
     return rowEpisodes, numberTotalRows, numberPages
 
-def generateUniqueRandom(collection, field):
-    token = ''.join(random.choice('0123456789ABCDEF') for i in range(tokenLength))
 
-    while mongoClient[collection].find({field:token}).count() > 0:
-        generateUniqueRandom(token)
+
+def generateUniqueRandom(tokenType, length):
+    token = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(length))
+
+    if tokenType == "register":
+        while mongoClient["tmpPatientToken"].find({"id":token}).count() > 0:
+            generateUniqueRandom(token)
+            
+    else:
+        while mongoClient["tmpPatientToken"].find({"communicationToken":token}).count() > 0 or \
+            mongoClient["patients"].find({"communicationToken":token}).count() > 0:
+            generateUniqueRandom(token)
 
     return token
 
@@ -1016,6 +1088,12 @@ def updatePattern(form, therapistId):
 
     for cur in cursor:
         mongoClient["patients"].update({"id":cur["id"]}, {"$push": {"patterns":idPattern}})
+        
+        
+        if mongoClient["updatePatternsAndroid"].count_documents({"communicationToken":cur["communicationToken"], "operation":"modify"}) == 0:
+            mongoClient["updatePatternsAndroid"].insert_one({"communicationToken":cur["communicationToken"], "operation":"modify", "patterns":[idPattern]})
+        else:
+            mongoClient["updatePatternsAndroid"].update_one({"communicationToken":cur["communicationToken"], "operation":"modify"}, {"$push":{"patterns":idPattern}})
 
     #Update groups which are now linked with the current pattern
     cursor = mongoClient["groups"].find({"therapist":therapistId, "patterns": {"$ne": idPattern}, \
@@ -1048,3 +1126,82 @@ def updateGroup(form, therapistId, idGroup):
     #Update group info
     mongoClient["groups"].update_one({"id" : idGroup}, {"$set" : {"name": form.name.data, \
         "description": form.description.data, "patterns": newPatterns }})
+
+def getUpdatePatternsAndroid(operation, communicationToken):
+    cursor = mongoClient["updatePatternsAndroid"].aggregate([
+      {
+        "$unwind": "$patterns"
+      },
+      {
+        "$lookup": {
+          "from": "patterns",
+          "localField": "patterns",
+          "foreignField": "id",
+          "as": "pattern_details"
+        }
+      },
+      {
+        "$match": {
+          "$expr": {
+            "$eq": [
+              "$communicationToken",
+              communicationToken
+            ],
+            "$eq": [
+              "$operation",
+              operation
+            ]
+          }
+        }
+      },
+      {
+        "$unwind": "$pattern_details"
+      },
+      {
+        "$project": {
+          "_id": 0,
+          "description": "$pattern_details.description",
+          "intensities": "$pattern_details.intensities",
+          "id": "$pattern_details.id",
+          "name": "$pattern_details.name"
+        }
+      }
+    ])
+    
+    return cursor
+    
+    
+def parseEpisodes(communicationToken, jsonData):
+    displayPatterns = jsonData.get("displayPatterns")
+    episodes = jsonData.get("episodes")
+    
+    print("[DEBUG] jsonData: ")
+    print(jsonData)   
+
+    i = 0
+    while str(i) in displayPatterns:
+        currentRegister = displayPatterns.get(str(i))
+        
+        #tz = pytz.timezone('Europe/Madrid')
+        #formattedTime = datetime.fromtimestamp(int(currentRegister.get("timestamp")), tz).isoformat()
+        
+        patient = mongoClient["patients"].find_one({"communicationToken": communicationToken})
+        idPatient = patient["id"]
+        
+        
+        mongoClient["displayPatterns"].insert_one({"id": i, "idPatient": idPatient, "level": int(currentRegister.get("level")), "timestamp": int(currentRegister.get("timestamp")), "pattern": int(currentRegister.get("pattern")), "status": int(currentRegister.get("status"))})
+        
+        if "comments" in currentRegister:
+            mongoClient["measurements"].update_one({"id": i, "idPatient": idPatient}, {"$push":{"comments": currentRegister.get("comments")}})
+        
+        i += 1
+    
+    i = 0
+        
+    while str(i) in episodes:
+        currentRegister = episodes.get(str(i))
+        print("[DEBUG1] episodes.currentRegister: ")
+        print(currentRegister)        
+        
+        mongoClient["episodes"].insert_one({"id": i, "idPatient": idPatient, "reasonAnger": currentRegister.get("reasonAnger"), "tmpIni": currentRegister.get("tmpIni"), "tmpEnd": currentRegister.get("tmpEnd")})        
+        i += 1

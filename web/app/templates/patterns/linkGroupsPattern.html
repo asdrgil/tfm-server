@@ -81,9 +81,20 @@
             
             <br><br>
             
-            <b>Intensidad naranja</b>:
+            <b>Intensidad amarilla-naranja</b>:
 
             {% if patternInfo.intensity2=="No" %}
+                No<span style='color:red;'><i class='fas fa-times'></i></span>
+            {% else %}
+                Sí<span style='color:green;'><i class='fas fa-check'></i></span>
+            {% endif %}
+
+            <br><br>            
+            <br><br>
+            
+            <b>Intensidad naranja</b>:
+
+            {% if patternInfo.intensity3=="No" %}
                 No<span style='color:red;'><i class='fas fa-times'></i></span>
             {% else %}
                 Sí<span style='color:green;'><i class='fas fa-check'></i></span>
@@ -93,7 +104,7 @@
             
             <b>Intensidad roja</b>:
 
-            {% if patternInfo.intensity3=="No" %}
+            {% if patternInfo.intensity4=="No" %}
                 No<span style='color:red;'><i class='fas fa-times'></i></span>
             {% else %}
                 Sí<span style='color:green;'><i class='fas fa-check'></i></span>

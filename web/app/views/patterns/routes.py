@@ -172,6 +172,7 @@ def editPattern(idPattern):
             form.intensity1.data = 1 in patternData["intensities"]
             form.intensity2.data = 2 in patternData["intensities"]
             form.intensity3.data = 3 in patternData["intensities"]
+            form.intensity4.data = 4 in patternData["intensities"]
 
         return render_template('patterns/editPattern.html', form=form, form2=form2, \
             therapistLiteral=therapistLiteral, rowsBreadCrumb=rowsBreadCrumb)
@@ -241,9 +242,10 @@ def linkGroupsPattern(idPattern):
     intensity1 = "Sí" if 1 in cursorPattern["intensities"] else "No"
     intensity2 = "Sí" if 2 in cursorPattern["intensities"] else "No"
     intensity3 = "Sí" if 3 in cursorPattern["intensities"] else "No"
+    intensity4 = "Sí" if 4 in cursorPattern["intensities"] else "No"
 
     patternInfo  = {"id": idPattern, "name":cursorPattern["name"], "description":cursorPattern["description"], 
-        "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3}        
+        "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3, "intensity4":intensity4}        
 
     if request.args.get('deleteElem') is not None:
         mongoClient["groups"].delete_one({"id": int(request.args.get('deleteElem'))})
@@ -273,7 +275,17 @@ def viewPatterns():
 
     #Delete element
     if request.args.get('deleteElem') != None:
-        mongoClient["patterns"].delete_one({"id": int(request.args.get('deleteElem'))})
+        deletePattern = int(request.args.get('deleteElem'))
+        mongoClient["patterns"].delete_one({"id": deletePattern})
+
+        cursor = mongoClient["patients"].find({"patterns":deletePattern})
+        
+        for cur in cursor:
+            if mongoClient["updatePatternsAndroid"].count_documents({"communicationToken":cur["communicationToken"], "operation":"delete"}) == 0:
+                mongoClient["updatePatternsAndroid"].insert_one({"communicationToken":cur["communicationToken"], "operation":"delete", "patterns":[deletePattern]})
+            else:
+                mongoClient["updatePatternsAndroid"].update_one({"communicationToken":cur["communicationToken"], "operation":"delete"}, {"$push":{"patterns":deletePattern}})   
+        
         flash("Pauta eliminada correctamente", "info")
 
     #Set form values to zero on first load

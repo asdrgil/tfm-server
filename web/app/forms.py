@@ -137,8 +137,9 @@ class RegisterPatternForm(FlaskForm):
         "style":"text-align:center;width:617px;height:85px"})
     
     intensity1 = BooleanField('Intensidad amarilla')
-    intensity2 = BooleanField('Intensidad naranja')
-    intensity3 = BooleanField('Intensidad roja')
+    intensity2 = BooleanField('Intensidad amarilla-naranja')
+    intensity3 = BooleanField('Intensidad naranja')
+    intensity4 = BooleanField('Intensidad roja')
 
     patients = SelectMultipleField('Asociar a pacientes (opcional)', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'patientsSelect'})
@@ -180,8 +181,9 @@ class EditPatternForm(FlaskForm):
         "placeholder":"Descripción de la pauta (opcional)\n", "style":"text-align:center;width:617px;height:85px"})
     
     intensity1 = BooleanField('Intensidad amarilla')
-    intensity2 = BooleanField('Intensidad naranja')
-    intensity3 = BooleanField('Intensidad roja')
+    intensity2 = BooleanField('Intensidad amarilla-naranja')
+    intensity3 = BooleanField('Intensidad naranja')
+    intensity4 = BooleanField('Intensidad roja')    
 
     patients = SelectMultipleField('Pacientes asociados', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'patientsSelect'})
@@ -234,8 +236,9 @@ class RegisterPatternForm2(FlaskForm):
         "placeholder":"Descripción de la pauta\n", "style":"text-align:center;width:617px;height:85px"})
 
     patternIntensity1 = BooleanField('Intensidad amarilla')
-    patternIntensity2 = BooleanField('Intensidad naranja')
-    patternIntensity3 = BooleanField('Intensidad roja')
+    patternIntensity2 = BooleanField('Intensidad amarilla-naranja')
+    patternIntensity3 = BooleanField('Intensidad naranja')
+    patternIntensity4 = BooleanField('Intensidad roja')
 
     patternSubmit = SubmitField('Añadir pauta', \
         render_kw={"class":"button is-link", 'onclick':'insertNewPattern();','type':'button'})
@@ -320,7 +323,7 @@ class SearchPatternsForm(FlaskForm):
     groups = SelectMultipleField('Grupos', validators=[Optional()], choices=[], \
         render_kw={'multiple':'multiple', 'id':'groupsSelect'})
     intensities = SelectMultipleField('Intensidades', validators=[Optional()], \
-        choices=[("1", "Amarilla"), ("2", "Naranja"), ("3", "Roja")], \
+        choices=[("1", "Amarilla"), ("2", "Amarilla-naranja"), ("3", "Naranja"), ("4", "Roja")], \
         render_kw={'multiple':'multiple', 'id':'intensitiesSelect'})
     searchBtn = SubmitField('Buscar', render_kw={"class":"button is-primary", "onclick": "saveChanges()"})
     returnBtn = SubmitField('Volver', render_kw={"class":"button is-light", "onclick": "returnPage()", \
@@ -418,7 +421,7 @@ class FilterByDateForm(FlaskForm):
 
 class PaginationForm(FlaskForm):
     pagination = SelectField('Página', validators=[Optional()], choices=[], \
-        render_kw={'id':'paginationSelect', 'onchange':'paginationFunc();'})
+        render_kw={'id':'paginationSelect', 'onchange':'paginationFunc();', "style":"width:70px"})
 
     def __init__(self, numberPages: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -427,7 +430,7 @@ class PaginationForm(FlaskForm):
 
 class PaginationForm2(FlaskForm):
     pagination = SelectField('Página', validators=[Optional()], choices=[], \
-        render_kw={'id':'paginationSelect2', 'onchange':'paginationFunc2();'})
+        render_kw={'id':'paginationSelect2', 'onchange':'paginationFunc2();', "style":"width:70px"})
 
     def __init__(self, numberPages: int, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -65,6 +65,8 @@
                                     <br>
                                     <b>{{ form.patternIntensity3.label }}</b> &nbsp;&nbsp; {{ form.patternIntensity3 }}
                                     <br>
+                                    <b>{{ form.patternIntensity4.label }}</b> &nbsp;&nbsp; {{ form.patternIntensity4 }}
+                                    <br>
                                     <br>
                                     {{ form.patternSubmit }}
 
@@ -95,6 +97,7 @@
                 {% endif %}
                 <th align="center"> <span> Nombre </span></th>
                 <th align="center"> <span> Intensidad amarilla </span></th>
+                <th align="center"> <span> Intensidad amarilla-naranja </span></th>
                 <th align="center"> <span> Intensidad naranja </span></th>
                 <th align="center"> <span> Intensidad roja </span></th>
                 <th align="center"> <span>  </span></th>
@@ -129,6 +132,13 @@
                     {% else %}
                         <td align="center"><span style='color:green;'><i class='fas fa-check'></i></span></td>
                     {% endif %}
+
+                    {% if row.intensity4=="No" %}
+                        <td align="center"><span style='color:red;'><i class='fas fa-times'></i></span></td>
+                    {% else %}
+                        <td align="center"><span style='color:green;'><i class='fas fa-check'></i></span></td>
+                    {% endif %}
+                    
                     <td align="center"><a href="{{addUrlPrefixMacro(url_for('patterns.viewPattern', idPattern=row.id))}}" data-tooltip="Ver"><i class='fas fa-eye'></i></a> </td>
                     {% if unlink == 1 %}
                         <td align="center" data-tooltip="Desvincular"><a onclick="unlinkPattern({{ row.id }});"><i class='fas fa-unlink'></i></a> </td>
@@ -261,8 +271,10 @@
                             {% if row.alertLevel == 1 %}
                                 <td align="center"><span class="dotYellow"></span></td>
                             {% elif row.alertLevel == 2 %}
-                                <td align="center"><span class="dotOrange"></span></td>
+                                <td align="center"><span class="dotYellowOrange"></span></td>
                             {% elif row.alertLevel == 3 %}
+                                <td align="center"><span class="dotOrange"></span></td>
+                            {% elif row.alertLevel == 4 %}
                                 <td align="center"><span class="dotRed"></span></td>
                             {% endif %}
                             <td align="center">Nombre de la pauta</td>
@@ -391,6 +403,7 @@
         <table id="intensitiesTable" class="table">
             <thead>
                 <th> Intensidad amarilla </th>
+                <th> Intensidad amarilla-naranja </th>
                 <th> Intensidad naranja </th>
                 <th> Intensidad roja </th>
             </thead>
@@ -409,6 +422,12 @@
                     {% endif %}
                     
 			        {% if patternInfo.intensity3=="No" %}
+			            <td> <span style='color:red;' data-tooltip="No" class="has-tooltip-bottom"><i class='fas fa-times'></i></span> </td>
+                    {% else %}
+                        <td> <span style='color:green;'data-tooltip="Sí" class="has-tooltip-bottom"><i class='fas fa-check'></i></span> </td>
+                    {% endif %}
+                    
+			        {% if patternInfo.intensity4=="No" %}
 			            <td> <span style='color:red;' data-tooltip="No" class="has-tooltip-bottom"><i class='fas fa-times'></i></span> </td>
                     {% else %}
                         <td> <span style='color:green;'data-tooltip="Sí" class="has-tooltip-bottom"><i class='fas fa-check'></i></span> </td>
