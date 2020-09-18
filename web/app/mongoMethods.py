@@ -5,7 +5,7 @@ from datetime import datetime
 import time
 import re
 import math
-from .constants import mongoClient, rowsPerPage, reasonAnger
+from .constants import mongoClient, rowsPerPage, reasonAnger, status
 import pytz
 
 def registerTraceUsers(user, url):
@@ -102,10 +102,14 @@ def searchPatterns(form, pageNum=1, excludeRegisters=None):
         #description = "" if "description" not in cur else cur["description"]
 
         intensity1 = "No" #Yellow
-        intensity2 = "No" #Orange
-        intensity3 = "No" #Red
+        intensity2 = "No" #Yellow-Orange        
+        intensity3 = "No" #Orange
+        intensity4 = "No" #Red
 
         if "intensities" in cur:
+
+            print("[DEBUG] intensities:")
+            print(cur["intensities"])
 
             if 1 in cur["intensities"]:
                 intensity1 = "Sí"
@@ -113,9 +117,11 @@ def searchPatterns(form, pageNum=1, excludeRegisters=None):
                 intensity2 = "Sí"
             if 3 in cur["intensities"]:
                 intensity3 = "Sí"
+            if 4 in cur["intensities"]:
+                intensity4 = "Sí"                
 
         rows.append({"id": cur["id"], "name": cur["name"], \
-            "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3})
+            "intensity1": intensity1, "intensity2": intensity2, "intensity3": intensity3, "intensity4": intensity4})
 
     return {"numberTotalRows":numberTotalRows, "numberPages":numberPages, "rows":rows}
 
@@ -243,7 +249,7 @@ def searchGroupsPattern(idPattern, pageNum=1, outputFormat="arr"):
         rows = ""
     
     cursorGroups = mongoClient["groups"].find({"therapist":current_user.get_id(), \
-        "patterns" :idPattern}).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+        "patterns" :idPattern}).skip((pageNum-1)*rowsPerPage).sort("name",1).limit(rowsPerPage)
 
     for cur in cursorGroups:
         if outputFormat == "arr":
@@ -275,20 +281,21 @@ def searchPatternsPatient(idPatient, pageNum=1, outputFormat="arr"):
     cursorPatient = mongoClient["patients"].find_one({"id":idPatient})
 
     cursorPatterns = mongoClient["patterns"].find({"therapist":current_user.get_id(), \
-        "id" :{"$in": cursorPatient["patterns"]}}).skip((pageNum-1)*rowsPerPage).limit(rowsPerPage)
+        "id" :{"$in": cursorPatient["patterns"]}}).skip((pageNum-1)*rowsPerPage).sort("name",1).limit(rowsPerPage)
 
     for cur in cursorPatterns:
 
         intensity1 = "Sí" if 1 in cur["intensities"] else "No"
         intensity2 = "Sí" if 2 in cur["intensities"] else "No"
         intensity3 = "Sí" if 3 in cur["intensities"] else "No"
+        intensity4 = "Sí" if 4 in cur["intensities"] else "No"
 
         if outputFormat == "arr":
             rows.append({"id":cur["id"], "name":cur["name"], "description":cur["description"], \
-                "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3})
+                "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3, "intensity4":intensity4})
         else:
-            rows += "{},{},{},{},{};".format(cur["id"], cur["name"], \
-                intensity1, intensity2, intensity3)
+            rows += "{},{},{},{},{},{};".format(cur["id"], cur["name"], \
+                intensity1, intensity2, intensity3, intensity4)
 
     numberTotalRows = len(rows)
     numberPages = math.ceil(numberTotalRows/rowsPerPage)
@@ -413,10 +420,12 @@ def searchPatternsGroup(idGroup, pageNum=1, outputFormat="arr"):
         intensity1 = "Sí" if 1 in cur["intensities"] else "No"
         intensity2 = "Sí" if 2 in cur["intensities"] else "No"
         intensity3 = "Sí" if 3 in cur["intensities"] else "No"
+        intensity4 = "Sí" if 4 in cur["intensities"] else "No"
 
         if outputFormat == "arr":
             rows.append({"id":cur["id"], "name":cur["name"], \
-                "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3})
+                "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3, \
+                "intensity4":intensity4})
         else:
             rows += "{},{},{},{},{};".format(cur["id"], cur["name"], \
                 intensity1, intensity2, intensity3)
@@ -647,7 +656,7 @@ def viewEpisodes(idPatient, date1, time1, date2, time2):
     print("[DEBUG] idPatient: " + str(idPatient))
     print(type(idPatient))
 
-    rowEpisodes = getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, "str")
+    rowEpisodes = getEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, "str")
     numberTotalRows = getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient)
     numberPages = math.ceil(numberTotalRows/rowsPerPage)
 
@@ -856,8 +865,11 @@ def getCountMultipleEpisodes(timestampFrom, timestampTo, idPatient):
 def getCountEpisodes(timestampFrom, timestampTo, idPatient):
     return mongoClient["episodes"].find({"idPatient":idPatient}).count()
 
-def getRowEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
-    result = []
+def getRowEpisodes(timestampFrom, timestampTo, idPatient, pageNumber, outputFormat="arr"):
+    if outputFormat=="arr":
+        result = []
+    else:
+        result = ""
 
     #TODO: add skip
     skip = (pageNumber-1)*rowsPerPage
@@ -868,72 +880,30 @@ def getRowEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
         dateFirst = datetime.fromtimestamp(cur["tmpIni"])
         dateLast = datetime.fromtimestamp(cur["tmpEnd"])
         
-        result.append(\
-            {"firstDate": dateFirst.strftime("%d/%m/%Y"), \
-            "firstTime": dateFirst.strftime("%H:%M:%S"), \
-            "lastTime": dateLast.strftime("%H:%M:%S"), \
-            "duration": str(dateLast - dateFirst),
-            "cause": reasonAnger[cur["reasonAnger"]], #TODO: sacarlo de un array en Constants
-            "timestampFrom":timestampFrom,
-            "timestampTo":timestampTo})
-
-    return result
-
-def getMultipleEpisodes(timestampFrom, timestampTo, idPatient, pageNumber):
-    if outputFormat == "arr":
-        result = []
-    else:
-        result = ""
-    
-    skip = (pageNumber-1)*rowsPerPage
-
-    cursor = getEpisodesCursor(timestampFrom, timestampTo, idPatient, skip, rowsPerPage)
-
-    totalAlerts = [0, 0, 0, 0]
-
-    for episode in cursor:
-    
-        firstDateTimestamp = 0
-        lastDateTimestamp = 0
-        firstAlert = True
-        for alert in episode["v"]:
-
-            if firstAlert:
-                firstAlert = False
-                firstDateTimestamp = float(alert["timestamp"])
-
-            lastDateTimestamp = float(alert["timestamp"])
-
-            totalAlerts[int(alert["level"]) -1] += 1
-
-        dateFirst = datetime.fromtimestamp(firstDateTimestamp)
-        dateLast = datetime.fromtimestamp(lastDateTimestamp)
-
         if outputFormat == "arr":
             result.append(\
                 {"firstDate": dateFirst.strftime("%d/%m/%Y"), \
                 "firstTime": dateFirst.strftime("%H:%M:%S"), \
                 "lastTime": dateLast.strftime("%H:%M:%S"), \
                 "duration": str(dateLast - dateFirst),
-                "cause": "Causa",
-                "timestampFrom":timestampFrom,
-                "timestampTo":timestampTo})
+                "cause": reasonAnger[cur["reasonAnger"]],
+                "timestampFrom":cur["tmpIni"],
+                "timestampTo":cur["tmpEnd"]})
         else:
             result += "{},{},{},{},{},{},{};".format(\
                 dateFirst.strftime("%d/%m/%Y"), \
                 dateFirst.strftime("%H:%M:%S"), \
                 dateLast.strftime("%H:%M:%S"), \
                 str(dateLast - dateFirst), \
-                "causa", \
-                timestampFrom,
-                timestampTo)
+                reasonAnger[cur["reasonAnger"]], \
+                cur["tmpIni"],
+                cur["tmpEnd"])
 
     if outputFormat == "str" and len(result) > 0:
         result = result[:-1]
 
-    print(result)
-
     return result
+
 
 def getOneEpisode(timestampFrom, timestampTo, idPatient):
     rows = []
@@ -952,11 +922,16 @@ def getOneEpisode(timestampFrom, timestampTo, idPatient):
             firstRow = False
         
         valueLastTimestamp = int(cur["timestamp"])
+        
+        patternString = mongoClient["patterns"].find_one({"id": cur["pattern"]})
+        
+        statusStr = status[cur["status"]]
     
         currentDate = datetime.fromtimestamp(int(cur["timestamp"]))
         rows.append({"plotDate": currentDate.strftime("Date.UTC(%Y, %m, %d, %H, %M, %S)"), \
             "date": currentDate.strftime("%d/%m/%Y"), "time": \
-            currentDate.strftime("%H:%M:%S"), "alertLevel": cur["level"]})
+            currentDate.strftime("%H:%M:%S"), "alertLevel": cur["level"], \
+            "pattern":patternString["name"], "status": statusStr})
 
     #Insert succeeding zero alert state
     currentDate = datetime.fromtimestamp(valueLastTimestamp+5)
@@ -1075,13 +1050,6 @@ def updatePattern(form, therapistId):
     for cur in cursor:
         mongoClient["patients"].update({"id":cur["id"]}, {"$pull": {"patterns":idPattern}})
 
-    #Update groups which are no longer linked with the current pattern
-    cursor = mongoClient["groups"].find({"therapist":therapistId, "patterns":idPattern, \
-        "id":{"$nin": list(map(int, form.patients.data))}})
-
-    for cur in cursor:
-        mongoClient["groups"].update({"id":cur["id"]}, {"$pull": {"patterns":idPattern}})
-
     #Update patients which are now linked with the current pattern
     cursor = mongoClient["patients"].find({"therapist":therapistId, "patterns": \
         {"$ne": idPattern}, "id":{"$in": list(map(int, form.patients.data))}})
@@ -1099,9 +1067,6 @@ def updatePattern(form, therapistId):
     cursor = mongoClient["groups"].find({"therapist":therapistId, "patterns": {"$ne": idPattern}, \
         "id":{"$in": list(map(int, form.groups.data))}})
 
-    for cur in cursor:
-        mongoClient["groups"].update({"id":cur["id"]}, {"$push": {"patterns":idPattern}})
-
     #Update the information of the pattern itself
 
     intensities = []
@@ -1114,6 +1079,9 @@ def updatePattern(form, therapistId):
 
     if form.intensity3.data:
         intensities.append(3)
+
+    if form.intensity4.data:
+        intensities.append(4)
 
     #Update the pattern info
     mongoClient["patterns"].update_one({"id" : idPattern}, {"$set" : {"name" : form.name.data, \

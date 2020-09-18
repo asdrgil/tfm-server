@@ -19,7 +19,7 @@ def syncDevice(registrationToken):
     if mongoClient["tmpPatientToken"].count_documents({'id': registrationToken, 'synced': False}) > 0:
         mongoClient["tmpPatientToken"].update_one({'id': registrationToken}, {"$set": {'synced': True}})
         cursorPatient = mongoClient["tmpPatientToken"].find_one({'id': registrationToken})
-        
+            
         return jsonify({'code': 1, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
             "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"], \
             "communicationToken":cursorPatient["communicationToken"]})
@@ -52,7 +52,7 @@ def updatePatternsPatient(communicationToken):
         if mongoClient["updatePatternsAndroid"].count_documents({"communicationToken":communicationToken, "operation":operation}) > 0:
             result[operation] = []
         
-            cursor = getUpdatePatternsAndroid(operation, communicationToken)
+        cursor = getUpdatePatternsAndroid(operation, communicationToken)
             
         for cur in cursor:
             dict_data = {

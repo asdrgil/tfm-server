@@ -91,9 +91,10 @@ def viewPattern(idPattern):
     intensity1 = "Sí" if 1 in cursorPattern["intensities"] else "No"
     intensity2 = "Sí" if 2 in cursorPattern["intensities"] else "No"
     intensity3 = "Sí" if 3 in cursorPattern["intensities"] else "No"
+    intensity4 = "Sí" if 4 in cursorPattern["intensities"] else "No"
 
     patternInfo  = {"id": idPattern, "name":cursorPattern["name"], "description":cursorPattern["description"], 
-        "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3}
+        "intensity1":intensity1, "intensity2":intensity2, "intensity3":intensity3, "intensity4":intensity4}
 
     rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPautas", "name":"Ver pautas"}]
     

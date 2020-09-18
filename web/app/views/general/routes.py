@@ -3,8 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from app import db
 from app.views.general import bp
 from app.forms import FilterByDateForm, SearchPatientsForm, PaginationForm
-from app.mongoMethods import getMultipleEpisodes, getCountMultipleEpisodes, \
-    searchPatients, registerTraceUsers
+from app.mongoMethods import getCountMultipleEpisodes, searchPatients, registerTraceUsers
 from app.constants import mongoClient, urlPrefix
 
 from datetime import datetime

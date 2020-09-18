@@ -65,6 +65,7 @@
                 data: $('form').serialize(),
                 type: 'POST',
                 success: function(response){
+                    console.log("DEBUG: response code is OK");
                     if(response["code"] == 1){
                         updateTableEpisodes(response["episodes"]);
                     }
@@ -79,26 +80,28 @@
             var bodyContent = "";
 
             if(message["numberTotalRows"] > 0){
-                var rows = message["rowEpisodes"].split(";");
+               //var rows = message["rowEpisodes"].split(";");
 
-                for(i=0; i<rows.length; i++){
-                    var cols = rows[i].split(",");
+                console.log(message["rowEpisodes"].length);
+
+                for(i=0; i<message["rowEpisodes"].length; i++){
+                    //var cols = message["rowEpisodes"][i].split(",");
 
                     bodyContent += "<tr>"
                     
                     //FirstDate
-                    bodyContent += "<td>"+cols[0]+"</td>";
+                    bodyContent += "<td>"+message["rowEpisodes"][i]["firstDate"]+"</td>";
                     //FirstTime
-                    bodyContent += "<td>"+cols[1]+"</td>";
+                    bodyContent += "<td>"+message["rowEpisodes"][i]["firstTime"]+"</td>";
                     //LastDate
-                    bodyContent += "<td>"+cols[2]+"</td>";
+                    bodyContent += "<td>"+message["rowEpisodes"][i]["lastDate"]+"</td>";
                     //Duration
-                    bodyContent += "<td>"+cols[3]+"</td>";
+                    bodyContent += "<td>"+message["rowEpisodes"][i]["duration"]+"</td>";
                     //Cause
-                    bodyContent += "<td>"+cols[4]+"</td>";
+                    bodyContent += "<td>"+message["rowEpisodes"][i]["cause"]+"</td>";
                     //View episode
                     
-                    bodyContent += "<td><a href={{ addUrlPrefixMacro(url_for('patients.viewOneEpisode'))}}?idPatient={{patientInfo.id}}&timestampFrom="+cols[5]+"&timestampTo="+cols[6]+" style='color:#3273dc'><i class='fas fa-eye'></i>Ver</a></td>";
+                    bodyContent += "<td><a href={{ addUrlPrefixMacro(url_for('patients.viewOneEpisode'))}}?idPatient={{patientInfo.id}}&timestampFrom="+message["rowEpisodes"][i]["timestampFrom"]+"&timestampTo="+message["rowEpisodes"][i]["timestampTo"]+" style='color:#3273dc'><i class='fas fa-eye'></i>Ver</a></td>";
                     
                     bodyContent += "</tr>"
                 }

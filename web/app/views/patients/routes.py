@@ -1,8 +1,8 @@
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import current_user, login_required
 from app import db
-from app.mongoMethods import searchPatterns, generateUniqueRandom, searchPatients, getMultipleEpisodes, \
-    getCountMultipleEpisodes, getOneEpisode, searchPatternsPatient, getEpisodes, registerTraceUsers
+from app.mongoMethods import searchPatterns, generateUniqueRandom, searchPatients, getCountMultipleEpisodes, \
+    getOneEpisode, searchPatternsPatient, getEpisodes, registerTraceUsers
 from app.views.patients import bp
 from app.constants import mongoClient, urlPrefix, registerTokenLength, communicationTokenLength
 from app.forms import RegisterPatternForm, SearchPatternsForm, PaginationForm, RegisterPatientForm, EditPatientForm, \
@@ -75,7 +75,10 @@ def registerPatternPatient(idPatient):
                 intensities.append(2)
 
             if form.intensity3.data:
-                intensities.append(3)                
+                intensities.append(3)   
+
+            if form.intensity4.data:
+                intensities.append(4)
 
             mongoClient["patterns"].insert_one({"therapist":current_user.get_id(), "id":idPattern, \
                 'name': form.name.data, 'description': form.description.data.strip(), 'intensities': intensities})
@@ -88,7 +91,7 @@ def registerPatternPatient(idPatient):
     form = RegisterPatternForm(current_user.get_id())
 
     patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
-        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+        "surname2":cursorPatient["surname2"], "age":int(cursorPatient["age"]), "gender":cursorPatient["gender"]}
 
     return render_template('patients/registerPatternPatient.html', title='Registrar una pauta', form=form, \
         therapistLiteral=therapistLiteral, patientInfo=patientInfo, rowsBreadCrumb=rowsBreadCrumb)
@@ -103,7 +106,7 @@ def linkPatternsPatient(idPatient):
     cursorPatient = mongoClient["patients"].find_one({"therapist":current_user.get_id(), "id": idPatient})
 
     patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
-        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+        "surname2":cursorPatient["surname2"], "age":int(cursorPatient["age"]), "gender":cursorPatient["gender"]}
 
     rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPacientes", "name":"Ver pacientes"}, \
         {"href": "/verPaciente/" + str(idPatient), "name": cursorPatient["name"] + " " + cursorPatient["surname1"]}]
@@ -239,7 +242,7 @@ def viewPatient(idPatient):
     cursorPatient = mongoClient["patients"].find_one({"id":idPatient, "therapist":current_user.get_id()})
 
     patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
-        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+        "surname2":cursorPatient["surname2"], "age":int(cursorPatient["age"]), "gender":cursorPatient["gender"]}
         
     #Link patterns to patient
     if request.args.get("linkPattIds") is not None:
@@ -436,7 +439,7 @@ def viewOneEpisode():
     cursorPatient = mongoClient["patients"].find_one({"id":idPatient, "therapist": current_user.get_id()})
 
     patientInfo  = {"id": idPatient, "name":cursorPatient["name"], "surname1":cursorPatient["surname1"], \
-        "surname2":cursorPatient["surname2"], "age":cursorPatient["age"], "gender":cursorPatient["gender"]}
+        "surname2":cursorPatient["surname2"], "age":int(cursorPatient["age"]), "gender":cursorPatient["gender"]}
 
 
     rowsBreadCrumb = [{"href": "/", "name":"Inicio"}, {"href": "/verPacientes", "name":"Ver pacientes"}, \

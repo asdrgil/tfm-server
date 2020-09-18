@@ -23,7 +23,7 @@
         .dotYellowOrange {
           height: 25px;
           width: 25px;
-          background-color: amber; /* Check if works */
+          background-color: #ffc966;
           border-radius: 50%;
           border: 1px solid black;
           display: inline-block;
@@ -103,7 +103,9 @@
                     } else if(this.y == 1){
                         return "Alerta amarilla (<span style='color:yellow'>◉</span>)<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);
                     } else if(this.y == 2){
-                        return "Alerta naranja (<span style='color:orange'>◉</span>)<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);
+                        return "Alerta amarilla-naranja (<span style='color:orange'>◉</span>)<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);
+                    } else if(this.y == 3){
+                        return "Alerta naranja (<span style='color:orange'>◉</span>)<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);                       
                     } else {
                         return "Alerta roja (<span style='color:red'>◉</span>)<br>Hora: " +  Highcharts.dateFormat('%H:%M:%S', this.x);
                     }

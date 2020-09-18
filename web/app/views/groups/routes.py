@@ -104,7 +104,6 @@ def viewGroup(idGroup):
 
     #LINK patterns
     if request.args.get("linkPattIds") is not None:
-        print("[DEBUG] INN.")
         patterns = list(map(int, request.args.get("linkPattIds").split(",")))
         for patt in patterns:
             mongoClient["groups"].update_one({"id": idGroup}, \

@@ -1,6 +1,6 @@
 from flask import render_template, jsonify, request
 from app.constants import mongoClient
-from app.mongoMethods import insertPatient, viewEpisodes
+from app.mongoMethods import insertPatient, getEpisodes
 from app.views.ajax import bp
 import time
 
@@ -38,7 +38,7 @@ def ajaxEpisodesPatient(idPatient):
         or request.args.get("time2") == None:
         return jsonify({'code': -1})
 
-    rowEpisodes, numberTotalRows, numberPages = viewEpisodes(idPatient, request.args.get("date1"), \
+    rowEpisodes, numberTotalRows, numberPages = getEpisodes(idPatient, request.args.get("date1"), \
         request.args.get("time1"), request.args.get("date2"), request.args.get("time2"))
 
     return jsonify({"code": 1, \
